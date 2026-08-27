@@ -1,0 +1,49 @@
+version: 1
+
+timezone: Asia/Shanghai
+
+feeds:
+  - id: juya-ai-daily
+    name: 橘鸦 AI 早报
+    url: https://daily.juya.uk/rss.xml
+    homepage: https://daily.juya.uk/
+    fallback_urls:
+      - https://imjuya.github.io/juya-ai-daily/rss.xml
+    language: zh-CN
+    source_type: curated_aggregator
+    role: discovery
+    enabled: true
+    priority: 80
+
+    fetch:
+      lookback_hours: 48
+      max_feed_items: 2
+
+    selection:
+      focus_topics:
+        - agent
+        - coding-agent
+        - agent-harness
+        - agent-runtime
+        - mcp
+        - llm
+        - open-models
+        - agent-memory
+        - agent-evaluation
+        - agent-security
+        - ai-infra
+      max_candidates_per_issue: 24
+
+    verification:
+      required: true
+      use_feed_summary_as_final_fact: false
+      preferred_primary_sources:
+        - official-announcement
+        - original-paper
+        - github-repository
+        - model-card
+        - official-documentation
+
+    notes: >-
+      该 RSS 是覆盖面较广的中文聚合源，适合发现候选主题；进入最终演示前，
+      应回查条目中的官方发布、原始论文、模型卡或 GitHub 仓库，并对重复新闻进行聚类。
