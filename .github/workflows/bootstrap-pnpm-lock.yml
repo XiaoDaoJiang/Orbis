@@ -32,7 +32,7 @@ jobs:
         run: pnpm install --lockfile-only --no-frozen-lockfile
       - name: Commit lockfile when changed
         run: |
-          if git diff --quiet -- pnpm-lock.yaml; then
+          if [ -z "$(git status --porcelain -- pnpm-lock.yaml)" ]; then
             echo 'pnpm-lock.yaml is already current'
             exit 0
           fi
