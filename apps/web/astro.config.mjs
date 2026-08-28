@@ -9,5 +9,5 @@ export default defineConfig({
   base,
   output: 'static',
   trailingSlash: 'always',
-  outDir: new URL('../../dist/web/', import.meta.url),
+  outDir: '../../dist/web',
 })
