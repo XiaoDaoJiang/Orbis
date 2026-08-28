@@ -18,6 +18,7 @@
     "build": "pnpm validate && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:prototype"
   },
   "devDependencies": {
+    "@orbis/content-schema": "workspace:*",
     "tsx": "4.23.12",
     "typescript": "5.9.3",
     "yaml": "2.8.3"
