@@ -1,6 +1,14 @@
-version: 1
-
+version: 2
+updated_at: 2026-08-27
 timezone: Asia/Shanghai
+
+policy:
+  rss_first: true
+  lookback_hours: 48
+  minimum_successful_feeds: 1
+  deduplicate_across_feeds: true
+  require_primary_source_verification: true
+  use_feed_summary_as_final_fact: false
 
 feeds:
   - id: juya-ai-daily
@@ -13,37 +21,55 @@ feeds:
     source_type: curated_aggregator
     role: discovery
     enabled: true
+    required: true
     priority: 80
 
     fetch:
       lookback_hours: 48
       max_feed_items: 2
+      parse_full_content: true
+      extract_external_links: true
 
     selection:
       focus_topics:
         - agent
+        - multi-agent
         - coding-agent
         - agent-harness
         - agent-runtime
         - mcp
+        - skills
+        - tool-use
         - llm
         - open-models
+        - reasoning-models
+        - context-engineering
         - agent-memory
         - agent-evaluation
+        - verification
         - agent-security
+        - sandbox
         - ai-infra
+        - inference
+        - model-routing
       max_candidates_per_issue: 24
+      exclude_topics:
+        - pure-marketing
+        - celebrity-news
+        - unverified-rumor
+        - duplicate-ranking
 
     verification:
       required: true
-      use_feed_summary_as_final_fact: false
       preferred_primary_sources:
         - official-announcement
         - original-paper
         - github-repository
         - model-card
         - official-documentation
+        - official-security-report
 
     notes: >-
-      该 RSS 是覆盖面较广的中文聚合源，适合发现候选主题；进入最终演示前，
-      应回查条目中的官方发布、原始论文、模型卡或 GitHub 仓库，并对重复新闻进行聚类。
+      该 RSS 是覆盖面较广的中文聚合源，只用于发现候选主题。进入最终演示前，
+      必须回查条目中的官方发布、原始论文、模型卡、官方文档或 GitHub 仓库，
+      并对重复新闻、改写标题和社区讨论进行聚类。
