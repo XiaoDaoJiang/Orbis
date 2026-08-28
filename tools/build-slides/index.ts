@@ -39,7 +39,7 @@ await mkdir(outputRoot, { recursive: true })
 
 for (const slug of entries) {
   const base = `${joinBasePath(siteBase, config.presentation.publicPath, slug)}/`
-  const out = `../../${config.presentation.outputDir}/${slug}`
+  const out = resolve(outputRoot, slug)
   await run([
     'exec',
     'slidev',
