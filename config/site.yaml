@@ -1,0 +1,21 @@
+version: 1
+
+site:
+  name: Orbis
+  origin: https://xiaodaojiang.github.io
+  basePath: /Orbis
+  locale: zh-CN
+
+content:
+  briefsDir: content/briefs
+
+presentation:
+  generatedDir: apps/slides/generated
+  outputDir: dist/slides
+  publicPath: slides
+
+preview:
+  provider: raw.githack
+  origin: https://raw.githack.com
+  repositoryPath: /XiaoDaoJiang/Orbis
+  branchPrefix: preview-pr-

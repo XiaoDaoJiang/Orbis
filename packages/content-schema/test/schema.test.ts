@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
-import { briefSchema } from '../src/index.ts'
+import { briefSchema, dailyBriefSchema } from '../src/index.ts'
 
 const valid = {
   kind: 'brief',
   cadence: 'daily',
-  publishedAt: '2026-08-28',
+  publishedAt: '2026-01-01',
   status: 'published',
-  title: 'A valid prototype brief',
+  title: 'A valid daily brief schema fixture',
   summary: 'A sufficiently descriptive prototype summary.',
   topics: ['agent-harness'],
   signals: Array.from({ length: 4 }, (_, index) => ({
@@ -14,7 +14,7 @@ const valid = {
     summary: 'A sufficiently descriptive signal summary.',
     impact: 'high',
   })),
-  sections: Array.from({ length: 3 }, (_, index) => ({
+  sections: Array.from({ length: 5 }, (_, index) => ({
     id: `section-${index + 1}`,
     layout: 'architecture',
     title: `Section ${index + 1}`,
@@ -40,8 +40,11 @@ const valid = {
   }],
   archivePicks: [],
   presentation: { enabled: true, template: 'daily-v1' },
-}
+} as const
 
-assert.equal(briefSchema.parse(valid).signals.length, 4)
+assert.equal(dailyBriefSchema.parse(valid).signals.length, 4)
+assert.equal(briefSchema.parse(valid).sections.length, 5)
 assert.throws(() => briefSchema.parse({ ...valid, signals: valid.signals.slice(0, 3) }))
+assert.throws(() => briefSchema.parse({ ...valid, sections: valid.sections.slice(0, 4) }))
+assert.throws(() => briefSchema.parse({ ...valid, presentation: { enabled: true, template: 'weekly-v1' } }))
 console.log('content-schema tests passed')

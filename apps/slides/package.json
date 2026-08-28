@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "slidev generated/2026-08-28/slides.md --open",
-    "build:prototype": "slidev build generated/2026-08-28/slides.md --base /Orbis/slides/2026-08-28/ --out ../../../../dist/slides/2026-08-28 --without-notes"
+    "dev": "pnpm --dir ../.. slides:dev",
+    "build": "pnpm --dir ../.. build:slides"
   },
   "dependencies": {
     "@orbis/design-tokens": "workspace:*",

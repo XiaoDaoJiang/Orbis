@@ -21,6 +21,10 @@ export const referenceSchema = z.object({
   accessedAt: dateStringSchema.optional(),
 })
 
+export const archivePickSchema = referenceSchema.extend({
+  publishedAt: dateStringSchema.optional(),
+})
+
 export const signalSchema = z.object({
   title: z.string().min(3),
   summary: z.string().min(12),
@@ -62,33 +66,40 @@ export const presentationSchema = z.object({
   template: z.enum(['daily-v1', 'weekly-v1', 'talk-v1']),
 })
 
-export const briefSchema = z
-  .object({
-    kind: z.literal('brief'),
-    cadence: z.enum(['daily', 'weekly', 'ad-hoc']),
-    publishedAt: dateStringSchema,
-    status: publicationStatusSchema,
-    title: z.string().min(5),
-    summary: z.string().min(12),
-    topics: z.array(z.string().min(2)).min(1),
-    signals: z.array(signalSchema).length(4),
-    sections: z.array(briefSectionSchema).min(3).max(5),
-    projects: z.array(projectSchema).max(6).default([]),
-    radar: z.array(radarItemSchema).max(8).default([]),
-    actions: z.array(actionSchema).min(3).max(5),
-    references: z.array(referenceSchema).min(1),
-    archivePicks: z.array(referenceSchema).max(6).default([]),
-    presentation: presentationSchema,
-  })
-  .superRefine((value, context) => {
-    if (value.cadence === 'daily' && value.presentation.template !== 'daily-v1') {
-      context.addIssue({
-        code: 'custom',
-        path: ['presentation', 'template'],
-        message: 'Daily briefs must use daily-v1 in the prototype',
-      })
-    }
-  })
+const briefBaseSchema = z.object({
+  kind: z.literal('brief'),
+  cadence: z.enum(['daily', 'weekly', 'ad-hoc']),
+  publishedAt: dateStringSchema,
+  status: publicationStatusSchema,
+  title: z.string().min(5),
+  summary: z.string().min(12),
+  topics: z.array(z.string().min(2)).min(1),
+  signals: z.array(signalSchema).min(1).max(8),
+  sections: z.array(briefSectionSchema).min(1).max(8),
+  projects: z.array(projectSchema).max(6).default([]),
+  radar: z.array(radarItemSchema).max(8).default([]),
+  actions: z.array(actionSchema).min(1).max(8),
+  references: z.array(referenceSchema).min(1),
+  archivePicks: z.array(archivePickSchema).max(6).default([]),
+  presentation: presentationSchema,
+})
+
+export const dailyBriefSchema = briefBaseSchema.extend({
+  cadence: z.literal('daily'),
+  signals: z.array(signalSchema).length(4),
+  sections: z.array(briefSectionSchema).length(5),
+  actions: z.array(actionSchema).min(3).max(5),
+  presentation: z.object({
+    enabled: z.boolean(),
+    template: z.literal('daily-v1'),
+  }),
+})
+
+const nonDailyBriefSchema = briefBaseSchema.extend({
+  cadence: z.enum(['weekly', 'ad-hoc']),
+})
+
+export const briefSchema = z.union([dailyBriefSchema, nonDailyBriefSchema])
 
 export const essaySchema = z.object({
   kind: z.literal('essay'),
@@ -124,6 +135,7 @@ export const knowledgeSchema = z.object({
 })
 
 export type Brief = z.infer<typeof briefSchema>
+export type DailyBrief = z.infer<typeof dailyBriefSchema>
 export type Essay = z.infer<typeof essaySchema>
 export type Topic = z.infer<typeof topicSchema>
 export type Knowledge = z.infer<typeof knowledgeSchema>

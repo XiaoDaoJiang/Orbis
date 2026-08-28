@@ -11,6 +11,7 @@
     "@astrojs/rss": "4.0.19",
     "@orbis/content-schema": "workspace:*",
     "@orbis/design-tokens": "workspace:*",
-    "astro": "7.2.9"
+    "astro": "7.2.9",
+    "yaml": "2.8.3"
   }
 }
