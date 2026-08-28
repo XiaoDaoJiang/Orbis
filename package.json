@@ -10,6 +10,7 @@
   "scripts": {
     "validate": "pnpm --filter @orbis/content-schema test && pnpm content:validate",
     "content:validate": "tsx tools/validate-content/index.ts",
+    "path:guard": "tsx tools/path-guard/index.ts",
     "generate:slides": "tsx tools/generate-slides/index.ts",
     "slides:dev": "pnpm generate:slides && tsx tools/build-slides/index.ts --dev",
     "build:web": "pnpm --filter @orbis/web build",
