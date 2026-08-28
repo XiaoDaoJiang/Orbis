@@ -35,7 +35,10 @@ function generateDaily(brief: Brief) {
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">IMPACT × ADOPTION HORIZON</div>\n\n## 技术投入判断\n\n<div class="radar-list">\n${brief.radar.map((item) => `<div class="radar-item"><strong>${escapeHtml(item.label)}</strong><div class="radar-track"><span style="width:${item.impact}%"></span></div><small>${item.horizon}</small></div>`).join('\n')}\n</div>\n`)
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">FROM SIGNALS TO ACTION</div>\n\n## 从信号到行动\n\n把值得关注的变化，转化为可验证的工程选择。\n\n<div class="action-grid">\n${brief.actions.map((action) => `<div class="action-card"><h3>${escapeHtml(action.title)}</h3><p>${escapeHtml(action.description)}</p></div>`).join('\n')}\n</div>\n`)
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">EXTENDED READING</div>\n\n## 扩展阅读\n\n<ol class="reference-list">\n${brief.references.map((reference) => `<li><a href="${reference.url}">${escapeHtml(reference.title)}</a> — ${escapeHtml(reference.supports)}</li>`).join('\n')}\n</ol>\n`)
-  return pages.join('\n---\n\n')
+
+  // Each page already starts with Slidev frontmatter delimiters. Joining with a
+  // plain newline avoids inserting an additional empty slide between pages.
+  return pages.join('\n\n')
 }
 
 await rm(outputRoot, { recursive: true, force: true })
