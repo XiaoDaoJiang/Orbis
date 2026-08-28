@@ -1,0 +1,7 @@
+node_modules/
+.pnpm-store/
+.astro/
+dist/
+apps/slides/generated/
+.DS_Store
+*.log

@@ -1,0 +1,16 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+export async function getStaticPaths() {
+  return (await getCollection('topics', ({ data }) => data.status !== 'archived')).map((entry) => ({ params: { id: entry.id }, props: { entry } }))
+}
+const { entry } = Astro.props
+const [essays, briefs, knowledge] = await Promise.all([getCollection('essays'), getCollection('briefs'), getCollection('knowledge')])
+const matches = [
+  ...essays.filter((item) => item.data.topics.includes(entry.id)).map((item) => ({ id: item.id, title: item.data.title, kind: 'essay' })),
+  ...briefs.filter((item) => item.data.topics.includes(entry.id)).map((item) => ({ id: item.id, title: item.data.title, kind: 'brief' })),
+  ...knowledge.filter((item) => item.data.topics.includes(entry.id)).map((item) => ({ id: item.id, title: item.data.title, kind: 'knowledge' })),
+]
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+---
+<BaseLayout title={entry.data.name} description={entry.data.description}><div class="eyebrow">Topic</div><h1>{entry.data.name}</h1><p class="lead">{entry.data.description}</p><div class="grid">{matches.map((item) => <a class="card" href={`${base}/${item.kind === 'essay' ? 'essays' : item.kind === 'brief' ? 'briefs' : 'knowledge'}/${item.id}/`}><small>{item.kind}</small><h3>{item.title}</h3></a>)}</div></BaseLayout>

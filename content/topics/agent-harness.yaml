@@ -1,0 +1,9 @@
+name: Agent Harness
+description: 管理模型、工具、上下文、状态、权限、环境和验证的系统运行层。
+aliases:
+  - harness
+  - agent-runtime-harness
+status: active
+related:
+  - coding-agent
+  - mcp

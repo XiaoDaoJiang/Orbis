@@ -1,0 +1,10 @@
+---
+import { getCollection, render } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+export async function getStaticPaths() {
+  return (await getCollection('knowledge', ({ data }) => data.status === 'published' || data.status === 'active')).map((entry) => ({ params: { id: entry.id }, props: { entry } }))
+}
+const { entry } = Astro.props
+const { Content } = await render(entry)
+---
+<BaseLayout title={entry.data.title} description={entry.data.summary}><article class="article"><header class="article-header"><div class="eyebrow">Knowledge · review {entry.data.reviewAt ?? 'not scheduled'}</div><h1>{entry.data.title}</h1><p class="lead">{entry.data.summary}</p></header><div class="article-body"><Content /></div></article></BaseLayout>

@@ -1,0 +1,52 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../layouts/BaseLayout.astro'
+
+const [essays, briefs, topics, knowledge] = await Promise.all([
+  getCollection('essays', ({ data }) => data.status === 'published'),
+  getCollection('briefs', ({ data }) => data.status === 'published'),
+  getCollection('topics', ({ data }) => data.status !== 'archived'),
+  getCollection('knowledge', ({ data }) => data.status === 'published' || data.status === 'active'),
+])
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+---
+<BaseLayout>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Essays · Briefs · Slides · Knowledge</div>
+      <h1>ORBIS</h1>
+      <p class="lead">一个将深度写作、结构化简报、交互式演示、主题聚合与长期知识归档统一起来的静态内容原型。</p>
+    </div>
+    <div class="starburst" aria-hidden="true"></div>
+  </section>
+
+  <div class="section-title"><h2>Latest content</h2><span>{essays.length + briefs.length + knowledge.length} entries</span></div>
+  <div class="grid">
+    {briefs.slice(0, 2).map((entry) => (
+      <a class="card" href={`${base}/briefs/${entry.id}/`}>
+        <small>Brief · {entry.data.cadence}</small>
+        <h3>{entry.data.title}</h3>
+        <p>{entry.data.summary}</p>
+      </a>
+    ))}
+    {essays.slice(0, 2).map((entry) => (
+      <a class="card" href={`${base}/essays/${entry.id}/`}>
+        <small>Essay</small>
+        <h3>{entry.data.title}</h3>
+        <p>{entry.data.description}</p>
+      </a>
+    ))}
+    {knowledge.slice(0, 2).map((entry) => (
+      <a class="card" href={`${base}/knowledge/${entry.id}/`}>
+        <small>Knowledge</small>
+        <h3>{entry.data.title}</h3>
+        <p>{entry.data.summary}</p>
+      </a>
+    ))}
+  </div>
+
+  <div class="section-title"><h2>Active topics</h2><span>{topics.length} topics</span></div>
+  <div class="pills">
+    {topics.map((topic) => <a class="pill" href={`${base}/topics/${topic.id}/`}>{topic.data.name}</a>)}
+  </div>
+</BaseLayout>
