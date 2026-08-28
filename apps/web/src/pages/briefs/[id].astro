@@ -1,0 +1,20 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+export async function getStaticPaths() {
+  return (await getCollection('briefs', ({ data }) => data.status === 'published')).map((entry) => ({ params: { id: entry.id }, props: { entry } }))
+}
+const { entry } = Astro.props
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+---
+<BaseLayout title={entry.data.title} description={entry.data.summary}>
+  <article class="article">
+    <header class="article-header"><div class="eyebrow">Brief · {entry.data.cadence} · {entry.data.publishedAt}</div><h1>{entry.data.title}</h1><p class="lead">{entry.data.summary}</p><div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div><p><a href={`${base}/slides/${entry.id}/`}>打开演示版 →</a></p></header>
+    <div class="article-body">
+      <h2>Four signals</h2><ul class="signal-list">{entry.data.signals.map((signal) => <li><strong>{signal.title}</strong><p>{signal.summary}</p></li>)}</ul>
+      {entry.data.sections.map((section) => <section><h2>{section.title}</h2><p><strong>{section.conclusion}</strong></p><ul>{section.facts.map((fact) => <li>{fact}</li>)}</ul>{section.limitations.length > 0 && <p><small>限制：{section.limitations.join('；')}</small></p>}</section>)}
+      <h2>From signals to action</h2><ul class="action-list">{entry.data.actions.map((action) => <li><strong>{action.title}</strong><p>{action.description}</p></li>)}</ul>
+      <h2>References</h2><ol class="reference-list">{entry.data.references.map((reference) => <li><a href={reference.url}>{reference.title}</a> — {reference.supports}</li>)}</ol>
+    </div>
+  </article>
+</BaseLayout>

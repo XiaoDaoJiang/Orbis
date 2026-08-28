@@ -1,0 +1,16 @@
+{
+  "name": "@orbis/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build"
+  },
+  "dependencies": {
+    "@astrojs/rss": "4.0.19",
+    "@orbis/content-schema": "workspace:*",
+    "@orbis/design-tokens": "workspace:*",
+    "astro": "7.2.9"
+  }
+}

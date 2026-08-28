@@ -1,0 +1,7 @@
+name: MCP
+description: 面向 Agent 的能力发现、连接、授权与工具调用协议边界。
+aliases:
+  - model-context-protocol
+status: active
+related:
+  - agent-harness
