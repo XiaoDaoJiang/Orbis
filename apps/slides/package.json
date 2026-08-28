@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "slidev generated/2026-08-28/slides.md --open",
-    "build:prototype": "slidev build generated/2026-08-28/slides.md --base /Orbis/slides/2026-08-28/ --out ../../dist/slides/2026-08-28 --without-notes"
+    "build:prototype": "slidev build generated/2026-08-28/slides.md --base /Orbis/slides/2026-08-28/ --out ../../../../dist/slides/2026-08-28 --without-notes"
   },
   "dependencies": {
     "@orbis/design-tokens": "workspace:*",
