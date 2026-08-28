@@ -10,6 +10,7 @@ const required = [
   'dist/site/topics/agent-harness/index.html',
   'dist/site/knowledge/verification-loop/index.html',
   'dist/site/rss.xml',
+  'dist/site/favicon.svg',
   'dist/site/slides/2026-08-28/index.html',
   'apps/slides/generated/2026-08-28/slides.md',
 ]
@@ -27,9 +28,12 @@ const frontmatterMarkers = slideSource.match(/^---$/gm) ?? []
 assert.match(home, /ORBIS/i)
 assert.match(brief, /Harness 正在成为模型之外的能力层/)
 assert.match(deck, /Orbis|Harness/i)
+assert.match(deck, /\/Orbis\/favicon\.svg/)
+assert.doesNotMatch(deck, /cdn\.jsdelivr\.net\/gh\/slidevjs\/slidev\/assets\/favicon\.png/)
 assert.match(rss, /<rss/)
 assert.equal(frontmatterMarkers.length, 22, 'The daily-v1 prototype must contain exactly 11 slides')
 assert.match(slideSource, /FOUR SIGNALS/)
 assert.match(slideSource, /FROM SIGNALS TO ACTION/)
 assert.match(slideSource, /EXTENDED READING/)
-console.log('Prototype artifact checks passed with exactly 11 slides')
+assert.match(slideSource, /favicon: \/Orbis\/favicon\.svg/)
+console.log('Prototype artifact checks passed with exactly 11 slides and a local favicon')

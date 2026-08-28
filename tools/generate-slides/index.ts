@@ -6,6 +6,7 @@ import { listFiles, readYaml } from '../shared/content.ts'
 const root = resolve(import.meta.dirname, '../..')
 const sourceDir = resolve(root, 'content/briefs')
 const outputRoot = resolve(root, 'apps/slides/generated')
+const siteBase = (process.env.SITE_BASE ?? '/Orbis').replace(/\/$/, '')
 
 function escapeHtml(value: string) {
   return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -13,7 +14,7 @@ function escapeHtml(value: string) {
 
 function generateDaily(brief: Brief) {
   const pages: string[] = []
-  pages.push(`---\ntheme: default\ntitle: ${brief.title}\nlayout: orbis-cover\ntransition: fade-out\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nhtmlAttrs:\n  lang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · ${brief.publishedAt}</div>\n\n# ${brief.title}\n\n${brief.summary}\n`)
+  pages.push(`---\ntheme: default\ntitle: ${brief.title}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: light\naspectRatio: 16/9\nfavicon: ${siteBase}/favicon.svg\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nhtmlAttrs:\n  lang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · ${brief.publishedAt}</div>\n\n# ${brief.title}\n\n${brief.summary}\n`)
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">FOUR SIGNALS</div>\n\n## 四个关键信号\n\n<div class="signal-grid">\n${brief.signals.map((signal) => `<div class="signal-card"><h3>${escapeHtml(signal.title)}</h3><p>${escapeHtml(signal.summary)}</p></div>`).join('\n')}\n</div>\n`)
 
   const sections = [...brief.sections]
