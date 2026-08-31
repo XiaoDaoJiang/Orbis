@@ -8,5 +8,6 @@ modes:
   content-agent:
     allowPrefixes:
       - content/briefs/
+      - content/presentations/
       - content/essays/
       - content/knowledge/
