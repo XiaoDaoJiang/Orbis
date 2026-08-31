@@ -26,11 +26,6 @@ export type SiteConfig = {
     repositoryPath: string
     branchPrefix: string
   }
-  compatibility?: {
-    legacyRootDir: string
-    archiveFile: string
-    rewriteBasePaths: string[]
-  }
 }
 
 export function normalizeBasePath(value: string): string {
@@ -54,13 +49,8 @@ export async function loadSiteConfig(): Promise<SiteConfig> {
   if (!value.presentation?.generatedDir || !value.presentation?.outputDir || !value.presentation?.publicPath) {
     throw new Error('presentation paths are required')
   }
-  if (value.compatibility) {
-    if (!value.compatibility.legacyRootDir || !value.compatibility.archiveFile) {
-      throw new Error('compatibility legacyRootDir and archiveFile are required when compatibility is enabled')
-    }
-    if (!Array.isArray(value.compatibility.rewriteBasePaths)) {
-      throw new Error('compatibility.rewriteBasePaths must be an array')
-    }
+  if (!value.preview?.origin || !value.preview?.repositoryPath || !value.preview?.branchPrefix) {
+    throw new Error('preview configuration is required')
   }
   return value
 }
