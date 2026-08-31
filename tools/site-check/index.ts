@@ -42,6 +42,10 @@ const required = [
   'dist/site/essays/agent-harness-system-layer/index.html',
   'dist/site/topics/agent-harness/index.html',
   'dist/site/knowledge/verification-loop/index.html',
+  'dist/site/archive/index.html',
+  'dist/site/slides/index.html',
+  'dist/site/briefs/daily/index.html',
+  'dist/site/briefs/weekly/index.html',
   'dist/site/rss.xml',
   'dist/site/favicon.svg',
   'dist/site/archive.json',
@@ -131,7 +135,20 @@ assert.ok(latestHtml.includes(latestTarget), `/latest/ must redirect to ${latest
 
 const home = await readFile(resolve(root, 'dist/site/index.html'), 'utf8')
 const rss = await readFile(resolve(root, 'dist/site/rss.xml'), 'utf8')
+const archivePage = await readFile(resolve(root, 'dist/site/archive/index.html'), 'utf8')
+const slidesPage = await readFile(resolve(root, 'dist/site/slides/index.html'), 'utf8')
+const dailyPage = await readFile(resolve(root, 'dist/site/briefs/daily/index.html'), 'utf8')
+const weeklyPage = await readFile(resolve(root, 'dist/site/briefs/weekly/index.html'), 'utf8')
+
 assert.match(home, /ORBIS/i)
 assert.match(rss, /<rss/)
+assert.match(archivePage, /Archive/i)
+assert.match(archivePage, /2026-08-28/)
+assert.match(slidesPage, /Presentations/i)
+assert.match(slidesPage, /2026-08-28/)
+assert.match(dailyPage, /Daily Briefs/i)
+assert.match(dailyPage, /2026-08-28/)
+assert.match(weeklyPage, /Weekly Briefs/i)
+assert.match(weeklyPage, /No weekly briefs have been published yet/i)
 console.log(`Structured archive checks passed for ${publishedDaily.length} published Daily brief(s); latest=${builtArchive.latest}`)
 console.log(`Site artifact checks passed for ${publishedDecks} published presentation(s)`)
