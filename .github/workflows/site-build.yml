@@ -1,4 +1,4 @@
-name: Site V2 build
+name: Orbis Site Build
 
 on:
   push:
@@ -15,12 +15,15 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
-      - '.github/workflows/pages-production.yml'
-      - '.github/workflows/site-v2-prototype.yml'
+      - '.github/workflows/*.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: orbis-site-build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -42,7 +45,7 @@ jobs:
       - name: Upload assembled site
         uses: actions/upload-artifact@v7
         with:
-          name: orbis-site-v2
+          name: orbis-site
           path: dist/site
           if-no-files-found: error
           retention-days: 14

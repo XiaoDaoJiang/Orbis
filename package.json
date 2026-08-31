@@ -16,9 +16,9 @@
     "build:web": "pnpm --filter @orbis/web build",
     "build:slides": "tsx tools/build-slides/index.ts",
     "assemble": "tsx tools/assemble-site/index.ts",
-    "test:prototype": "tsx tools/prototype-check/index.ts",
+    "test:site": "tsx tools/site-check/index.ts",
     "test:multi-presentation": "tsx tools/multi-presentation-check/index.ts",
-    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:prototype"
+    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:site"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",

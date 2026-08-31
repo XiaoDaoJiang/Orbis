@@ -13,11 +13,14 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
-      - '.github/workflows/pages-production.yml'
-      - '.github/workflows/pr-preview-*.yml'
+      - '.github/workflows/*.yml'
 
 permissions:
   contents: read
+
+concurrency:
+  group: orbis-pr-preview-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   build-preview:
