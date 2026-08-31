@@ -29,7 +29,6 @@ export type SiteConfig = {
   compatibility?: {
     legacyRootDir: string
     archiveFile: string
-    latestDir: string
     rewriteBasePaths: string[]
   }
 }
@@ -56,8 +55,8 @@ export async function loadSiteConfig(): Promise<SiteConfig> {
     throw new Error('presentation paths are required')
   }
   if (value.compatibility) {
-    if (!value.compatibility.legacyRootDir || !value.compatibility.archiveFile || !value.compatibility.latestDir) {
-      throw new Error('compatibility legacyRootDir, archiveFile and latestDir are required when compatibility is enabled')
+    if (!value.compatibility.legacyRootDir || !value.compatibility.archiveFile) {
+      throw new Error('compatibility legacyRootDir and archiveFile are required when compatibility is enabled')
     }
     if (!Array.isArray(value.compatibility.rewriteBasePaths)) {
       throw new Error('compatibility.rewriteBasePaths must be an array')
