@@ -4,11 +4,6 @@ on:
   workflow_run:
     workflows: ['Orbis PR Preview Build']
     types: [completed]
-  push:
-    branches:
-      - planning/astro-slidev-monorepo
-    paths:
-      - '.github/workflows/pr-preview-publish.yml'
 
 permissions:
   actions: read
@@ -17,30 +12,20 @@ permissions:
 
 jobs:
   publish-preview:
-    if: github.event_name == 'push' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request')
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Resolve preview metadata
         id: preview
         env:
-          EVENT_NAME: ${{ github.event_name }}
-          WORKFLOW_PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
-          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
         run: |
-          if [ "$EVENT_NAME" = 'push' ]; then
-            PR_NUMBER=2
-            RUN_ID=33345610091
-          else
-            PR_NUMBER="$WORKFLOW_PR_NUMBER"
-            RUN_ID="$WORKFLOW_RUN_ID"
-          fi
-          if [ -z "$PR_NUMBER" ] || [ -z "$RUN_ID" ]; then
-            echo 'No pull request/build run is associated with this preview publish'
+          if [ -z "$PR_NUMBER" ]; then
+            echo 'No pull request is associated with this workflow run'
             exit 1
           fi
           echo "pr=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           echo "branch=preview-pr-$PR_NUMBER" >> "$GITHUB_OUTPUT"
           echo "url=https://raw.githack.com/${GITHUB_REPOSITORY}/preview-pr-$PR_NUMBER/index.html" >> "$GITHUB_OUTPUT"
       - name: Download trusted build artifact
@@ -49,7 +34,7 @@ jobs:
           name: orbis-pr-preview
           path: preview
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ steps.preview.outputs.run_id }}
+          run-id: ${{ github.event.workflow_run.id }}
       - name: Publish preview branch
         uses: peaceiris/actions-gh-pages@v4
         with:
