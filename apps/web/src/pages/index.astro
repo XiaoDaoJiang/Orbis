@@ -10,12 +10,14 @@ import {
   toBriefDiscoveryItem,
   toEssayDiscoveryItem,
 } from '../lib/content-discovery'
+import { buildPublicPresentations } from '../lib/presentation-discovery'
 
-const [briefEntries, essayEntries, knowledgeEntries, topicEntries] = await Promise.all([
+const [briefEntries, essayEntries, knowledgeEntries, topicEntries, presentationEntries] = await Promise.all([
   getCollection('briefs'),
   getCollection('essays'),
   getCollection('knowledge'),
   getCollection('topics'),
+  getCollection('presentations'),
 ])
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -25,7 +27,7 @@ const briefs = sortDiscoveryNewestFirst(
 const essays = sortDiscoveryNewestFirst(
   essayEntries.filter(isPublicEssay).map((entry) => toEssayDiscoveryItem(entry, base)),
 )
-const presentations = sortDiscoveryNewestFirst(briefs.filter((entry) => Boolean(entry.presentationHref)))
+const presentations = buildPublicPresentations(briefEntries, presentationEntries, base)
 const knowledgeUpdates = knowledgeEntries
   .filter(isPublicKnowledge)
   .sort((left, right) =>
@@ -90,18 +92,22 @@ const latestPresentation = presentations[0]
     </section>
   )}
 
-  {latestPresentation?.presentationHref && (
+  {latestPresentation && (
     <section class="home-section" data-home-section="latest-presentation">
       <div class="section-title"><h2>Latest Presentation</h2><a href={`${base}/slides/`}>All presentations →</a></div>
-      <article class="home-feature home-feature-presentation" data-home-id={`presentation:${latestPresentation.id}`}>
+      <article class="home-feature home-feature-presentation" data-home-id={`presentation:${latestPresentation.id}`} data-presentation-source={latestPresentation.sourceKind}>
         <div>
-          <small>Presentation · {latestPresentation.cadence} · {latestPresentation.publishedAt}</small>
+          <small>
+            {latestPresentation.sourceKind === 'brief'
+              ? `Brief presentation · ${latestPresentation.cadence} · ${latestPresentation.publishedAt}`
+              : `Standalone presentation · ${latestPresentation.publishedAt}`}
+          </small>
           <h3><a href={latestPresentation.presentationHref}>{latestPresentation.title}</a></h3>
           <p>{latestPresentation.summary}</p>
         </div>
         <div class="home-feature-actions">
           <a href={latestPresentation.presentationHref}>Open Slides →</a>
-          <a href={latestPresentation.href}>Reading →</a>
+          {latestPresentation.readingHref && <a href={latestPresentation.readingHref}>Reading →</a>}
         </div>
       </article>
     </section>
