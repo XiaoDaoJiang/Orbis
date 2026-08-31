@@ -64,22 +64,7 @@ jobs:
         run: |
           set -euo pipefail
           base="${PAGE_URL%/}"
-          routes=(
-            '/'
-            '/latest/'
-            '/archive.json'
-            '/2026/08/28/'
-            '/2026/08/27/'
-            '/2026/08/27/payload-1.txt'
-            '/2026/08/27/payload-2a.txt'
-            '/2026/08/27/payload-2b.txt'
-            '/2026/08/27/payload-3.txt'
-            '/2026/08/27/payload-4.txt'
-            '/briefs/2026-08-28/'
-            '/slides/2026-08-28/'
-            '/rss.xml'
-            '/favicon.svg'
-          )
+
           fetch() {
             route="$1"
             for attempt in {1..12}; do
@@ -93,7 +78,14 @@ jobs:
             echo "FAIL ${route}"
             return 1
           }
-          for route in "${routes[@]}"; do fetch "$route"; done
-          curl --fail --silent --show-error --location "${base}/archive.json" | jq -e '.latest and (.issues | length > 0)' >/dev/null
+
+          for route in '/' '/latest/' '/archive.json' '/rss.xml' '/favicon.svg'; do fetch "$route"; done
+
+          curl --fail --silent --show-error --location "${base}/archive.json" -o /tmp/orbis-archive.json
+          jq -e '.latest and (.issues | length > 0)' /tmp/orbis-archive.json >/dev/null
+          latest_path="$(jq -r '.issues[0].path' /tmp/orbis-archive.json)"
+          test -n "$latest_path" && test "$latest_path" != 'null'
+          fetch "/${latest_path#/}"
+
           curl --fail --silent --show-error --location "${base}/rss.xml" | grep -q '<rss'
-          echo 'Production Pages smoke checks passed.'
+          echo "Production Pages smoke checks passed; latest structured Daily path=/${latest_path#/}"

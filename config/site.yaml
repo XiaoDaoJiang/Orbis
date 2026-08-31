@@ -19,9 +19,3 @@ preview:
   origin: https://raw.githack.com
   repositoryPath: /XiaoDaoJiang/Orbis
   branchPrefix: preview-pr-
-
-compatibility:
-  legacyRootDir: docs
-  archiveFile: docs/archive.json
-  rewriteBasePaths:
-    - /ai-frontier
