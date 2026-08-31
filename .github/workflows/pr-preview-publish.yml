@@ -43,6 +43,23 @@ jobs:
           publish_dir: ./preview
           force_orphan: true
           enable_jekyll: false
+      - name: Verify public preview availability
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+        run: |
+          preview_root="${PREVIEW_URL%/index.html}"
+          for attempt in $(seq 1 12); do
+            if rss="$(curl --fail --silent --show-error --location --max-time 15 "$preview_root/rss.xml")" \
+              && grep -q '<rss' <<< "$rss" \
+              && curl --fail --silent --show-error --location --max-time 15 "$preview_root/favicon.svg" > /dev/null; then
+              echo "Public preview assets are reachable: $PREVIEW_URL"
+              exit 0
+            fi
+            echo "Preview not visible yet (attempt $attempt/12)"
+            sleep 5
+          done
+          echo "Public preview did not become reachable: $PREVIEW_URL" >&2
+          exit 1
       - name: Comment preview URL
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,6 +69,6 @@ jobs:
           body_file="$(mktemp)"
           printf '%s\n\n%s\n' \
             "Orbis public preview: $PREVIEW_URL" \
-            'This preview is rebuilt from the PR artifact and published without exposing a write token to PR code.' \
+            'This preview was rebuilt from the read-only PR artifact and passed a public availability smoke check before this comment was posted.' \
             > "$body_file"
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$body_file"
