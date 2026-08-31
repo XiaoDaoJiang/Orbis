@@ -3,7 +3,7 @@ import { access, readFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { briefSchema } from '@orbis/content-schema'
 import { listFiles, readYaml } from '../shared/content.ts'
-import { loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
+import { loadSiteConfig, normalizeBasePath, runtimeSiteBase } from '../shared/site-config.ts'
 
 const root = resolve(import.meta.dirname, '../..')
 const config = await loadSiteConfig()
@@ -57,6 +57,50 @@ for (const file of briefFiles) {
 }
 
 assert.ok(publishedDecks > 0, 'At least one published presentation is required')
+
+if (config.compatibility) {
+  const sourceArchive = JSON.parse(await readFile(resolve(root, config.compatibility.archiveFile), 'utf8')) as {
+    latest?: string
+    issues?: Array<{ date?: string; path?: string }>
+  }
+  const builtArchive = JSON.parse(await readFile(resolve(root, 'dist/site/archive.json'), 'utf8'))
+  assert.deepEqual(builtArchive, sourceArchive, 'Legacy archive.json must be preserved without semantic changes during cutover')
+  assert.ok(sourceArchive.latest, 'Legacy archive must declare latest')
+  assert.ok(sourceArchive.issues?.some((issue) => issue.date === sourceArchive.latest), 'Legacy latest must reference an archived issue')
+
+  const latestPath = resolve(root, 'dist/site/latest/index.html')
+  await access(latestPath)
+  const legacyHtmlFiles = [latestPath]
+
+  for (const issue of sourceArchive.issues ?? []) {
+    assert.ok(issue.path, 'Legacy archive issue must declare path')
+    const relativePath = issue.path.replaceAll('\\', '/').replace(/^\/+|\/+$/g, '')
+    assert.ok(relativePath && !relativePath.split('/').includes('..'), `Unsafe legacy issue path: ${issue.path}`)
+    const directory = resolve(root, 'dist/site', relativePath)
+    const indexPath = resolve(directory, 'index.html')
+    await access(indexPath)
+    legacyHtmlFiles.push(indexPath)
+
+    const html = await readFile(indexPath, 'utf8')
+    const payloads = [...html.matchAll(/["'](payload-[^"']+\.txt)["']/g)].map((match) => match[1])
+    for (const payload of payloads) await access(resolve(directory, payload))
+    console.log(`✓ legacy /${relativePath}/ (${payloads.length} payload asset(s))`)
+  }
+
+  for (const htmlPath of legacyHtmlFiles) {
+    const html = await readFile(htmlPath, 'utf8')
+    for (const oldBaseValue of config.compatibility.rewriteBasePaths) {
+      const oldBase = normalizeBasePath(oldBaseValue)
+      if (!oldBase || oldBase === siteBase) continue
+      assert.ok(
+        !html.includes(`"${oldBase}/`) && !html.includes(`'${oldBase}/`) && !html.includes(`url(${oldBase}/`),
+        `${htmlPath} still contains legacy absolute asset base ${oldBase}`,
+      )
+    }
+  }
+  console.log(`Legacy compatibility checks passed for ${sourceArchive.issues?.length ?? 0} archived issue(s)`)
+}
+
 const home = await readFile(resolve(root, 'dist/site/index.html'), 'utf8')
 const rss = await readFile(resolve(root, 'dist/site/rss.xml'), 'utf8')
 assert.match(home, /ORBIS/i)
