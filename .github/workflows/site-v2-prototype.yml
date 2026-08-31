@@ -1,8 +1,9 @@
-name: Site V2 branch build
+name: Site V2 build
 
 on:
   push:
     branches:
+      - main
       - planning/astro-slidev-monorepo
     paths:
       - 'apps/**'
