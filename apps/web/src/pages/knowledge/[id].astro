@@ -1,10 +1,44 @@
 ---
 import { getCollection, render } from 'astro:content'
+import RelatedContent from '../../components/RelatedContent.astro'
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import {
+  buildPublicDiscoveryItems,
+  getRelatedContent,
+  isPublicKnowledge,
+  toKnowledgeDiscoveryItem,
+} from '../../lib/content-discovery'
+
 export async function getStaticPaths() {
-  return (await getCollection('knowledge', ({ data }) => data.status === 'published' || data.status === 'active')).map((entry) => ({ params: { id: entry.id }, props: { entry } }))
+  const [briefEntries, essayEntries, knowledgeEntries] = await Promise.all([
+    getCollection('briefs'),
+    getCollection('essays'),
+    getCollection('knowledge'),
+  ])
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+  const candidates = buildPublicDiscoveryItems(briefEntries, essayEntries, knowledgeEntries, base)
+
+  return knowledgeEntries.filter(isPublicKnowledge).map((entry) => {
+    const current = toKnowledgeDiscoveryItem(entry, base)
+    return {
+      params: { id: entry.id },
+      props: { entry, related: getRelatedContent(current, candidates) },
+    }
+  })
 }
-const { entry } = Astro.props
+
+const { entry, related } = Astro.props
 const { Content } = await render(entry)
 ---
-<BaseLayout title={entry.data.title} description={entry.data.summary}><article class="article"><header class="article-header"><div class="eyebrow">Knowledge · review {entry.data.reviewAt ?? 'not scheduled'}</div><h1>{entry.data.title}</h1><p class="lead">{entry.data.summary}</p></header><div class="article-body"><Content /></div></article></BaseLayout>
+<BaseLayout title={entry.data.title} description={entry.data.summary}>
+  <article class="article">
+    <header class="article-header">
+      <div class="eyebrow">Knowledge · review {entry.data.reviewAt ?? 'not scheduled'}</div>
+      <h1>{entry.data.title}</h1>
+      <p class="lead">{entry.data.summary}</p>
+      <div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+    </header>
+    <div class="article-body"><Content /></div>
+  </article>
+  <RelatedContent items={related} />
+</BaseLayout>
