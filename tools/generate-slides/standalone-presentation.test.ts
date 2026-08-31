@@ -78,6 +78,24 @@ assert.match(markdown, /REFERENCES/)
 const markers = markdown.match(/^---$/gm) ?? []
 assert.equal(markers.length, 6, 'A one-section talk-v1 must contain exactly 3 slides')
 
+const unsafeFixture = {
+  ...fixture,
+  title: '<script>alert(1)</script> Safe presentation title',
+  summary: '<iframe src="https://example.com"></iframe> Safe standalone presentation summary.',
+  sections: [{
+    ...fixture.sections[0],
+    title: '<script>alert(2)</script> Safe section title',
+    conclusion: '<iframe src="https://example.com"></iframe> Safe structured conclusion text.',
+    facts: ['<script>alert(3)</script> Safe structured fact content.'],
+  }],
+}
+const unsafePresentation = presentationContentSchema.parse(unsafeFixture)
+const unsafeDescriptor = sourceModule.toStandalonePresentationDescriptor(unsafePresentation as never, { slug: 'unsafe-talk' })
+const unsafeMarkdown = registry.renderPresentation(unsafeDescriptor, { siteBase: '/Orbis' })
+assert.doesNotMatch(unsafeMarkdown, /<script|<iframe/i, 'talk-v1 must not emit raw executable HTML from content fields')
+assert.match(unsafeMarkdown, /&lt;script&gt;/, 'talk-v1 must HTML-escape markup-like content')
+assert.match(unsafeMarkdown, /&lt;iframe/, 'talk-v1 must HTML-escape iframe-like content')
+
 assert.throws(
   () => discoveryModule.assertUniquePresentationSlugs([
     descriptor,
