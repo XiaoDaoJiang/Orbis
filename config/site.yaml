@@ -8,6 +8,7 @@ site:
 
 content:
   briefsDir: content/briefs
+  presentationsDir: content/presentations
 
 presentation:
   generatedDir: apps/slides/generated
