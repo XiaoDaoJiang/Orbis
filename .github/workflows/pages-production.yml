@@ -21,9 +21,6 @@ jobs:
     name: Build production artifact
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      SITE_ORIGIN: https://xiaodaojiang.github.io
-      SITE_BASE: /Orbis
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
