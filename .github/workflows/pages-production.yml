@@ -1,0 +1,63 @@
+name: Orbis Pages Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy the validated artifact to GitHub Pages'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orbis-pages-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build production artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SITE_ORIGIN: https://xiaodaojiang.github.io
+      SITE_BASE: /Orbis
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.16.0'
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.24.0 --activate
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build and validate production artifact
+        run: pnpm build
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: ${{ github.ref == 'refs/heads/main' && inputs.deploy == true }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Deploy validated artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
