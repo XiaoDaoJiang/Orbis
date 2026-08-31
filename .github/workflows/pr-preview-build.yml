@@ -3,17 +3,6 @@ name: Orbis PR Preview Build
 on:
   pull_request:
     types: [opened, reopened, synchronize]
-    paths:
-      - 'apps/**'
-      - 'content/**'
-      - 'config/**'
-      - 'docs/**'
-      - 'packages/**'
-      - 'tools/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.github/workflows/*.yml'
 
 permissions:
   contents: read
