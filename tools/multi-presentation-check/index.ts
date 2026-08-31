@@ -13,6 +13,8 @@ const sourceDir = resolve(root, config.content.briefsDir)
 const generatedRoot = resolve(root, config.presentation.generatedDir)
 const fixtureSlug = 'zz-orbis-multi-presentation-check'
 const fixturePath = resolve(sourceDir, `${fixtureSlug}.yaml`)
+const fixtureDate = '2099-12-31'
+const fixtureStablePath = '2099/12/31'
 const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
 async function run(script: string) {
@@ -43,7 +45,7 @@ assert.ok(seedSlug)
 
 const fixture = {
   ...seed,
-  publishedAt: '2099-12-31',
+  publishedAt: fixtureDate,
   title: 'Orbis multi-presentation integration fixture',
   summary: 'Ephemeral CI fixture proving that multiple published Brief presentations can be generated, built, assembled and validated together.',
 }
@@ -71,17 +73,38 @@ try {
   const fixtureBrief = resolve(root, `dist/site/briefs/${fixtureSlug}/index.html`)
   const fixtureDeck = resolve(root, `dist/site/slides/${fixtureSlug}/index.html`)
   const fixtureSource = resolve(generatedRoot, fixtureSlug, 'slides.md')
+  const fixtureStable = resolve(root, `dist/site/${fixtureStablePath}/index.html`)
+  const latestPath = resolve(root, 'dist/site/latest/index.html')
+  const archivePath = resolve(root, 'dist/site/archive.json')
 
   await access(seedDeck)
   await access(fixtureBrief)
   await access(fixtureDeck)
   await access(fixtureSource)
+  await access(fixtureStable)
+  await access(latestPath)
+  await access(archivePath)
 
+  const siteBase = runtimeSiteBase(config)
+  const expectedDeckBase = `${joinBasePath(siteBase, config.presentation.publicPath, fixtureSlug)}/`
   const deckHtml = await readFile(fixtureDeck, 'utf8')
-  const expectedBase = `${joinBasePath(runtimeSiteBase(config), config.presentation.publicPath, fixtureSlug)}/`
-  assert.ok(deckHtml.includes(expectedBase), `Fixture deck must reference its own base path: ${expectedBase}`)
+  const stableHtml = await readFile(fixtureStable, 'utf8')
+  const latestHtml = await readFile(latestPath, 'utf8')
+  const archive = JSON.parse(await readFile(archivePath, 'utf8')) as {
+    latest?: string
+    issues?: Array<{ date?: string; path?: string }>
+  }
+
+  assert.ok(deckHtml.includes(expectedDeckBase), `Fixture deck must reference its own base path: ${expectedDeckBase}`)
+  assert.ok(stableHtml.includes(expectedDeckBase), `Stable Daily route must redirect to fixture deck: ${expectedDeckBase}`)
+  assert.equal(archive.latest, fixtureDate, 'A newer published Daily must promote archive.latest')
+  assert.ok(archive.issues?.some((issue) => issue.date === fixtureDate && issue.path === `${fixtureStablePath}/`), 'Merged archive must include the future Daily fixture')
+
+  const expectedLatestTarget = `${joinBasePath(siteBase, fixtureStablePath)}/`
+  assert.ok(latestHtml.includes(expectedLatestTarget), `/latest/ must advance to ${expectedLatestTarget}`)
 
   console.log(`Multi-presentation integration check passed: ${seedSlug} + ${fixtureSlug}`)
+  console.log(`Future Daily promotion check passed: latest=${fixtureDate}, stable=/${fixtureStablePath}/`)
 } finally {
   await rm(fixturePath, { force: true })
   await rm(generatedRoot, { recursive: true, force: true })
