@@ -5,6 +5,7 @@ import {
   briefSchema,
   essaySchema,
   knowledgeSchema,
+  topicSchema,
   type Brief,
   type Essay,
   type Knowledge,
@@ -38,8 +39,14 @@ type PublicDiscovery = {
   id: string
   title: string
   publishedAt: string
+  updatedAt?: string
   topics: string[]
   pagePath: string
+}
+
+type PublicTopic = {
+  id: string
+  name: string
 }
 
 function safeRelativePath(value: string): string {
@@ -77,6 +84,13 @@ function expectedRelated(current: PublicDiscovery, candidates: PublicDiscovery[]
     .map(({ candidate }) => candidate)
 }
 
+function sortPublicNewest<T extends { publishedAt: string; title: string; id: string }>(items: T[]): T[] {
+  return [...items].sort((left, right) =>
+    right.publishedAt.localeCompare(left.publishedAt)
+    || left.title.localeCompare(right.title)
+    || left.id.localeCompare(right.id))
+}
+
 async function loadPublicMarkdownEntries<T extends Essay | Knowledge>(
   directory: string,
   kind: 'essay' | 'knowledge',
@@ -95,11 +109,24 @@ async function loadPublicMarkdownEntries<T extends Essay | Knowledge>(
       id,
       title: entry.title,
       publishedAt: entry.publishedAt,
+      updatedAt: entry.updatedAt,
       topics: entry.topics,
       pagePath: `dist/site/${kind === 'essay' ? 'essays' : 'knowledge'}/${id}/index.html`,
     })
   }
   return entries
+}
+
+async function loadPublicTopics(): Promise<PublicTopic[]> {
+  const files = await listFiles(resolve(root, 'content/topics'), ['.yaml', '.yml'])
+  const topics: PublicTopic[] = []
+  for (const file of files) {
+    const topic = topicSchema.parse(await readYaml(file))
+    if (topic.status === 'archived') continue
+    const id = basename(file).replace(/\.(yaml|yml)$/, '')
+    topics.push({ id, name: topic.name })
+  }
+  return topics.sort((left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id))
 }
 
 const required = [
@@ -205,6 +232,7 @@ publicDiscovery.push(...await loadPublicMarkdownEntries(
   (value) => knowledgeSchema.parse(value),
   (entry) => entry.status === 'published' || entry.status === 'active',
 ))
+const publicTopics = await loadPublicTopics()
 
 assert.ok(publishedPresentations.length > 0, 'At least one published presentation is required')
 assert.ok(publishedDaily.length > 0, 'At least one published Daily brief is required')
@@ -284,6 +312,57 @@ const dailyPage = await readFile(resolve(root, 'dist/site/briefs/daily/index.htm
 const weeklyPage = await readFile(resolve(root, 'dist/site/briefs/weekly/index.html'), 'utf8')
 
 assert.match(home, /ORBIS/i)
+assert.match(home, /data-home-section=["']latest-brief["']/)
+assert.match(home, /data-home-section=["']latest-essay["']/)
+assert.match(home, /data-home-section=["']latest-presentation["']/)
+assert.match(home, /data-home-section=["']knowledge-updates["']/)
+assert.match(home, /data-home-section=["']active-topics["']/)
+assert.match(home, /data-home-section=["']explore["']/)
+
+const latestBrief = sortPublicNewest(publishedBriefs.map(({ brief, slug }) => ({
+  id: slug,
+  title: brief.title,
+  publishedAt: brief.publishedAt,
+})))[0]
+assert.ok(latestBrief, 'Homepage requires at least one public Brief')
+assert.ok(home.includes(`data-home-id="brief:${latestBrief.id}"`), `Homepage Latest Brief must be ${latestBrief.id}`)
+assert.ok(home.includes(`${joinBasePath(siteBase, 'briefs', latestBrief.id)}/`), 'Homepage Latest Brief must link to Reading')
+
+const publicEssays = publicDiscovery.filter((entry) => entry.kind === 'essay')
+const latestEssay = sortPublicNewest(publicEssays)[0]
+assert.ok(latestEssay, 'Homepage requires at least one public Essay')
+assert.ok(home.includes(`data-home-id="essay:${latestEssay.id}"`), `Homepage Latest Essay must be ${latestEssay.id}`)
+
+const latestPresentation = sortPublicNewest(publishedPresentations.map(({ brief, slug }) => ({
+  id: slug,
+  title: brief.title,
+  publishedAt: brief.publishedAt,
+})))[0]
+assert.ok(latestPresentation, 'Homepage requires at least one public Presentation')
+assert.ok(home.includes(`data-home-id="presentation:${latestPresentation.id}"`), `Homepage Latest Presentation must be ${latestPresentation.id}`)
+assert.ok(home.includes(`${joinBasePath(siteBase, config.presentation.publicPath, latestPresentation.id)}/`), 'Homepage Latest Presentation must link to Slides')
+
+const knowledgeUpdates = publicDiscovery
+  .filter((entry) => entry.kind === 'knowledge')
+  .sort((left, right) =>
+    (right.updatedAt ?? right.publishedAt).localeCompare(left.updatedAt ?? left.publishedAt)
+    || left.title.localeCompare(right.title)
+    || left.id.localeCompare(right.id))
+  .slice(0, 3)
+for (const item of knowledgeUpdates) {
+  assert.ok(home.includes(`data-home-id="knowledge:${item.id}"`), `Homepage Knowledge Updates must include ${item.id}`)
+}
+
+for (const topic of publicTopics) {
+  assert.ok(home.includes(`data-home-topic="${topic.id}"`), `Homepage Active Topics must include ${topic.id}`)
+  assert.ok(home.includes(`${joinBasePath(siteBase, 'topics', topic.id)}/`), `Homepage Active Topics must link to ${topic.id}`)
+}
+
+for (const path of ['archive', 'slides', 'briefs/daily', 'briefs/weekly', 'essays', 'knowledge']) {
+  assert.ok(home.includes(`${joinBasePath(siteBase, path)}/`), `Homepage Explore must link to /${path}/`)
+}
+assert.ok(home.includes(`${joinBasePath(siteBase, 'rss.xml')}`), 'Homepage Explore must link to RSS')
+
 assert.match(rss, /<rss/)
 assert.match(archivePage, /<h1>Archive<\/h1>/i)
 assert.match(archivePage, /id="archive-kind"/)
@@ -321,5 +400,6 @@ if (publishedWeekly.length === 0) {
 
 console.log(`Structured archive checks passed for ${publishedDaily.length} published Daily brief(s); latest=${builtArchive.latest}`)
 console.log(`Relation checks passed for ${publicDiscovery.length} public content item(s) and ${publishedDaily.length} Daily brief(s)`)
+console.log(`Homepage discovery checks passed for latest Brief=${latestBrief.id}, Essay=${latestEssay.id}, Presentation=${latestPresentation.id}`)
 console.log(`Discovery route checks passed for ${publishedBriefs.length} published Brief(s), ${publishedWeekly.length} Weekly brief(s), and ${publishedPresentations.length} presentation(s)`)
 console.log(`Site artifact checks passed for ${publishedPresentations.length} published presentation(s)`)

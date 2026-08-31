@@ -1,52 +1,148 @@
 ---
 import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
+import {
+  isPublicBrief,
+  isPublicEssay,
+  isPublicKnowledge,
+  isPublicTopic,
+  sortDiscoveryNewestFirst,
+  toBriefDiscoveryItem,
+  toEssayDiscoveryItem,
+} from '../lib/content-discovery'
 
-const [essays, briefs, topics, knowledge] = await Promise.all([
-  getCollection('essays', ({ data }) => data.status === 'published'),
-  getCollection('briefs', ({ data }) => data.status === 'published'),
-  getCollection('topics', ({ data }) => data.status !== 'archived'),
-  getCollection('knowledge', ({ data }) => data.status === 'published' || data.status === 'active'),
+const [briefEntries, essayEntries, knowledgeEntries, topicEntries] = await Promise.all([
+  getCollection('briefs'),
+  getCollection('essays'),
+  getCollection('knowledge'),
+  getCollection('topics'),
 ])
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+
+const briefs = sortDiscoveryNewestFirst(
+  briefEntries.filter(isPublicBrief).map((entry) => toBriefDiscoveryItem(entry, base)),
+)
+const essays = sortDiscoveryNewestFirst(
+  essayEntries.filter(isPublicEssay).map((entry) => toEssayDiscoveryItem(entry, base)),
+)
+const presentations = sortDiscoveryNewestFirst(briefs.filter((entry) => Boolean(entry.presentationHref)))
+const knowledgeUpdates = knowledgeEntries
+  .filter(isPublicKnowledge)
+  .sort((left, right) =>
+    (right.data.updatedAt ?? right.data.publishedAt).localeCompare(left.data.updatedAt ?? left.data.publishedAt)
+    || left.data.title.localeCompare(right.data.title)
+    || left.id.localeCompare(right.id))
+  .slice(0, 3)
+const topics = topicEntries
+  .filter(isPublicTopic)
+  .sort((left, right) => left.data.name.localeCompare(right.data.name) || left.id.localeCompare(right.id))
+
+const latestBrief = briefs[0]
+const latestEssay = essays[0]
+const latestPresentation = presentations[0]
 ---
 <BaseLayout>
   <section class="hero">
     <div>
       <div class="eyebrow">Essays · Briefs · Slides · Knowledge</div>
       <h1>ORBIS</h1>
-      <p class="lead">一个将深度写作、结构化简报、交互式演示、主题聚合与长期知识归档统一起来的静态内容原型。</p>
+      <p class="lead">Git-native、Agent-native 的结构化技术知识发布系统：从研究与信号出发，持续形成可阅读、可演示、可聚合、可归档的长期知识。</p>
+      <div class="discovery-links hero-actions" aria-label="Primary discovery links">
+        <a class="pill" href={`${base}/archive/`}>Browse Archive</a>
+        <a class="pill" href={`${base}/briefs/daily/`}>Daily Briefs</a>
+        <a class="pill" href={`${base}/slides/`}>Presentations</a>
+        <a class="pill" href={`${base}/rss.xml`}>RSS</a>
+      </div>
     </div>
     <div class="starburst" aria-hidden="true"></div>
   </section>
 
-  <div class="section-title"><h2>Latest content</h2><span>{essays.length + briefs.length + knowledge.length} entries</span></div>
-  <div class="grid">
-    {briefs.slice(0, 2).map((entry) => (
-      <a class="card" href={`${base}/briefs/${entry.id}/`}>
-        <small>Brief · {entry.data.cadence}</small>
-        <h3>{entry.data.title}</h3>
-        <p>{entry.data.summary}</p>
-      </a>
-    ))}
-    {essays.slice(0, 2).map((entry) => (
-      <a class="card" href={`${base}/essays/${entry.id}/`}>
-        <small>Essay</small>
-        <h3>{entry.data.title}</h3>
-        <p>{entry.data.description}</p>
-      </a>
-    ))}
-    {knowledge.slice(0, 2).map((entry) => (
-      <a class="card" href={`${base}/knowledge/${entry.id}/`}>
-        <small>Knowledge</small>
-        <h3>{entry.data.title}</h3>
-        <p>{entry.data.summary}</p>
-      </a>
-    ))}
-  </div>
+  {latestBrief && (
+    <section class="home-section" data-home-section="latest-brief">
+      <div class="section-title"><h2>Latest Brief</h2><a href={`${base}/briefs/`}>All briefs →</a></div>
+      <article class="home-feature" data-home-id={`brief:${latestBrief.id}`}>
+        <div>
+          <small>Brief · {latestBrief.cadence} · {latestBrief.publishedAt}</small>
+          <h3><a href={latestBrief.href}>{latestBrief.title}</a></h3>
+          <p>{latestBrief.summary}</p>
+          <div class="pills">{latestBrief.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+        </div>
+        <div class="home-feature-actions">
+          <a href={latestBrief.href}>Read →</a>
+          {latestBrief.presentationHref && <a href={latestBrief.presentationHref}>Slides →</a>}
+        </div>
+      </article>
+    </section>
+  )}
 
-  <div class="section-title"><h2>Active topics</h2><span>{topics.length} topics</span></div>
-  <div class="pills">
-    {topics.map((topic) => <a class="pill" href={`${base}/topics/${topic.id}/`}>{topic.data.name}</a>)}
-  </div>
+  {latestEssay && (
+    <section class="home-section" data-home-section="latest-essay">
+      <div class="section-title"><h2>Latest Essay</h2><a href={`${base}/essays/`}>All essays →</a></div>
+      <article class="home-feature" data-home-id={`essay:${latestEssay.id}`}>
+        <div>
+          <small>Essay · {latestEssay.publishedAt}</small>
+          <h3><a href={latestEssay.href}>{latestEssay.title}</a></h3>
+          <p>{latestEssay.summary}</p>
+          <div class="pills">{latestEssay.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+        </div>
+        <div class="home-feature-actions"><a href={latestEssay.href}>Read →</a></div>
+      </article>
+    </section>
+  )}
+
+  {latestPresentation?.presentationHref && (
+    <section class="home-section" data-home-section="latest-presentation">
+      <div class="section-title"><h2>Latest Presentation</h2><a href={`${base}/slides/`}>All presentations →</a></div>
+      <article class="home-feature home-feature-presentation" data-home-id={`presentation:${latestPresentation.id}`}>
+        <div>
+          <small>Presentation · {latestPresentation.cadence} · {latestPresentation.publishedAt}</small>
+          <h3><a href={latestPresentation.presentationHref}>{latestPresentation.title}</a></h3>
+          <p>{latestPresentation.summary}</p>
+        </div>
+        <div class="home-feature-actions">
+          <a href={latestPresentation.presentationHref}>Open Slides →</a>
+          <a href={latestPresentation.href}>Reading →</a>
+        </div>
+      </article>
+    </section>
+  )}
+
+  <section class="home-section" data-home-section="knowledge-updates">
+    <div class="section-title"><h2>Knowledge Updates</h2><a href={`${base}/knowledge/`}>All knowledge →</a></div>
+    {knowledgeUpdates.length > 0 ? (
+      <div class="grid home-knowledge-grid">
+        {knowledgeUpdates.map((entry) => (
+          <a class="card" data-home-id={`knowledge:${entry.id}`} href={`${base}/knowledge/${entry.id}/`}>
+            <small>Knowledge · updated {entry.data.updatedAt ?? entry.data.publishedAt}</small>
+            <h3>{entry.data.title}</h3>
+            <p>{entry.data.summary}</p>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="empty-state">No public Knowledge entries yet.</div>
+    )}
+  </section>
+
+  <section class="home-section" data-home-section="active-topics">
+    <div class="section-title"><h2>Active Topics</h2><a href={`${base}/topics/`}>{topics.length} topics →</a></div>
+    <div class="pills home-topics">
+      {topics.map((topic) => (
+        <a class="pill" data-home-topic={topic.id} href={`${base}/topics/${topic.id}/`}>{topic.data.name}</a>
+      ))}
+    </div>
+  </section>
+
+  <section class="home-section" data-home-section="explore">
+    <div class="section-title"><h2>Explore Orbis</h2><span>Find the right entry point</span></div>
+    <div class="explore-grid">
+      <a class="explore-card" href={`${base}/archive/`}><strong>Archive</strong><span>按类型、cadence 与 Topic 浏览全部公开内容。</span></a>
+      <a class="explore-card" href={`${base}/slides/`}><strong>Slides</strong><span>进入全部已发布演示。</span></a>
+      <a class="explore-card" href={`${base}/briefs/daily/`}><strong>Daily</strong><span>按时间浏览 Daily Brief。</span></a>
+      <a class="explore-card" href={`${base}/briefs/weekly/`}><strong>Weekly</strong><span>稳定的 Weekly 发现入口。</span></a>
+      <a class="explore-card" href={`${base}/essays/`}><strong>Essays</strong><span>阅读深度技术写作。</span></a>
+      <a class="explore-card" href={`${base}/knowledge/`}><strong>Knowledge</strong><span>进入长期维护的知识条目。</span></a>
+      <a class="explore-card" href={`${base}/rss.xml`}><strong>RSS</strong><span>通过标准阅读器订阅公开更新。</span></a>
+    </div>
+  </section>
 </BaseLayout>
