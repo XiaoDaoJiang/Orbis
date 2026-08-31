@@ -75,7 +75,7 @@ export function toKnowledgeDiscoveryItem(entry: CollectionEntry<'knowledge'>, ba
   }
 }
 
-export function sortDiscoveryNewestFirst<T extends { publishedAt: string }>(items: T[]): T[] {
+export function sortDiscoveryNewestFirst<T extends { publishedAt: string; title: string }>(items: T[]): T[] {
   return [...items].sort((left, right) => right.publishedAt.localeCompare(left.publishedAt) || left.title.localeCompare(right.title))
 }
 
