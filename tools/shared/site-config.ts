@@ -14,6 +14,7 @@ export type SiteConfig = {
   }
   content: {
     briefsDir: string
+    presentationsDir: string
   }
   presentation: {
     generatedDir: string
@@ -45,7 +46,9 @@ export async function loadSiteConfig(): Promise<SiteConfig> {
   const value = parse(await readFile(path, 'utf8')) as SiteConfig
   if (value?.version !== 1) throw new Error(`Unsupported site config version in ${path}`)
   if (!value.site?.origin || !value.site?.basePath) throw new Error('site.origin and site.basePath are required')
-  if (!value.content?.briefsDir) throw new Error('content.briefsDir is required')
+  if (!value.content?.briefsDir || !value.content?.presentationsDir) {
+    throw new Error('content.briefsDir and content.presentationsDir are required')
+  }
   if (!value.presentation?.generatedDir || !value.presentation?.outputDir || !value.presentation?.publicPath) {
     throw new Error('presentation paths are required')
   }
