@@ -17,7 +17,8 @@
     "build:slides": "tsx tools/build-slides/index.ts",
     "assemble": "tsx tools/assemble-site/index.ts",
     "test:prototype": "tsx tools/prototype-check/index.ts",
-    "build": "pnpm validate && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:prototype"
+    "test:multi-presentation": "tsx tools/multi-presentation-check/index.ts",
+    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:prototype"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",
