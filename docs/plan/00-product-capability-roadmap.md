@@ -2,7 +2,7 @@
 
 > 状态：Active
 > 基线日期：2026-08-31
-> 基线提交：`main@d2f0235587c01558ced1492225c4e376bfb20c22`
+> 基线提交：`main@f756822cd901ae680a6a37ae44a57df872e0cd44`
 
 ## 1. 当前阶段判断
 
@@ -16,9 +16,10 @@ Orbis 已经完成：
 - Path Guard + CODEOWNERS + Agent 内容边界；
 - read-only PR Build → trusted Preview Publish → 公网 Smoke；
 - GitHub Actions Pages Production Cutover；
-- 原 `main:/docs` Legacy HTML/Archive 兼容层彻底退役。
+- 原 `main:/docs` Legacy HTML/Archive 兼容层彻底退役；
+- Plan 10A Archive & Discovery Indexes：`/archive/`、`/slides/`、`/briefs/daily/`、`/briefs/weekly/`、共享公开内容查询与 Topic 可见性修正。
 
-因此项目已经结束 Architecture Migration，正式进入 **Product Capability Phase**。
+因此项目已经结束 Architecture Migration，正式进入 **Product Capability Phase**，当前正在推进 Milestone A — Discoverable Orbis。
 
 ## 2. 产品定义回顾
 
@@ -96,13 +97,13 @@ RSS / Web / Primary Sources
 | Weekly Brief | Planned | Schema/template 名称预留，但没有 Weekly 语义模型与 `weekly-v1` 实现 |
 | Ad-hoc Brief | Partial | 基础 cadence 可表达，缺少通用 Presentation 模板 |
 | 独立 Presentation | Planned | Slidev 基础设施已有，缺 `content/presentations/**` 与 `talk-v1` |
-| Topic | Done / Basic | Topic 实体与 Essay/Brief/Knowledge 聚合 |
+| Topic | Done / Basic | Topic 实体与公开 Essay/Brief/Knowledge 聚合 |
 | Knowledge | Done / Basic | 状态、`reviewAt`、Topic、References |
 | RSS 输入 | Partial | `feeds.yaml` + Agent Contract，缺 Repository Scheduled Orchestration |
 | RSS 输出 | Done | `/rss.xml` 聚合已发布内容 |
-| 阅读版 + 演示版双输出 | Done | 同一 Brief 单一事实源 |
+| 阅读版 + 演示版双输出 | Done / Partial Navigation | 同一 Brief 单一事实源；阅读→Slides 已有，稳定双向导航待 10B |
 | 永久日期 URL / Latest / Archive data | Done | 全部由 Daily Brief 动态派生 |
-| 人类 Archive / Discovery UI | Planned | 只有 JSON 和基础列表页，缺 `/archive/`、`/slides/`、筛选/导航 |
+| 人类 Archive / Discovery UI | In Progress | 10A 已提供 `/archive/`、`/slides/`、Daily/Weekly 索引与静态筛选；跨内容导航/首页待完成 |
 | Agent 只修改内容 | Done | Prompt + AGENTS + Path Guard |
 | 多 Deck Build | Done | 自动发现并逐个构建，已有 N>1 集成 Gate |
 | PR Preview / Pages Governance | Done / Mature | read-only build、trusted publish、public smoke、protected main |
@@ -123,10 +124,10 @@ RSS / Web / Primary Sources
 | Essay / Knowledge / Topic 基础 | 70% |
 | RSS | 75% |
 | Weekly / Ad-hoc / Talk | 20% |
-| Archive / Discovery / Navigation UX | 40% |
+| Archive / Discovery / Navigation UX | 60% |
 | SEO / Sharing | 30% |
 | Source / Author Registry | 10% |
-| 完整 Orbis 内容产品 | 约 60–65% |
+| 完整 Orbis 内容产品 | 约 65–70% |
 
 成熟度是路线判断，不是精确 KPI。后续应以真实路由、内容规模、构建验证和日常使用体验替代主观百分比。
 
@@ -145,6 +146,8 @@ dailyBriefSchema
    ├── /rss.xml
    ├── /YYYY/MM/DD/
    ├── /archive.json
+   ├── /archive/
+   ├── /briefs/daily/
    └── /latest/
 ```
 
@@ -164,11 +167,17 @@ dailyBriefSchema
 
 ## 8. Product Capability Roadmap
 
-### Milestone A — Discoverable Orbis
+### Milestone A — Discoverable Orbis · In Progress
 
 对应 Plan 10。
 
 目标：从“有内容页”变成“历史内容可浏览、可筛选、可继续探索”。
+
+实施状态：
+
+- **10A Archive & Discovery Indexes — Done**：PR #8 已合并；提供 `/archive/`、`/slides/`、`/briefs/daily/`、`/briefs/weekly/`、共享公开内容规则和 Topic 可见性修正。
+- **10B Cross-content Navigation & Related Content — Current**：Previous / Next、Topic Related、阅读版 ↔ 演示版稳定双向导航。
+- **10C Homepage Discovery — Planned**：首页 Latest Brief / Essay / Presentation / Knowledge / Topics / Archive 信息架构。
 
 主要能力：
 
@@ -179,7 +188,7 @@ dailyBriefSchema
 - 阅读版 ↔ 演示版双向导航；
 - 首页结构升级。
 
-退出条件：用户不需要知道文件路径或日期即可找到历史内容。
+退出条件：用户不需要知道文件路径或日期即可找到历史内容，并能从任一内容继续探索相关内容。
 
 ### Milestone B — Presentation Platform
 
