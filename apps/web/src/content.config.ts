@@ -4,6 +4,7 @@ import {
   briefSchema,
   essaySchema,
   knowledgeSchema,
+  presentationContentSchema,
   topicSchema,
 } from '@orbis/content-schema'
 
@@ -17,6 +18,11 @@ const briefs = defineCollection({
   schema: briefSchema,
 })
 
+const presentations = defineCollection({
+  loader: glob({ pattern: '**/*.{yaml,yml}', base: '../../content/presentations' }),
+  schema: presentationContentSchema,
+})
+
 const topics = defineCollection({
   loader: glob({ pattern: '**/*.{yaml,yml}', base: '../../content/topics' }),
   schema: topicSchema,
@@ -27,4 +33,4 @@ const knowledge = defineCollection({
   schema: knowledgeSchema,
 })
 
-export const collections = { essays, briefs, topics, knowledge }
+export const collections = { essays, briefs, presentations, topics, knowledge }
