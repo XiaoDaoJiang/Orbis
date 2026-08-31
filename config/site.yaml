@@ -23,6 +23,5 @@ preview:
 compatibility:
   legacyRootDir: docs
   archiveFile: docs/archive.json
-  latestDir: docs/latest
   rewriteBasePaths:
     - /ai-frontier
