@@ -1,0 +1,26 @@
+---
+import type { DiscoveryItem } from '../lib/content-discovery'
+
+type Props = {
+  previous?: DiscoveryItem
+  next?: DiscoveryItem
+}
+
+const { previous, next } = Astro.props
+---
+{(previous || next) && (
+  <nav class="adjacent-nav" aria-label="Daily brief navigation">
+    {previous ? (
+      <a class="adjacent-link" data-adjacent="previous" href={previous.href}>
+        <small>Previous · {previous.publishedAt}</small>
+        <strong>{previous.title}</strong>
+      </a>
+    ) : <span></span>}
+    {next && (
+      <a class="adjacent-link adjacent-link-next" data-adjacent="next" href={next.href}>
+        <small>Next · {next.publishedAt}</small>
+        <strong>{next.title}</strong>
+      </a>
+    )}
+  </nav>
+)}
