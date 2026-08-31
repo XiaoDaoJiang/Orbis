@@ -1,0 +1,23 @@
+---
+import type { DiscoveryItem } from '../lib/content-discovery'
+
+type Props = {
+  items: DiscoveryItem[]
+}
+
+const { items } = Astro.props
+---
+{items.length > 0 && (
+  <section class="related-content" aria-labelledby="related-content-title">
+    <div class="section-title"><h2 id="related-content-title">Related Content</h2></div>
+    <div class="related-grid">
+      {items.map((item) => (
+        <a class="card" data-related-id={`${item.kind}:${item.id}`} href={item.href}>
+          <small>{item.kind} · {item.publishedAt}</small>
+          <h3>{item.title}</h3>
+          <p>{item.summary}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+)}
