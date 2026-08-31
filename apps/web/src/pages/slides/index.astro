@@ -1,0 +1,39 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import {
+  isPublicBrief,
+  sortDiscoveryNewestFirst,
+  toBriefDiscoveryItem,
+} from '../../lib/content-discovery'
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const entries = sortDiscoveryNewestFirst(
+  (await getCollection('briefs'))
+    .filter((entry) => isPublicBrief(entry) && entry.data.presentation.enabled)
+    .map((entry) => toBriefDiscoveryItem(entry, base)),
+)
+---
+<BaseLayout title="Presentations" description="Published Orbis presentations derived from structured content">
+  <div class="eyebrow">Presentation discovery</div>
+  <h1>Presentations</h1>
+  <p class="lead">当前索引只展示真实存在的 Brief 派生 Deck；独立 Presentation 与 Template Registry 留给下一阶段。</p>
+  {entries.length > 0 ? (
+    <div class="grid">
+      {entries.map((entry) => (
+        <article class="card">
+          <small>{entry.cadence} · {entry.publishedAt}</small>
+          <h3>{entry.title}</h3>
+          <p>{entry.summary}</p>
+          <div class="pills">{entry.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+          <div class="link-row">
+            <a href={entry.presentationHref}>Open presentation →</a>
+            <a href={entry.href}>Read brief →</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  ) : (
+    <div class="empty-state">No published presentations are available.</div>
+  )}
+</BaseLayout>
