@@ -1,7 +1,7 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 基线：`main@f756822cd901ae680a6a37ae44a57df872e0cd44`
+> 基线：`main@78a7371deaf82f1b9b0c07c41ac55728503f18f0`
 > 阶段：Product Capability Phase
 
 `docs/plan/` 用于保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
@@ -12,8 +12,8 @@
 
 - Plan 10 · Archive & Discovery Experience：**In Progress**
   - 10A Archive & Discovery Indexes：**Done**，PR #8 已合并 `main`
-  - 10B Cross-content Navigation & Related Content：**Current**
-  - 10C Homepage Discovery：**Planned**
+  - 10B Cross-content Navigation & Related Content：**Done**，PR #9 已合并 `main`
+  - 10C Homepage Discovery：**Current**
 - Plan 20–70：**Planned**
 
 ## 总体目标
