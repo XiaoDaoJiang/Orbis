@@ -1,12 +1,44 @@
 ---
 import { getCollection, render } from 'astro:content'
+import RelatedContent from '../../components/RelatedContent.astro'
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import {
+  buildPublicDiscoveryItems,
+  getRelatedContent,
+  isPublicEssay,
+  toEssayDiscoveryItem,
+} from '../../lib/content-discovery'
+
 export async function getStaticPaths() {
-  return (await getCollection('essays', ({ data }) => data.status === 'published')).map((entry) => ({ params: { id: entry.id }, props: { entry } }))
+  const [briefEntries, essayEntries, knowledgeEntries] = await Promise.all([
+    getCollection('briefs'),
+    getCollection('essays'),
+    getCollection('knowledge'),
+  ])
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+  const candidates = buildPublicDiscoveryItems(briefEntries, essayEntries, knowledgeEntries, base)
+
+  return essayEntries.filter(isPublicEssay).map((entry) => {
+    const current = toEssayDiscoveryItem(entry, base)
+    return {
+      params: { id: entry.id },
+      props: { entry, related: getRelatedContent(current, candidates) },
+    }
+  })
 }
-const { entry } = Astro.props
+
+const { entry, related } = Astro.props
 const { Content } = await render(entry)
 ---
 <BaseLayout title={entry.data.title} description={entry.data.description}>
-  <article class="article"><header class="article-header"><div class="eyebrow">Essay · {entry.data.publishedAt}</div><h1>{entry.data.title}</h1><p class="lead">{entry.data.description}</p><div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div></header><div class="article-body"><Content /></div></article>
+  <article class="article">
+    <header class="article-header">
+      <div class="eyebrow">Essay · {entry.data.publishedAt}</div>
+      <h1>{entry.data.title}</h1>
+      <p class="lead">{entry.data.description}</p>
+      <div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+    </header>
+    <div class="article-body"><Content /></div>
+  </article>
+  <RelatedContent items={related} />
 </BaseLayout>
