@@ -17,9 +17,10 @@
     "build:slides": "tsx tools/build-slides/index.ts",
     "assemble": "tsx tools/assemble-site/index.ts",
     "test:site": "tsx tools/site-check/index.ts",
+    "test:presentation-scope": "tsx tools/presentation-scope-check/index.ts",
     "test:multi-presentation": "tsx tools/multi-presentation-check/index.ts",
     "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts",
-    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:site"
+    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",
