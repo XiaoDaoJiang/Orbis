@@ -14,6 +14,7 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - '.github/workflows/pages-production.yml'
       - '.github/workflows/site-v2-prototype.yml'
   workflow_dispatch:
 
