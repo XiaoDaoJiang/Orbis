@@ -1,0 +1,13 @@
+version: 1
+
+modes:
+  pr:
+    denyPrefixes:
+      - dist/
+      - apps/slides/generated/
+  content-agent:
+    allowPrefixes:
+      - content/briefs/
+      - content/essays/
+      - content/knowledge/
+      - content/topics/

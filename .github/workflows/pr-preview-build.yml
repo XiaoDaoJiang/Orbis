@@ -1,0 +1,52 @@
+name: Orbis PR Preview Build
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - 'apps/**'
+      - 'content/**'
+      - 'config/**'
+      - 'docs/**'
+      - 'packages/**'
+      - 'tools/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/pages-production.yml'
+      - '.github/workflows/pr-preview-*.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SITE_ORIGIN: https://raw.githack.com
+      SITE_BASE: /${{ github.repository }}/preview-pr-${{ github.event.number }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.16.0'
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.24.0 --activate
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Guard generated paths
+        run: pnpm path:guard --mode pr --base '${{ github.event.pull_request.base.sha }}'
+      - name: Build preview
+        run: pnpm build
+      - name: Upload public-preview artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: orbis-pr-preview
+          path: dist/site
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,16 @@
+{
+  "name": "@orbis/slides",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --dir ../.. slides:dev",
+    "build": "pnpm --dir ../.. build:slides"
+  },
+  "dependencies": {
+    "@orbis/design-tokens": "workspace:*",
+    "@slidev/cli": "52.19.1",
+    "@slidev/theme-default": "0.25.0",
+    "vue": "3.5.41"
+  }
+}

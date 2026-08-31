@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 11 defaults minimumReleaseAge to 1440 minutes. Astro 7.2.9 is
+# intentionally pinned and was reviewed as part of this foundation change, so
+# exempt only that exact version rather than disabling the supply-chain policy.
+minimumReleaseAgeExclude:
+  - astro@7.2.9
+
+allowBuilds:
+  esbuild: true

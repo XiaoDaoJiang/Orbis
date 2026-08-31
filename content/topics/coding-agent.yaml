@@ -1,0 +1,7 @@
+name: Coding Agent
+description: 在代码仓库、终端、测试和审查环境中执行软件工程任务的 Agent。
+aliases:
+  - software-agent
+status: active
+related:
+  - agent-harness

@@ -1,0 +1,10 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+const entries = (await getCollection('briefs', ({ data }) => data.status === 'published')).sort((a, b) => b.data.publishedAt.localeCompare(a.data.publishedAt))
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+---
+<BaseLayout title="Briefs" description="Structured daily, weekly and ad-hoc briefs">
+  <div class="eyebrow">Structured signals</div><h1>Briefs</h1>
+  <div class="grid">{entries.map((entry) => <a class="card" href={`${base}/briefs/${entry.id}/`}><small>{entry.data.cadence} · {entry.data.publishedAt}</small><h3>{entry.data.title}</h3><p>{entry.data.summary}</p></a>)}</div>
+</BaseLayout>
