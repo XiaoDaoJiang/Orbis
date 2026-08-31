@@ -26,6 +26,12 @@ export type SiteConfig = {
     repositoryPath: string
     branchPrefix: string
   }
+  compatibility?: {
+    legacyRootDir: string
+    archiveFile: string
+    latestDir: string
+    rewriteBasePaths: string[]
+  }
 }
 
 export function normalizeBasePath(value: string): string {
@@ -48,6 +54,14 @@ export async function loadSiteConfig(): Promise<SiteConfig> {
   if (!value.content?.briefsDir) throw new Error('content.briefsDir is required')
   if (!value.presentation?.generatedDir || !value.presentation?.outputDir || !value.presentation?.publicPath) {
     throw new Error('presentation paths are required')
+  }
+  if (value.compatibility) {
+    if (!value.compatibility.legacyRootDir || !value.compatibility.archiveFile || !value.compatibility.latestDir) {
+      throw new Error('compatibility legacyRootDir, archiveFile and latestDir are required when compatibility is enabled')
+    }
+    if (!Array.isArray(value.compatibility.rewriteBasePaths)) {
+      throw new Error('compatibility.rewriteBasePaths must be an array')
+    }
   }
   return value
 }
