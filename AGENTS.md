@@ -4,25 +4,24 @@ Automated agents are content contributors, not UI or infrastructure maintainers.
 
 ## Allowed by default
 
-- `content/essays/**`
 - `content/briefs/**`
-- `content/presentations/**`
+- `content/essays/**`
 - `content/knowledge/**`
+
+Presentation sources are derived from structured Briefs during the build; scheduled agents must not commit generated Slidev files.
 
 ## Requires explicit human approval
 
 - `content/topics/**`
-- `content/sources/**`
 - `config/**`
 
 ## Forbidden for scheduled content tasks
 
 - `apps/**`
 - `packages/**`
-- `brand/**`
-- `design/**`
 - `tools/**`
 - `.github/**`
-- root package or lock files
+- root package, workspace or lock files
+- generated HTML, CSS, JavaScript, Astro components, Vue components or Slidev sources
 
-Scheduled content tasks must never generate HTML, CSS, JavaScript, Astro components, Vue components, Slidev layouts or GitHub workflows.
+The enforceable allowlist for automated content changes is `config/path-guard.yaml` mode `content-agent`. This document and the guard configuration must stay consistent.

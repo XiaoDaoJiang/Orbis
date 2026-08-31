@@ -67,7 +67,7 @@ try {
   await run('build:web')
   await run('build:slides')
   await run('assemble')
-  await run('test:prototype')
+  await run('test:site')
 
   const seedDeck = resolve(root, `dist/site/slides/${seedSlug}/index.html`)
   const fixtureBrief = resolve(root, `dist/site/briefs/${fixtureSlug}/index.html`)
