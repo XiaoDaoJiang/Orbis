@@ -3,7 +3,7 @@ import { basename, resolve } from 'node:path'
 import { briefSchema, dailyBriefSchema } from '@orbis/content-schema'
 import { renderDailyV1 } from '../../apps/slides/templates/daily-v1.ts'
 import { listFiles, readYaml } from '../shared/content.ts'
-import { loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
+import { joinBasePath, loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
 
 const root = resolve(import.meta.dirname, '../..')
 const config = await loadSiteConfig()
@@ -28,7 +28,12 @@ for (const file of files) {
   switch (brief.presentation.template) {
     case 'daily-v1': {
       const daily = dailyBriefSchema.parse(brief)
-      await writeFile(resolve(directory, 'slides.md'), renderDailyV1(daily, siteBase), 'utf8')
+      const readingHref = `${joinBasePath(siteBase, 'briefs', slug)}/`
+      await writeFile(
+        resolve(directory, 'slides.md'),
+        renderDailyV1(daily, { siteBase, readingHref }),
+        'utf8',
+      )
       break
     }
     default:
