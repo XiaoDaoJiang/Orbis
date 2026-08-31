@@ -2,7 +2,7 @@
 
 > 状态：Active
 > 基线日期：2026-08-31
-> 基线提交：`main@f756822cd901ae680a6a37ae44a57df872e0cd44`
+> 基线提交：`main@78a7371deaf82f1b9b0c07c41ac55728503f18f0`
 
 ## 1. 当前阶段判断
 
@@ -17,9 +17,10 @@ Orbis 已经完成：
 - read-only PR Build → trusted Preview Publish → 公网 Smoke；
 - GitHub Actions Pages Production Cutover；
 - 原 `main:/docs` Legacy HTML/Archive 兼容层彻底退役；
-- Plan 10A Archive & Discovery Indexes：`/archive/`、`/slides/`、`/briefs/daily/`、`/briefs/weekly/`、共享公开内容查询与 Topic 可见性修正。
+- Plan 10A Archive & Discovery Indexes：`/archive/`、`/slides/`、`/briefs/daily/`、`/briefs/weekly/`、共享公开内容查询与 Topic 可见性修正；
+- Plan 10B Cross-content Navigation：Daily Previous / Next、Brief / Essay / Knowledge Related、Reading ↔ Slides 稳定双向导航与非公开内容排除。
 
-因此项目已经结束 Architecture Migration，正式进入 **Product Capability Phase**，当前正在推进 Milestone A — Discoverable Orbis。
+因此项目已经结束 Architecture Migration，正式进入 **Product Capability Phase**，当前正在推进 Milestone A — Discoverable Orbis 的最后子阶段 10C Homepage Discovery。
 
 ## 2. 产品定义回顾
 
@@ -92,18 +93,18 @@ RSS / Web / Primary Sources
 | Astro + Slidev 分层 | Done | `apps/web` / `apps/slides` 独立构建 |
 | Shared Schema | Done | `packages/content-schema` + Zod |
 | Shared Design Tokens | Done | Astro/Slidev 共用视觉 Token |
-| Essay | Done / Basic | Markdown → `/essays/:id/` |
-| Daily Brief | Done / Mature | YAML → 阅读 + 11 页 Slidev + RSS + Date/Latest/Archive |
+| Essay | Done / Basic | Markdown → `/essays/:id/`，已支持 Related |
+| Daily Brief | Done / Mature | YAML → 阅读 + 11 页 Slidev + RSS + Date/Latest/Archive + Previous/Next |
 | Weekly Brief | Planned | Schema/template 名称预留，但没有 Weekly 语义模型与 `weekly-v1` 实现 |
 | Ad-hoc Brief | Partial | 基础 cadence 可表达，缺少通用 Presentation 模板 |
 | 独立 Presentation | Planned | Slidev 基础设施已有，缺 `content/presentations/**` 与 `talk-v1` |
 | Topic | Done / Basic | Topic 实体与公开 Essay/Brief/Knowledge 聚合 |
-| Knowledge | Done / Basic | 状态、`reviewAt`、Topic、References |
+| Knowledge | Done / Basic | 状态、`reviewAt`、Topic、References、Related |
 | RSS 输入 | Partial | `feeds.yaml` + Agent Contract，缺 Repository Scheduled Orchestration |
 | RSS 输出 | Done | `/rss.xml` 聚合已发布内容 |
-| 阅读版 + 演示版双输出 | Done / Partial Navigation | 同一 Brief 单一事实源；阅读→Slides 已有，稳定双向导航待 10B |
+| 阅读版 + 演示版双输出 | Done | 同一 Brief 单一事实源，Reading ↔ Slides 双向可达 |
 | 永久日期 URL / Latest / Archive data | Done | 全部由 Daily Brief 动态派生 |
-| 人类 Archive / Discovery UI | In Progress | 10A 已提供 `/archive/`、`/slides/`、Daily/Weekly 索引与静态筛选；跨内容导航/首页待完成 |
+| 人类 Archive / Discovery UI | In Progress | 10A/10B 已完成 Archive、Slides、cadence 入口、Previous/Next、Related；首页发现 IA 待 10C |
 | Agent 只修改内容 | Done | Prompt + AGENTS + Path Guard |
 | 多 Deck Build | Done | 自动发现并逐个构建，已有 N>1 集成 Gate |
 | PR Preview / Pages Governance | Done / Mature | read-only build、trusted publish、public smoke、protected main |
@@ -117,17 +118,17 @@ RSS / Web / Primary Sources
 |---|---:|
 | Monorepo / Build Foundation | 95% |
 | Structured Content Architecture | 90% |
-| Daily Brief Pipeline | 90% |
-| Astro + Slidev 双输出 | 90% |
+| Daily Brief Pipeline | 92% |
+| Astro + Slidev 双输出 | 93% |
 | CI / Preview / Pages / Governance | 95% |
 | Agent Content Boundary | 95% |
-| Essay / Knowledge / Topic 基础 | 70% |
+| Essay / Knowledge / Topic 基础 | 75% |
 | RSS | 75% |
 | Weekly / Ad-hoc / Talk | 20% |
-| Archive / Discovery / Navigation UX | 60% |
+| Archive / Discovery / Navigation UX | 80% |
 | SEO / Sharing | 30% |
 | Source / Author Registry | 10% |
-| 完整 Orbis 内容产品 | 约 65–70% |
+| 完整 Orbis 内容产品 | 约 70–75% |
 
 成熟度是路线判断，不是精确 KPI。后续应以真实路由、内容规模、构建验证和日常使用体验替代主观百分比。
 
@@ -143,6 +144,8 @@ content/briefs/YYYY-MM-DD.yaml
 dailyBriefSchema
    ├── /briefs/<id>/        Astro 阅读版
    ├── /slides/<id>/        11 页 Slidev
+   ├── Previous / Next
+   ├── Related by Topic
    ├── /rss.xml
    ├── /YYYY/MM/DD/
    ├── /archive.json
@@ -176,8 +179,8 @@ dailyBriefSchema
 实施状态：
 
 - **10A Archive & Discovery Indexes — Done**：PR #8 已合并；提供 `/archive/`、`/slides/`、`/briefs/daily/`、`/briefs/weekly/`、共享公开内容规则和 Topic 可见性修正。
-- **10B Cross-content Navigation & Related Content — Current**：Previous / Next、Topic Related、阅读版 ↔ 演示版稳定双向导航。
-- **10C Homepage Discovery — Planned**：首页 Latest Brief / Essay / Presentation / Knowledge / Topics / Archive 信息架构。
+- **10B Cross-content Navigation & Related Content — Done**：PR #9 已合并；提供 Previous / Next、Topic Related、阅读版 ↔ 演示版稳定双向导航及非公开关系排除。
+- **10C Homepage Discovery — Current**：首页 Latest Brief / Essay / Presentation / Knowledge updates / Topics / Archive 信息架构。
 
 主要能力：
 
@@ -188,7 +191,7 @@ dailyBriefSchema
 - 阅读版 ↔ 演示版双向导航；
 - 首页结构升级。
 
-退出条件：用户不需要知道文件路径或日期即可找到历史内容，并能从任一内容继续探索相关内容。
+退出条件：用户不需要知道文件路径或日期即可找到主要内容、历史内容和最新内容，并能从任一内容继续探索相关内容。
 
 ### Milestone B — Presentation Platform
 
