@@ -5,10 +5,12 @@ import {
   briefSchema,
   essaySchema,
   knowledgeSchema,
+  presentationContentSchema,
   topicSchema,
   type Brief,
   type Essay,
   type Knowledge,
+  type PresentationContent,
 } from '@orbis/content-schema'
 import { listFiles, readMarkdownFrontmatter, readYaml } from '../shared/content.ts'
 import { joinBasePath, loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
@@ -34,6 +36,18 @@ type PublishedBrief = {
   slug: string
 }
 
+type PublishedStandalonePresentation = {
+  presentation: PresentationContent
+  slug: string
+}
+
+type PublicPresentation = {
+  id: string
+  title: string
+  publishedAt: string
+  sourceKind: 'brief' | 'presentation'
+}
+
 type PublicDiscovery = {
   kind: 'brief' | 'essay' | 'knowledge'
   id: string
@@ -47,6 +61,15 @@ type PublicDiscovery = {
 type PublicTopic = {
   id: string
   name: string
+}
+
+async function assertMissing(path: string, message: string) {
+  try {
+    await access(path)
+    assert.fail(message)
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+  }
 }
 
 function safeRelativePath(value: string): string {
@@ -89,6 +112,15 @@ function sortPublicNewest<T extends { publishedAt: string; title: string; id: st
     right.publishedAt.localeCompare(left.publishedAt)
     || left.title.localeCompare(right.title)
     || left.id.localeCompare(right.id))
+}
+
+function articleFragment(html: string, marker: string): string {
+  const markerIndex = html.indexOf(marker)
+  assert.ok(markerIndex >= 0, `Missing HTML marker: ${marker}`)
+  const start = html.lastIndexOf('<article', markerIndex)
+  const end = html.indexOf('</article>', markerIndex)
+  assert.ok(start >= 0 && end >= 0, `Marker is not inside an article: ${marker}`)
+  return html.slice(start, end + '</article>'.length)
 }
 
 async function loadPublicMarkdownEntries<T extends Essay | Knowledge>(
@@ -153,7 +185,9 @@ for (const file of required) {
 const publishedBriefs: PublishedBrief[] = []
 const publishedDaily: PublishedBrief[] = []
 const publishedWeekly: PublishedBrief[] = []
-const publishedPresentations: PublishedBrief[] = []
+const publishedBriefPresentations: PublishedBrief[] = []
+const publishedStandalonePresentations: PublishedStandalonePresentation[] = []
+const nonPublicStandaloneTitles: string[] = []
 const publicDiscovery: PublicDiscovery[] = []
 const dailyDates = new Set<string>()
 const briefFiles = await listFiles(resolve(root, config.content.briefsDir), ['.yaml', '.yml'])
@@ -181,7 +215,7 @@ for (const file of briefFiles) {
 
   const presentationHref = `${joinBasePath(siteBase, config.presentation.publicPath, slug)}/`
   if (brief.presentation.enabled) {
-    publishedPresentations.push(published)
+    publishedBriefPresentations.push(published)
     assert.ok(briefHtml.includes(presentationHref), `${slug} reading page must link to ${presentationHref}`)
 
     const deckPath = resolve(root, `dist/site/${config.presentation.publicPath}/${slug}/index.html`)
@@ -206,7 +240,7 @@ for (const file of briefFiles) {
       assert.match(slideSource, /EXTENDED READING/)
     }
 
-    console.log(`✓ ${config.presentation.publicPath}/${slug} (${brief.presentation.template})`)
+    console.log(`✓ ${config.presentation.publicPath}/${slug} (${brief.presentation.template}, brief)`)
   } else {
     assert.ok(!briefHtml.includes(presentationHref), `${slug} reading page must not claim disabled presentation ${presentationHref}`)
   }
@@ -218,6 +252,40 @@ for (const file of briefFiles) {
   } else if (brief.cadence === 'weekly') {
     publishedWeekly.push(published)
   }
+}
+
+const standaloneFiles = await listFiles(resolve(root, config.content.presentationsDir), ['.yaml', '.yml'])
+for (const file of standaloneFiles) {
+  const presentation = presentationContentSchema.parse(await readYaml(file))
+  const slug = basename(file).replace(/\.(yaml|yml)$/, '')
+  const deckPath = resolve(root, `dist/site/${config.presentation.publicPath}/${slug}/index.html`)
+  const sourcePath = resolve(root, `${config.presentation.generatedDir}/${slug}/slides.md`)
+
+  if (presentation.status !== 'published') {
+    nonPublicStandaloneTitles.push(presentation.title)
+    await assertMissing(deckPath, `${slug} non-public standalone Presentation must not have a public deck`)
+    await assertMissing(sourcePath, `${slug} non-public standalone Presentation must not generate Slidev source`)
+    continue
+  }
+
+  publishedStandalonePresentations.push({ presentation, slug })
+  await access(deckPath)
+  await access(sourcePath)
+  const deck = await readFile(deckPath, 'utf8')
+  const slideSource = await readFile(sourcePath, 'utf8')
+  assert.match(deck, /<html/i)
+  assert.doesNotMatch(deck, /cdn\.jsdelivr\.net\/gh\/slidevjs\/slidev\/assets\/favicon\.png/)
+  assert.match(slideSource, new RegExp(`favicon: ["']?${siteBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/favicon\\.svg`))
+  assert.ok(slideSource.includes(presentation.title), `${slug} talk source must contain its title`)
+  assert.match(slideSource, /REFERENCES/)
+
+  if (presentation.template === 'talk-v1') {
+    const frontmatterMarkers = slideSource.match(/^---$/gm) ?? []
+    const expectedMarkers = (presentation.sections.length + 2) * 2
+    assert.equal(frontmatterMarkers.length, expectedMarkers, `${slug} talk-v1 must contain sections.length + 2 slides`)
+  }
+
+  console.log(`✓ ${config.presentation.publicPath}/${slug} (${presentation.template}, presentation)`)
 }
 
 publicDiscovery.push(...await loadPublicMarkdownEntries(
@@ -233,8 +301,10 @@ publicDiscovery.push(...await loadPublicMarkdownEntries(
   (entry) => entry.status === 'published' || entry.status === 'active',
 ))
 const publicTopics = await loadPublicTopics()
+const presentationCount = publishedBriefPresentations.length + publishedStandalonePresentations.length
 
-assert.ok(publishedPresentations.length > 0, 'At least one published presentation is required')
+assert.ok(presentationCount > 0, 'At least one published presentation is required')
+assert.ok(publishedStandalonePresentations.length > 0, 'At least one published standalone Presentation is required')
 assert.ok(publishedDaily.length > 0, 'At least one published Daily brief is required')
 
 const builtArchive = JSON.parse(await readFile(resolve(root, 'dist/site/archive.json'), 'utf8')) as Archive
@@ -333,14 +403,29 @@ const latestEssay = sortPublicNewest(publicEssays)[0]
 assert.ok(latestEssay, 'Homepage requires at least one public Essay')
 assert.ok(home.includes(`data-home-id="essay:${latestEssay.id}"`), `Homepage Latest Essay must be ${latestEssay.id}`)
 
-const latestPresentation = sortPublicNewest(publishedPresentations.map(({ brief, slug }) => ({
-  id: slug,
-  title: brief.title,
-  publishedAt: brief.publishedAt,
-})))[0]
+const publicPresentations: PublicPresentation[] = [
+  ...publishedBriefPresentations.map(({ brief, slug }) => ({
+    id: slug,
+    title: brief.title,
+    publishedAt: brief.publishedAt,
+    sourceKind: 'brief' as const,
+  })),
+  ...publishedStandalonePresentations.map(({ presentation, slug }) => ({
+    id: slug,
+    title: presentation.title,
+    publishedAt: presentation.publishedAt,
+    sourceKind: 'presentation' as const,
+  })),
+]
+const latestPresentation = sortPublicNewest(publicPresentations)[0]
 assert.ok(latestPresentation, 'Homepage requires at least one public Presentation')
 assert.ok(home.includes(`data-home-id="presentation:${latestPresentation.id}"`), `Homepage Latest Presentation must be ${latestPresentation.id}`)
 assert.ok(home.includes(`${joinBasePath(siteBase, config.presentation.publicPath, latestPresentation.id)}/`), 'Homepage Latest Presentation must link to Slides')
+const latestPresentationCard = articleFragment(home, `data-home-id="presentation:${latestPresentation.id}"`)
+assert.ok(latestPresentationCard.includes(`data-presentation-source="${latestPresentation.sourceKind}"`), 'Homepage Latest Presentation must expose its source kind')
+if (latestPresentation.sourceKind === 'presentation') {
+  assert.ok(!latestPresentationCard.includes('Reading →'), 'Standalone Homepage Presentation must not expose a fake Reading link')
+}
 
 const knowledgeUpdates = publicDiscovery
   .filter((entry) => entry.kind === 'knowledge')
@@ -383,10 +468,24 @@ for (const { brief } of publishedDaily) {
   assert.ok(dailyPage.includes(brief.title), `Daily index must include published Daily: ${brief.title}`)
 }
 
-for (const { brief, slug } of publishedPresentations) {
+for (const { brief, slug } of publishedBriefPresentations) {
   const presentationHref = `${joinBasePath(siteBase, config.presentation.publicPath, slug)}/`
-  assert.ok(slidesPage.includes(brief.title), `Slides index must include published presentation: ${brief.title}`)
+  assert.ok(slidesPage.includes(brief.title), `Slides index must include published Brief presentation: ${brief.title}`)
   assert.ok(slidesPage.includes(presentationHref), `Slides index must link to ${presentationHref}`)
+}
+
+for (const { presentation, slug } of publishedStandalonePresentations) {
+  const presentationHref = `${joinBasePath(siteBase, config.presentation.publicPath, slug)}/`
+  assert.ok(slidesPage.includes(presentation.title), `Slides index must include standalone Presentation: ${presentation.title}`)
+  assert.ok(slidesPage.includes(presentationHref), `Slides index must link to ${presentationHref}`)
+  const card = articleFragment(slidesPage, `data-presentation-id="${slug}"`)
+  assert.ok(card.includes('data-presentation-source="presentation"'), `${slug} Slides card must expose standalone source kind`)
+  assert.ok(!card.includes('Read brief'), `${slug} standalone Slides card must not expose a fake Brief reading link`)
+}
+
+for (const title of nonPublicStandaloneTitles) {
+  assert.ok(!slidesPage.includes(title), `Slides index must exclude non-public standalone Presentation: ${title}`)
+  assert.ok(!home.includes(title), `Homepage must exclude non-public standalone Presentation: ${title}`)
 }
 
 if (publishedWeekly.length === 0) {
@@ -401,5 +500,5 @@ if (publishedWeekly.length === 0) {
 console.log(`Structured archive checks passed for ${publishedDaily.length} published Daily brief(s); latest=${builtArchive.latest}`)
 console.log(`Relation checks passed for ${publicDiscovery.length} public content item(s) and ${publishedDaily.length} Daily brief(s)`)
 console.log(`Homepage discovery checks passed for latest Brief=${latestBrief.id}, Essay=${latestEssay.id}, Presentation=${latestPresentation.id}`)
-console.log(`Discovery route checks passed for ${publishedBriefs.length} published Brief(s), ${publishedWeekly.length} Weekly brief(s), and ${publishedPresentations.length} presentation(s)`)
-console.log(`Site artifact checks passed for ${publishedPresentations.length} published presentation(s)`)
+console.log(`Discovery route checks passed for ${publishedBriefs.length} published Brief(s), ${publishedWeekly.length} Weekly brief(s), and ${presentationCount} presentation(s)`)
+console.log(`Site artifact checks passed for ${publishedBriefPresentations.length} Brief presentation(s) + ${publishedStandalonePresentations.length} standalone Presentation(s)`)

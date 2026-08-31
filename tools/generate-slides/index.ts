@@ -1,28 +1,21 @@
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
-import { basename, resolve } from 'node:path'
-import { briefSchema } from '@orbis/content-schema'
+import { resolve } from 'node:path'
 import { renderPresentation } from '../../apps/slides/templates/registry.ts'
-import { listFiles, readYaml } from '../shared/content.ts'
-import { joinBasePath, loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
-import { toBriefPresentationDescriptor } from './brief-source.ts'
+import { loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
+import { discoverPresentationDescriptors } from './discover-presentations.ts'
 
 const root = resolve(import.meta.dirname, '../..')
 const config = await loadSiteConfig()
-const sourceDir = resolve(root, config.content.briefsDir)
 const outputRoot = resolve(root, config.presentation.generatedDir)
 const siteBase = runtimeSiteBase(config)
 
+const descriptors = await discoverPresentationDescriptors({ root, siteBase, config })
+if (descriptors.length === 0) throw new Error('No published Slidev deck generated')
+
 await rm(outputRoot, { recursive: true, force: true })
-const files = await listFiles(sourceDir, ['.yaml', '.yml'])
 let generated = 0
 
-for (const file of files) {
-  const brief = briefSchema.parse(await readYaml(file))
-  if (!brief.presentation.enabled || brief.status !== 'published') continue
-
-  const slug = basename(file).replace(/\.(yaml|yml)$/, '')
-  const readingUrl = `${joinBasePath(siteBase, 'briefs', slug)}/`
-  const descriptor = toBriefPresentationDescriptor(brief, { slug, readingUrl })
+for (const descriptor of descriptors) {
   const directory = resolve(outputRoot, descriptor.slug)
   await mkdir(directory, { recursive: true })
   await cp(resolve(root, 'apps/slides/style.css'), resolve(directory, 'style.css'))
@@ -34,8 +27,7 @@ for (const file of files) {
   )
 
   generated += 1
-  console.log(`Generated Slidev deck: ${descriptor.slug} (${descriptor.template})`)
+  console.log(`Generated Slidev deck: ${descriptor.slug} (${descriptor.template}, ${descriptor.sourceKind})`)
 }
 
-if (generated === 0) throw new Error('No published Slidev deck generated')
 console.log(`Generated ${generated} presentation(s)`)

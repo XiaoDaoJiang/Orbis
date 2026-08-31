@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { briefSchema, dailyBriefSchema } from '../src/index.ts'
+import { briefSchema, dailyBriefSchema, presentationContentSchema } from '../src/index.ts'
 
 const valid = {
   kind: 'brief',
@@ -47,4 +47,38 @@ assert.equal(briefSchema.parse(valid).sections.length, 5)
 assert.throws(() => briefSchema.parse({ ...valid, signals: valid.signals.slice(0, 3) }))
 assert.throws(() => briefSchema.parse({ ...valid, sections: valid.sections.slice(0, 4) }))
 assert.throws(() => briefSchema.parse({ ...valid, presentation: { enabled: true, template: 'weekly-v1' } }))
+
+const validPresentation = {
+  kind: 'presentation',
+  title: 'A valid standalone presentation fixture',
+  summary: 'A sufficiently descriptive standalone presentation summary.',
+  publishedAt: '2026-08-31',
+  status: 'published',
+  topics: ['agent-harness'],
+  template: 'talk-v1',
+  sections: [{
+    id: 'architecture',
+    layout: 'architecture',
+    title: 'Presentation architecture',
+    conclusion: 'Standalone presentations converge on the shared descriptor pipeline.',
+    facts: ['Structured Presentation content is validated before Slidev generation.'],
+    limitations: [],
+    references: [],
+  }],
+  references: [{
+    title: 'Orbis repository',
+    url: 'https://github.com/XiaoDaoJiang/Orbis',
+    supports: 'Provides the implementation source for the fixture.',
+  }],
+} as const
+
+assert.equal(presentationContentSchema.parse(validPresentation).template, 'talk-v1')
+assert.throws(() => presentationContentSchema.parse({ ...validPresentation, kind: 'brief' }))
+assert.throws(() => presentationContentSchema.parse({ ...validPresentation, template: 'daily-v1' }))
+assert.throws(() => presentationContentSchema.parse({ ...validPresentation, sections: [] }))
+assert.throws(() => presentationContentSchema.parse({
+  ...validPresentation,
+  sections: [{ ...validPresentation.sections[0], layout: 'raw-html' }],
+}))
+
 console.log('content-schema tests passed')

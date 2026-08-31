@@ -1,0 +1,84 @@
+kind: presentation
+title: Orbis Presentation Platform
+summary: How Orbis converges Brief-derived and standalone structured sources into one validated Slidev presentation pipeline.
+publishedAt: 2026-08-31
+status: published
+topics:
+  - agent-harness
+  - coding-agent
+template: talk-v1
+sections:
+  - id: architecture
+    layout: architecture
+    title: One descriptor pipeline
+    conclusion: Brief-derived and standalone sources converge on one Presentation Descriptor before template rendering.
+    facts:
+      - PresentationDescriptor carries slug, title, publication date, topics, template, source kind, optional reading URL, and render payload.
+      - The Template Registry is the only layer that maps a descriptor template name to a concrete renderer.
+      - Generated Slidev Markdown remains build output rather than a second hand-maintained content source.
+    limitations:
+      - Weekly-specific semantics and weekly-v1 remain outside Plan 20 and are reserved for Plan 30.
+    references:
+      - title: Presentation descriptor contract
+        url: https://github.com/XiaoDaoJiang/Orbis/blob/main/apps/slides/presentation.ts
+        supports: Defines the source-neutral PresentationDescriptor contract used by the platform.
+      - title: Presentation Platform roadmap
+        url: https://github.com/XiaoDaoJiang/Orbis/blob/planning/product-capability-roadmap/docs/plan/20-presentation-platform.md
+        supports: Defines the target architecture and Plan 20 acceptance boundaries.
+  - id: comparison
+    layout: comparison
+    title: Two sources, one output contract
+    conclusion: Brief presentations and standalone talks differ at source adaptation but share rendering, build, and public slide routing.
+    facts:
+      - Published Briefs with presentation enabled retain their reading backlink and daily-v1 renderer contract.
+      - Published standalone Presentation YAML uses talk-v1 without requiring a separate reading page.
+      - Both source kinds resolve to independent /slides/<slug>/ routes after the same Slidev build stage.
+    limitations: []
+    references:
+      - title: Template registry
+        url: https://github.com/XiaoDaoJiang/Orbis/blob/main/apps/slides/templates/registry.ts
+        supports: Shows template dispatch behind a single Registry interface.
+      - title: Slide generator
+        url: https://github.com/XiaoDaoJiang/Orbis/blob/main/tools/generate-slides/index.ts
+        supports: Shows the generator entry point that writes generated Slidev sources.
+  - id: timeline
+    layout: timeline
+    title: Platform evolution
+    conclusion: Orbis moves from one Daily renderer to a registry foundation and then to multi-source Presentation publishing.
+    facts:
+      - Foundation established structured Daily Brief generation and independent Slidev base paths.
+      - Plan 20A introduced PresentationDescriptor and Template Registry while preserving daily-v1 output.
+      - Plan 20B adds standalone structured Presentation content and talk-v1 on the same platform seam.
+    limitations: []
+    references:
+      - title: Presentation Platform roadmap
+        url: https://github.com/XiaoDaoJiang/Orbis/blob/planning/product-capability-roadmap/docs/plan/20-presentation-platform.md
+        supports: Records the two-step implementation sequence for the Presentation Platform milestone.
+  - id: metrics
+    layout: metrics
+    title: Acceptance is executable
+    conclusion: Platform correctness is enforced by schema, descriptor, mixed-build, route, and negative validation gates rather than documentation alone.
+    facts:
+      - daily-v1 remains constrained to exactly eleven slides by artifact validation.
+      - A repository build must generate and build at least one Daily deck and one standalone Talk together.
+      - Duplicate presentation slugs and unsupported templates are explicit build failures.
+      - Non-public standalone presentations must not generate decks or enter public Presentation discovery.
+    limitations:
+      - The Presentation Platform does not add a visual editor, runtime templates, custom theme uploads, or PPTX export.
+    references:
+      - title: Presentation Platform roadmap
+        url: https://github.com/XiaoDaoJiang/Orbis/blob/planning/product-capability-roadmap/docs/plan/20-presentation-platform.md
+        supports: Defines the required acceptance and negative-validation behavior for Plan 20.
+references:
+  - title: Presentation Platform roadmap
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/planning/product-capability-roadmap/docs/plan/20-presentation-platform.md
+    supports: Defines the Presentation Platform target architecture, scope, and acceptance criteria.
+  - title: Presentation descriptor contract
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/apps/slides/presentation.ts
+    supports: Defines the shared descriptor consumed by presentation templates.
+  - title: Template registry
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/apps/slides/templates/registry.ts
+    supports: Defines centralized presentation template dispatch.
+  - title: Slide generator
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/tools/generate-slides/index.ts
+    supports: Defines the generator entry point for Slidev source production.

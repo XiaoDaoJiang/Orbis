@@ -3,6 +3,7 @@ import {
   briefSchema,
   essaySchema,
   knowledgeSchema,
+  presentationContentSchema,
   topicSchema,
 } from '@orbis/content-schema'
 import { listFiles, readMarkdownFrontmatter, readYaml } from '../shared/content.ts'
@@ -10,6 +11,7 @@ import { listFiles, readMarkdownFrontmatter, readYaml } from '../shared/content.
 const root = resolve(import.meta.dirname, '../..')
 const checks = [
   { directory: 'content/briefs', extensions: ['.yaml', '.yml'], schema: briefSchema, markdown: false },
+  { directory: 'content/presentations', extensions: ['.yaml', '.yml'], schema: presentationContentSchema, markdown: false },
   { directory: 'content/essays', extensions: ['.md'], schema: essaySchema, markdown: true },
   { directory: 'content/topics', extensions: ['.yaml', '.yml'], schema: topicSchema, markdown: false },
   { directory: 'content/knowledge', extensions: ['.md'], schema: knowledgeSchema, markdown: true },

@@ -41,6 +41,16 @@ export const briefSectionSchema = z.object({
   references: z.array(referenceSchema).min(1),
 })
 
+export const presentationSectionSchema = z.object({
+  id: z.string().min(2),
+  layout: z.enum(['content', 'architecture', 'comparison', 'timeline', 'metrics', 'system-map']),
+  title: z.string().min(3),
+  conclusion: z.string().min(12),
+  facts: z.array(z.string().min(5)).min(1).max(6),
+  limitations: z.array(z.string().min(5)).max(3).default([]),
+  references: z.array(referenceSchema).default([]),
+})
+
 export const projectSchema = z.object({
   action: z.enum(['CLONE', 'READ', 'TEST', 'WATCH']),
   name: z.string().min(3),
@@ -101,6 +111,18 @@ const nonDailyBriefSchema = briefBaseSchema.extend({
 
 export const briefSchema = z.union([dailyBriefSchema, nonDailyBriefSchema])
 
+export const presentationContentSchema = z.object({
+  kind: z.literal('presentation'),
+  title: z.string().min(5),
+  summary: z.string().min(12),
+  publishedAt: dateStringSchema,
+  status: publicationStatusSchema,
+  topics: z.array(z.string().min(2)).min(1),
+  template: z.literal('talk-v1'),
+  sections: z.array(presentationSectionSchema).min(1).max(12),
+  references: z.array(referenceSchema).min(1),
+})
+
 export const essaySchema = z.object({
   kind: z.literal('essay'),
   title: z.string().min(5),
@@ -136,6 +158,7 @@ export const knowledgeSchema = z.object({
 
 export type Brief = z.infer<typeof briefSchema>
 export type DailyBrief = z.infer<typeof dailyBriefSchema>
+export type PresentationContent = z.infer<typeof presentationContentSchema>
 export type Essay = z.infer<typeof essaySchema>
 export type Topic = z.infer<typeof topicSchema>
 export type Knowledge = z.infer<typeof knowledgeSchema>
