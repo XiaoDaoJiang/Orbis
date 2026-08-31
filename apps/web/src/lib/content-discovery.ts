@@ -15,6 +15,13 @@ export type DiscoveryItem = {
   presentationHref?: string
 }
 
+export type DiscoveryIdentity = Pick<DiscoveryItem, 'kind' | 'id'>
+
+export type AdjacentContent = {
+  previous?: DiscoveryItem
+  next?: DiscoveryItem
+}
+
 function publicHref(base: string, ...segments: string[]): string {
   const normalizedBase = base.replace(/\/$/, '')
   const path = segments.map((segment) => segment.replace(/^\/+|\/+$/g, '')).filter(Boolean).join('/')
@@ -84,4 +91,69 @@ export function filterBriefsByCadence(
   cadence: BriefCadence,
 ): CollectionEntry<'briefs'>[] {
   return entries.filter((entry) => isPublicBrief(entry) && entry.data.cadence === cadence)
+}
+
+export function buildPublicDiscoveryItems(
+  briefs: CollectionEntry<'briefs'>[],
+  essays: CollectionEntry<'essays'>[],
+  knowledge: CollectionEntry<'knowledge'>[],
+  base: string,
+): DiscoveryItem[] {
+  return [
+    ...briefs.filter(isPublicBrief).map((entry) => toBriefDiscoveryItem(entry, base)),
+    ...essays.filter(isPublicEssay).map((entry) => toEssayDiscoveryItem(entry, base)),
+    ...knowledge.filter(isPublicKnowledge).map((entry) => toKnowledgeDiscoveryItem(entry, base)),
+  ]
+}
+
+function identity(item: DiscoveryIdentity): string {
+  return `${item.kind}:${item.id}`
+}
+
+function sharedTopicCount(left: DiscoveryItem, right: DiscoveryItem): number {
+  const topics = new Set(left.topics)
+  return right.topics.filter((topic) => topics.has(topic)).length
+}
+
+export function getRelatedContent(
+  current: DiscoveryItem,
+  candidates: DiscoveryItem[],
+  limit = 3,
+): DiscoveryItem[] {
+  if (limit <= 0) return []
+
+  return candidates
+    .filter((candidate) => identity(candidate) !== identity(current))
+    .map((candidate) => ({ candidate, shared: sharedTopicCount(current, candidate) }))
+    .filter(({ shared }) => shared > 0)
+    .sort((left, right) =>
+      right.shared - left.shared
+      || right.candidate.publishedAt.localeCompare(left.candidate.publishedAt)
+      || left.candidate.title.localeCompare(right.candidate.title)
+      || left.candidate.kind.localeCompare(right.candidate.kind)
+      || left.candidate.id.localeCompare(right.candidate.id))
+    .slice(0, limit)
+    .map(({ candidate }) => candidate)
+}
+
+export function getDailyAdjacency(
+  entries: CollectionEntry<'briefs'>[],
+  currentId: string,
+  base: string,
+): AdjacentContent {
+  const sequence = entries
+    .filter((entry) => isPublicBrief(entry) && entry.data.cadence === 'daily')
+    .map((entry) => toBriefDiscoveryItem(entry, base))
+    .sort((left, right) =>
+      left.publishedAt.localeCompare(right.publishedAt)
+      || left.title.localeCompare(right.title)
+      || left.id.localeCompare(right.id))
+
+  const currentIndex = sequence.findIndex((entry) => entry.id === currentId)
+  if (currentIndex < 0) return {}
+
+  return {
+    previous: sequence[currentIndex - 1],
+    next: sequence[currentIndex + 1],
+  }
 }
