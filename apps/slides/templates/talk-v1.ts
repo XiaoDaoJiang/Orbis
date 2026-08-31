@@ -19,7 +19,7 @@ export function renderTalkV1(
   const favicon = `${context.siteBase}/favicon.svg`.replace(/^\/\//, '/')
   const readingLink = descriptor.readingUrl ? `\n\n[Reading ↗](${descriptor.readingUrl})` : ''
 
-  pages.push(`---\ntheme: default\ntitle: ${JSON.stringify(talk.title)}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: light\naspectRatio: 16/9\nfavicon: ${JSON.stringify(favicon)}\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nhtmlAttrs:\n  lang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · TALK · ${escapeHtml(talk.publishedAt)}</div>\n\n# ${escapeHtml(talk.title)}\n\n${escapeHtml(talk.summary)}${readingLink}\n`)
+  pages.push(`---\ntheme: default\ntitle: ${JSON.stringify(escapeHtml(talk.title))}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: light\naspectRatio: 16/9\nfavicon: ${JSON.stringify(favicon)}\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nhtmlAttrs:\n  lang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · TALK · ${escapeHtml(talk.publishedAt)}</div>\n\n# ${escapeHtml(talk.title)}\n\n${escapeHtml(talk.summary)}${readingLink}\n`)
 
   for (const section of talk.sections) {
     const limitations = section.limitations.length
