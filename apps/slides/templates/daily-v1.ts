@@ -1,5 +1,10 @@
 import type { DailyBrief } from '@orbis/content-schema'
 
+export type DailyV1RenderContext = {
+  siteBase: string
+  readingHref: string
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -9,11 +14,11 @@ function escapeHtml(value: string) {
     .replaceAll("'", '&#039;')
 }
 
-export function renderDailyV1(brief: DailyBrief, siteBase: string) {
+export function renderDailyV1(brief: DailyBrief, context: DailyV1RenderContext) {
   const pages: string[] = []
-  const favicon = `${siteBase}/favicon.svg`.replace(/^\/\//, '/')
+  const favicon = `${context.siteBase}/favicon.svg`.replace(/^\/\//, '/')
 
-  pages.push(`---\ntheme: default\ntitle: ${JSON.stringify(brief.title)}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: light\naspectRatio: 16/9\nfavicon: ${JSON.stringify(favicon)}\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nhtmlAttrs:\n  lang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · ${brief.publishedAt}</div>\n\n# ${brief.title}\n\n${brief.summary}\n`)
+  pages.push(`---\ntheme: default\ntitle: ${JSON.stringify(brief.title)}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: light\naspectRatio: 16/9\nfavicon: ${JSON.stringify(favicon)}\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nhtmlAttrs:\n  lang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · ${brief.publishedAt}</div>\n\n# ${brief.title}\n\n${brief.summary}\n\n[阅读版 ↗](${context.readingHref})\n`)
 
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">FOUR SIGNALS</div>\n\n## 四个关键信号\n\n<div class="signal-grid">\n${brief.signals.map((signal) => `<div class="signal-card"><h3>${escapeHtml(signal.title)}</h3><p>${escapeHtml(signal.summary)}</p><small>${signal.impact.toUpperCase()}</small></div>`).join('\n')}\n</div>\n`)
 
@@ -31,7 +36,7 @@ export function renderDailyV1(brief: DailyBrief, siteBase: string) {
     ? `\n\n### PART 02 · ARCHIVE PICKS / 往期推荐\n\n<ol class="reference-list">\n${brief.archivePicks.map((reference) => `<li>${reference.publishedAt ? `${reference.publishedAt} · ` : ''}<a href="${escapeHtml(reference.url)}">${escapeHtml(reference.title)}</a> — ${escapeHtml(reference.supports)}</li>`).join('\n')}\n</ol>`
     : ''
 
-  pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">EXTENDED READING</div>\n\n## 扩展阅读\n\n### PART 01 · REFERENCES / 参考资源引用\n\n<ol class="reference-list">\n${brief.references.map((reference) => `<li><a href="${escapeHtml(reference.url)}">${escapeHtml(reference.title)}</a> — ${escapeHtml(reference.supports)}</li>`).join('\n')}\n</ol>${archive}\n`)
+  pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">EXTENDED READING</div>\n\n## 扩展阅读\n\n### PART 01 · REFERENCES / 参考资源引用\n\n<ol class="reference-list">\n${brief.references.map((reference) => `<li><a href="${escapeHtml(reference.url)}">${escapeHtml(reference.title)}</a> — ${escapeHtml(reference.supports)}</li>`).join('\n')}\n</ol>${archive}\n\n[返回阅读版 ↗](${context.readingHref})\n`)
 
   return pages.join('\n\n')
 }
