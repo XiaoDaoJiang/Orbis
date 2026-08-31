@@ -1,6 +1,7 @@
-import { dailyBriefSchema } from '@orbis/content-schema'
+import { dailyBriefSchema, presentationContentSchema } from '@orbis/content-schema'
 import type { PresentationDescriptor, PresentationRenderContext } from '../presentation.ts'
 import { renderDailyV1 } from './daily-v1.ts'
+import { renderTalkV1 } from './talk-v1.ts'
 
 export type PresentationRenderer = (
   descriptor: PresentationDescriptor,
@@ -18,6 +19,10 @@ const renderers: Record<string, PresentationRenderer> = {
       siteBase: context.siteBase,
       readingHref: descriptor.readingUrl,
     })
+  },
+  'talk-v1': (descriptor, context) => {
+    const talk = presentationContentSchema.parse(descriptor.payload)
+    return renderTalkV1(talk, descriptor, context)
   },
 }
 
