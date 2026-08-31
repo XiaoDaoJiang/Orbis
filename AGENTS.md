@@ -5,10 +5,11 @@ Automated agents are content contributors, not UI or infrastructure maintainers.
 ## Allowed by default
 
 - `content/briefs/**`
+- `content/presentations/**`
 - `content/essays/**`
 - `content/knowledge/**`
 
-Presentation sources are derived from structured Briefs during the build; scheduled agents must not commit generated Slidev files.
+Presentation decks are generated from structured Briefs or standalone `content/presentations/**`; scheduled agents must never commit generated Slidev files.
 
 ## Requires explicit human approval
 
