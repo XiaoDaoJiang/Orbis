@@ -1,0 +1,115 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import {
+  isPublicBrief,
+  isPublicEssay,
+  isPublicKnowledge,
+  isPublicTopic,
+  sortDiscoveryNewestFirst,
+  toBriefDiscoveryItem,
+  toEssayDiscoveryItem,
+  toKnowledgeDiscoveryItem,
+} from '../../lib/content-discovery'
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const [briefEntries, essayEntries, knowledgeEntries, topicEntries] = await Promise.all([
+  getCollection('briefs'),
+  getCollection('essays'),
+  getCollection('knowledge'),
+  getCollection('topics'),
+])
+
+const items = sortDiscoveryNewestFirst([
+  ...briefEntries.filter(isPublicBrief).map((entry) => toBriefDiscoveryItem(entry, base)),
+  ...essayEntries.filter(isPublicEssay).map((entry) => toEssayDiscoveryItem(entry, base)),
+  ...knowledgeEntries.filter(isPublicKnowledge).map((entry) => toKnowledgeDiscoveryItem(entry, base)),
+])
+const topics = topicEntries.filter(isPublicTopic).sort((left, right) => left.data.name.localeCompare(right.data.name))
+---
+<BaseLayout title="Archive" description="Browse published Orbis content by type, cadence and topic">
+  <div class="eyebrow">Discover · Revisit · Connect</div>
+  <h1>Archive</h1>
+  <p class="lead">从同一个结构化内容源浏览 Brief、Essay 与 Knowledge。筛选只增强静态页面；关闭 JavaScript 时所有公开内容仍然可见。</p>
+
+  <div class="filters" aria-label="Archive filters">
+    <label class="filter-control">
+      <span>Type</span>
+      <select id="archive-kind">
+        <option value="all">All types</option>
+        <option value="brief">Brief</option>
+        <option value="essay">Essay</option>
+        <option value="knowledge">Knowledge</option>
+      </select>
+    </label>
+    <label class="filter-control">
+      <span>Cadence</span>
+      <select id="archive-cadence">
+        <option value="all">All cadences</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="ad-hoc">Ad-hoc</option>
+      </select>
+    </label>
+    <label class="filter-control">
+      <span>Topic</span>
+      <select id="archive-topic">
+        <option value="all">All topics</option>
+        {topics.map((topic) => <option value={topic.id}>{topic.data.name}</option>)}
+      </select>
+    </label>
+  </div>
+
+  <div class="grid archive-grid">
+    {items.map((item) => (
+      <article
+        class="card archive-item"
+        data-archive-item
+        data-kind={item.kind}
+        data-cadence={item.cadence ?? ''}
+        data-topics={item.topics.join(' ')}
+      >
+        <small>{item.kind}{item.cadence ? ` · ${item.cadence}` : ''} · {item.publishedAt}</small>
+        <h3><a href={item.href}>{item.title}</a></h3>
+        <p>{item.summary}</p>
+        <div class="pills">{item.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+        <div class="link-row">
+          <a href={item.href}>Read →</a>
+          {item.presentationHref && <a href={item.presentationHref}>Presentation →</a>}
+        </div>
+      </article>
+    ))}
+  </div>
+
+  <div class="empty-state archive-empty" id="archive-empty" hidden>No content matches the selected filters.</div>
+
+  <script>
+    const kindControl = document.querySelector<HTMLSelectElement>('#archive-kind')
+    const cadenceControl = document.querySelector<HTMLSelectElement>('#archive-cadence')
+    const topicControl = document.querySelector<HTMLSelectElement>('#archive-topic')
+    const cards = [...document.querySelectorAll<HTMLElement>('[data-archive-item]')]
+    const emptyState = document.querySelector<HTMLElement>('#archive-empty')
+
+    const applyFilters = () => {
+      const kind = kindControl?.value ?? 'all'
+      const cadence = cadenceControl?.value ?? 'all'
+      const topic = topicControl?.value ?? 'all'
+      let visible = 0
+
+      for (const card of cards) {
+        const kindMatches = kind === 'all' || card.dataset.kind === kind
+        const cadenceMatches = cadence === 'all' || card.dataset.cadence === cadence
+        const cardTopics = (card.dataset.topics ?? '').split(' ').filter(Boolean)
+        const topicMatches = topic === 'all' || cardTopics.includes(topic)
+        card.hidden = !(kindMatches && cadenceMatches && topicMatches)
+        if (!card.hidden) visible += 1
+      }
+
+      if (emptyState) emptyState.hidden = visible !== 0
+    }
+
+    for (const control of [kindControl, cadenceControl, topicControl]) {
+      control?.addEventListener('change', applyFilters)
+    }
+  </script>
+</BaseLayout>

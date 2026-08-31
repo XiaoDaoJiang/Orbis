@@ -1,0 +1,36 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import {
+  filterBriefsByCadence,
+  sortDiscoveryNewestFirst,
+  toBriefDiscoveryItem,
+} from '../../../lib/content-discovery'
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const entries = sortDiscoveryNewestFirst(
+  filterBriefsByCadence(await getCollection('briefs'), 'weekly').map((entry) => toBriefDiscoveryItem(entry, base)),
+)
+---
+<BaseLayout title="Weekly Briefs" description="Published Orbis Weekly Briefs">
+  <div class="eyebrow">Brief archive · Weekly</div>
+  <h1>Weekly Briefs</h1>
+  <p class="lead">Weekly 将用于跨日趋势、周期判断与下一周期 Watch；路由先保持稳定，内容按 Schema 成熟度逐步进入。</p>
+  {entries.length > 0 ? (
+    <div class="grid">
+      {entries.map((entry) => (
+        <a class="card" href={entry.href}>
+          <small>Weekly · {entry.publishedAt}</small>
+          <h3>{entry.title}</h3>
+          <p>{entry.summary}</p>
+          <div class="pills">{entry.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+        </a>
+      ))}
+    </div>
+  ) : (
+    <div class="empty-state">
+      <strong>No weekly briefs have been published yet.</strong>
+      <p>Weekly Intelligence 将在专属 Schema 与 `weekly-v1` 就绪后开始发布。</p>
+    </div>
+  )}
+</BaseLayout>

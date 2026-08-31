@@ -1,0 +1,29 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import {
+  filterBriefsByCadence,
+  sortDiscoveryNewestFirst,
+  toBriefDiscoveryItem,
+} from '../../../lib/content-discovery'
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const entries = sortDiscoveryNewestFirst(
+  filterBriefsByCadence(await getCollection('briefs'), 'daily').map((entry) => toBriefDiscoveryItem(entry, base)),
+)
+---
+<BaseLayout title="Daily Briefs" description="Published Orbis Daily Briefs">
+  <div class="eyebrow">Brief archive · Daily</div>
+  <h1>Daily Briefs</h1>
+  <p class="lead">按时间浏览已发布的 Daily Brief，阅读结构化内容或进入对应演示。</p>
+  <div class="grid">
+    {entries.map((entry) => (
+      <a class="card" href={entry.href}>
+        <small>Daily · {entry.publishedAt}</small>
+        <h3>{entry.title}</h3>
+        <p>{entry.summary}</p>
+        <div class="pills">{entry.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+      </a>
+    ))}
+  </div>
+</BaseLayout>
