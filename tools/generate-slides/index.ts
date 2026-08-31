@@ -1,9 +1,10 @@
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
-import { briefSchema, dailyBriefSchema } from '@orbis/content-schema'
-import { renderDailyV1 } from '../../apps/slides/templates/daily-v1.ts'
+import { briefSchema } from '@orbis/content-schema'
+import { renderPresentation } from '../../apps/slides/templates/registry.ts'
 import { listFiles, readYaml } from '../shared/content.ts'
 import { joinBasePath, loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
+import { toBriefPresentationDescriptor } from './brief-source.ts'
 
 const root = resolve(import.meta.dirname, '../..')
 const config = await loadSiteConfig()
@@ -20,28 +21,20 @@ for (const file of files) {
   if (!brief.presentation.enabled || brief.status !== 'published') continue
 
   const slug = basename(file).replace(/\.(yaml|yml)$/, '')
-  const directory = resolve(outputRoot, slug)
+  const readingUrl = `${joinBasePath(siteBase, 'briefs', slug)}/`
+  const descriptor = toBriefPresentationDescriptor(brief, { slug, readingUrl })
+  const directory = resolve(outputRoot, descriptor.slug)
   await mkdir(directory, { recursive: true })
   await cp(resolve(root, 'apps/slides/style.css'), resolve(directory, 'style.css'))
   await cp(resolve(root, 'apps/slides/layouts'), resolve(directory, 'layouts'), { recursive: true })
-
-  switch (brief.presentation.template) {
-    case 'daily-v1': {
-      const daily = dailyBriefSchema.parse(brief)
-      const readingHref = `${joinBasePath(siteBase, 'briefs', slug)}/`
-      await writeFile(
-        resolve(directory, 'slides.md'),
-        renderDailyV1(daily, { siteBase, readingHref }),
-        'utf8',
-      )
-      break
-    }
-    default:
-      throw new Error(`Unsupported presentation template: ${brief.presentation.template}`)
-  }
+  await writeFile(
+    resolve(directory, 'slides.md'),
+    renderPresentation(descriptor, { siteBase }),
+    'utf8',
+  )
 
   generated += 1
-  console.log(`Generated Slidev deck: ${slug} (${brief.presentation.template})`)
+  console.log(`Generated Slidev deck: ${descriptor.slug} (${descriptor.template})`)
 }
 
 if (generated === 0) throw new Error('No published Slidev deck generated')
