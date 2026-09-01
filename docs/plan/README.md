@@ -4,7 +4,7 @@
 > 基线：`main@241996d3b1ad3c38fcaaec7622e8f41c6641ab65`
 > 基线日期：2026-09-01
 > 阶段：Product Capability Phase
-> 当前目标：Plan 40 · Source & Author Registry
+> 当前目标：Plan 40A · Source & Author Registry + Referential Integrity
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -22,7 +22,9 @@
 - Plan 30 · Weekly Brief：**Done**
   - 30A Weekly Schema + Reading：PR #13
   - 30B `weekly-v1` + Daily / Weekly / Talk mixed integration：PR #14
-- Plan 40 · Source & Author Registry：**Planned / Next**
+- Plan 40 · Source & Author Registry：**In Progress**
+  - 40A Registry + Referential Integrity：**Current**，PR #15
+  - 40B Registry-backed Content UI：**Next**
 - Plan 50 · SEO & Sharing：**Planned**
 - Plan 60 · Knowledge Lifecycle：**Planned**
 - Plan 70 · Scheduled Content Automation：**Planned**
@@ -50,6 +52,8 @@ Standalone Presentation
 ```
 
 Presentation Platform 可以在一次真实 Build 中同时生成 Daily + Weekly + Talk；生成源和 `dist/**` 继续只作为构建产物，不进入 Git。
+
+Plan 40 正在补齐下一层基础：以文件名为 canonical ID 的 Source / Author Registry，以及 Topic / Source / Author 的构建期引用完整性。
 
 ## 总体目标
 
@@ -87,7 +91,9 @@ PR Preview / Review / GitHub Pages
         ↓
 30 Weekly Brief                Done
         ↓
-40 Source & Author Registry    Next
+40 Source & Author Registry    In Progress
+  ├── 40A Identity / Integrity Current
+  └── 40B Existing UI consume  Next
         ↓
 50 SEO & Sharing
         ↓

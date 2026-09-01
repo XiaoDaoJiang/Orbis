@@ -1,89 +1,136 @@
 # 40 · Source & Author Registry
 
-> 状态：Planned
+> 状态：In Progress
 > Roadmap Milestone：D — Knowledge Identity
+> 当前基线：`main@241996d3b1ad3c38fcaaec7622e8f41c6641ab65`
+> 当前子阶段：40A — Registry + Referential Integrity
+> 当前实现：PR #15
 > 建议优先级：P1
-> 依赖：Plan 10；可与 Plan 30 并行
+> 依赖：Plan 10、20、30 已完成
 
 ## 1. 目标
 
 把当前内容中的自由字符串 Author / Source 引用升级为稳定实体和可验证关系，使 Orbis 的知识关系不再依赖拼写一致性。
 
-核心目标不是“多建两个目录”，而是建立最小 Referential Integrity。
-
-## 2. 当前问题
-
-当前 Reference 已经包含：
-
-- title；
-- url；
-- source（可选字符串）；
-- supports；
-- accessedAt。
-
-Essay 也有 authors 字符串数组。
-
-问题是：
-
-- `source: github`、`source: GitHub`、`source: github-docs` 可以自由分叉；
-- Author 没有稳定 profile；
-- Topic、Source、Author 的关系无法在 CI 中整体校验；
-- 聚合页无法可靠展示来源元数据和作者信息。
-
-## 3. 新增内容实体
-
-### 3.1 Sources
-
-新增：
+核心目标不是“多建两个目录”，而是建立最小、可持续的 Referential Integrity：
 
 ```text
-content/sources/**
+content/**
+    ↓
+per-file Schema
+    ↓
+Topic / Source / Author relation validation
+    ↓
+Astro / Slidev / RSS / Archive
 ```
 
-建议第一版 Schema：
+## 2. 已确认的产品决策
+
+1. Source / Author canonical ID 来自扁平文件名与 Astro `entry.id`；YAML 不重复声明 `id`。
+2. ID 统一匹配 `^[a-z0-9]+(?:-[a-z0-9]+)*$`。
+3. `Reference.source` 可省略；一旦声明，必须解析到 Source Registry。
+4. Essay `authors[]` 全量强校验，必须解析到 Author Registry。
+5. Brief / Presentation / Essay / Knowledge 的 `topics[]`、Weekly `trendMovements[].topic` 与 Topic `related[]` 必须解析到 Topic Registry。
+6. archived Source / Author 继续允许历史内容引用，不因状态变化破坏旧内容。
+7. Scheduled Content Agent 可以使用已注册 active ID，但不能创建或修改 Source / Author Registry。
+8. 第一版只 enrich 现有内容页，不新增 `/sources/`、`/authors/` 目录或详情路由。
+
+## 3. Canonical Identity
+
+Registry 使用扁平目录：
+
+```text
+content/sources/astro.yaml          -> source ID: astro
+content/sources/github.yaml         -> source ID: github
+content/sources/slidev.yaml         -> source ID: slidev
+content/authors/xiaodaojiang.yaml   -> author ID: xiaodaojiang
+```
+
+不允许：
+
+```text
+content/sources/github/docs.yaml
+content/authors/team/xiaodaojiang.yaml
+```
+
+也不允许同一 ID 同时存在 `.yaml` 与 `.yml` 变体。
+
+## 4. Source Registry
+
+目录：
+
+```text
+content/sources/*.{yaml,yml}
+```
+
+第一版 Schema：
 
 ```yaml
-id: github
 name: GitHub
 homepage: https://github.com/
 type: official
 trustTier: primary
 status: active
+
+# optional
+feed: https://example.com/rss.xml
+aliases:
+  - github-docs
+description: GitHub official product, repository and documentation source.
 ```
 
-可选字段：
+### 4.1 字段合同
 
-- feed；
-- aliases；
-- description。
+Required：
 
-`type` 与 `trustTier` 必须使用枚举，不使用自由文本。
+- `name`；
+- `homepage`；
+- `type`：`official | publisher | individual | community | aggregator`；
+- `trustTier`：`primary | secondary | discovery`；
+- `status`：`active | archived`。
 
-### 3.2 Authors
+Optional：
 
-新增：
+- `feed`；
+- `aliases`：唯一、同样使用 lowercase kebab-case；
+- `description`。
+
+`type` 描述来源形态，`trustTier` 只是编辑治理元数据，不代表机器自动证明可信。
+
+## 5. Author Registry
+
+目录：
 
 ```text
-content/authors/**
+content/authors/*.{yaml,yml}
 ```
 
-建议第一版字段：
+第一版 Schema：
 
 ```yaml
-id: xiaodaojiang
 name: XiaoDaoJiang
-url: https://github.com/XiaoDaoJiang
-bio: ...
 status: active
+
+# optional
+url: https://github.com/XiaoDaoJiang
+bio: Orbis author and maintainer.
 ```
 
-不需要第一版就建立复杂社交 profile。
+Required：
 
-## 4. 引用合同
+- `name`；
+- `status`：`active | archived`。
 
-Reference 保留具体 URL 和 title，因为引用的是具体材料，而不是只引用 Source Entity。
+Optional：
 
-建议：
+- `url`；
+- `bio`。
+
+Author 不强制拥有公开 URL；身份核心是 canonical ID + name。
+
+## 6. 引用合同
+
+Reference 保留具体 URL 与标题，因为引用的是某份材料，而不是只引用来源实体：
 
 ```yaml
 references:
@@ -93,73 +140,164 @@ references:
     supports: 支持 GitHub Actions Pages 构建模型
 ```
 
-其中 `source` 一旦存在，必须解析到 `content/sources/<id>`。
+`source` 只是 Registry ID，不嵌入整个 Source object。
 
-Essay `authors` 同理必须解析到 Author Registry。
+没有 `source` 的 Reference 仍然合法：
 
-## 5. Referential Integrity
+```yaml
+references:
+  - title: Independent primary material
+    url: https://example.com/material
+    supports: 支持当前判断
+```
 
-新增跨文件校验工具，至少验证：
+## 7. Referential Integrity
 
-- Topic ID 存在；
-- Reference Source ID 存在；
-- Author ID 存在；
-- related Topic 存在；
-- archived Source/Author 的使用策略明确；
-- Registry ID 不重复。
+### 7.1 校验范围
 
-建议把它作为 `pnpm content:validate` 的一部分，而不是另建人工流程。
+验证全部结构化内容，不只验证 `published`：
 
-## 6. 产品展示
+- Brief `topics[]`；
+- Presentation `topics[]`；
+- Essay `topics[]`；
+- Knowledge `topics[]`；
+- Weekly `trendMovements[].topic`；
+- Topic `related[]`；
+- Essay `authors[]`；
+- 顶层 References；
+- `sections[].references`；
+- Daily / Ad-hoc `archivePicks`。
 
-第一阶段至少：
+### 7.2 失败语义
 
-- Essay 展示 Author 名称和链接；
-- Reference 可展示 Source 名称；
-- Topic/Archive 仍按当前内容聚合。
+构建期错误必须包含内容路径、字段路径、关系类型和缺失 ID，例如：
 
-可选但非本 Plan 必需：
+```text
+Invalid relation: content/essays/example.md: authors[0] -> missing author "unknown-author"
+Invalid relation: content/briefs/example.yaml: sections[1].references[0].source -> missing source "unknown-source"
+Invalid relation: content/knowledge/example.md: topics[0] -> missing topic "unknown-topic"
+Invalid relation: content/topics/example.yaml: related[0] -> topic "example" cannot reference itself
+Duplicate registry ID: source "github"
+```
+
+独立错误按稳定顺序聚合后一次输出。
+
+### 7.3 archived 策略
+
+`status: archived` 表示不建议新内容继续采用，但 canonical identity 仍存在：
+
+- 历史 Source 引用继续通过；
+- 历史 Essay Author 继续通过；
+- 不要求批量重写旧内容；
+- 第一版不实现基于 Git diff 的“新增 archived relation” warning。
+
+## 8. Astro 与产品展示
+
+Source / Author 注册为 Astro Content Collections，供构建期消费。
+
+第一版不创建：
 
 ```text
 /sources/
 /sources/:id/
+/authors/
 /authors/:id/
 ```
 
-如果没有真实浏览需求，先不创建 Source Directory UI。
+40B 只在现有页面展示：
 
-## 7. 实现任务
+- Essay Author display name、可选 profile URL、状态；
+- Reference Source name / type / trustTier / status；
+- 无 source 的 Reference 保持原显示。
 
-1. 新增 `sourceSchema`、`authorSchema`；
-2. 新增 `content/sources/**`、`content/authors/**`；
-3. 注册对应 Content Collections 或共享 Loader；
-4. 迁移现有 Reference source 字符串；
-5. 迁移现有 Essay authors；
-6. 新增 Referential Integrity validator；
-7. 增加 missing source / author / topic 负向测试；
-8. 在 Essay / Reference UI 使用 Registry metadata；
-9. 更新 Agent Prompt：不得创造未注册 Source/Author ID；新 Registry 变更需要人工评审。
+## 9. Agent Governance
 
-## 8. 非目标
+`content-agent` Path Guard allowlist 不加入：
+
+```text
+content/sources/
+content/authors/
+```
+
+Agent Contract 明确：
+
+- 可以使用已经注册并 active 的 ID；
+- 不得自行创建、改名、archive 或修改 Registry；
+- 新 Registry identity 必须进入人工评审；
+- generated Slidev / Web artifact 继续禁止提交。
+
+## 10. 实现拆分
+
+### 40A — Registry + Referential Integrity · Current
+
+PR #15：`feat: add source and author registry integrity`
+
+范围：
+
+- [x] `sourceSchema` / `authorSchema`；
+- [x] canonical filename ID contract；
+- [x] 初始 Source：astro / github / slidev；
+- [x] 初始 Author：xiaodaojiang；
+- [x] Astro Source / Author collections；
+- [x] Topic / Source / Author 跨文件校验；
+- [x] invalid / duplicate / nested / missing relation 负向合同；
+- [x] archived 与 unsourced Reference 正向合同；
+- [x] Agent governance；
+- [ ] PR #15 合并 main。
+
+40A 不修改 Reading UI，不新增 Source/Author 路由。
+
+### 40B — Registry-backed Content UI · Next
+
+建议 PR：
+
+```text
+feat: render registry-backed author and source metadata
+```
+
+范围：
+
+- [ ] Essay Author byline；
+- [ ] 共享 Reference rendering component；
+- [ ] Daily / Weekly / Ad-hoc Reading Source metadata；
+- [ ] Essay / Knowledge Reference Source metadata；
+- [ ] archived 状态显示；
+- [ ] unsourced Reference 兼容；
+- [ ] artifact / Preview 验证；
+- [ ] 不新增 Registry 路由。
+
+40B 必须建立在已合并的 40A identity contract 上，不重新定义 canonical IDs 或校验规则。
+
+## 11. 非目标
 
 - 自动信任评分模型；
 - 来源真实性自动判定；
 - Citation graph database；
-- ORCID/Google Scholar 集成；
-- 用户账号体系。
+- Source/Author 反向内容聚合；
+- Source/Author Directory UI；
+- ORCID / Google Scholar 集成；
+- 用户账号体系；
+- aliases 自动关系解析；
+- Git-history-aware archived warnings。
 
-`trustTier` 只是编辑治理元数据，不代表机器自动证明来源可信。
+## 12. Plan 40 验收标准
 
-## 9. 验收标准
+### 40A
 
-- 所有已发布 Essay Author 都能解析到 Registry；
-- 所有声明 `source` 的 Reference 都能解析到 Registry；
-- 不存在悬空 Topic/Source/Author relation；
-- 缺失 Registry ID 会使内容校验失败；
-- Agent 默认不能修改 Sources/Authors；
-- 现有 RSS、Brief、Slide 构建无回归。
+- Source / Author 有严格 Schema 和唯一 canonical ID；
+- 所有 Essay Author 均可解析；
+- 所有声明 `source` 的 Reference 均可解析；
+- 所有 Topic relation 均可解析；
+- invalid / duplicate / nested Registry identity 会使 Build 失败；
+- archived identity 保持历史可解析；
+- Agent 默认不能修改 Source / Author Registry；
+- Daily / Weekly / Talk、RSS、Archive 与 Preview 无回归。
 
-## 10. 建议 PR 拆分
+### 40B / Milestone D 最终退出条件
 
-1. `feat: add source and author registries`
-2. `feat: enforce content referential integrity`
+- Essay 使用 Registry Author metadata；
+- Reading References 使用 Registry Source metadata；
+- unsourced 与 archived 显示语义明确；
+- 不存在悬空 Topic / Source / Author relation；
+- 不新增无真实需求的 Source / Author 目录系统；
+- Plan 40 所有 PR 合并 main 并完成公网验证。
