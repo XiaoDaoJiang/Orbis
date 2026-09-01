@@ -10,7 +10,7 @@
 
 Plan 30B completes Weekly as a first-class Orbis Presentation output without changing the Presentation Platform architecture established by Plan 20.
 
-The completed repository must support three real Presentation sources/templates in one normal build:
+A normal real-content build must support:
 
 ```text
 Daily Brief 2026-08-28                 -> daily-v1  -> /slides/2026-08-28/
@@ -18,62 +18,47 @@ Weekly Brief 2026-09-01-weekly          -> weekly-v1 -> /slides/2026-09-01-weekl
 Standalone Orbis Presentation Platform  -> talk-v1   -> /slides/orbis-presentation-platform/
 ```
 
-The Weekly Presentation must express cross-time judgment rather than reuse Daily slide semantics.
+The Weekly deck expresses cross-time judgment rather than reusing Daily slide semantics.
 
 Plan 30B is complete when:
 
-- `weekly-v1` is implemented as a dedicated renderer;
+- `weekly-v1` is a dedicated renderer;
 - Template Registry owns `weekly-v1 -> WeeklyBrief` validation and dispatch;
 - the real Weekly switches to `presentation.enabled: true`;
-- Daily + Weekly + Talk build through the existing descriptor/generator/build pipeline;
-- Weekly enters Slides and Homepage Latest Presentation naturally through existing discovery;
-- Weekly deck links back to its Reading page and Reading links to the deck;
+- Daily + Weekly + Talk use the existing descriptor/generator/build pipeline;
+- Weekly enters Slides and Homepage Latest Presentation through existing discovery;
+- Reading and Slides link to each other;
 - Daily `/latest/`, date aliases and generated structured `archive.json` remain Daily-only;
-- all new template and integration behavior is covered by RED -> GREEN cloud evidence;
-- no generated Slidev source or `dist/**` output is committed.
+- RED -> GREEN cloud evidence covers template and integration behavior;
+- generated Slidev sources and `dist/**` are never committed.
 
 ## 2. Architecture Decision
 
 Use a dedicated `weekly-v1` renderer registered through the existing Template Registry.
 
-Do not merge Daily and Weekly into a cadence-switching generic Brief renderer, and do not adapt Weekly into standalone `PresentationContent` / `talk-v1`.
+Do not:
+
+- merge Daily and Weekly into a cadence-switching generic Brief renderer;
+- adapt Weekly into standalone `PresentationContent` / `talk-v1`;
+- add another generator or build path.
 
 Target flow:
 
 ```text
 WeeklyBrief
-    |
-    v
-toBriefPresentationDescriptor()
-    |
-    v
-PresentationDescriptor
-  id / slug
-  title
-  publishedAt
-  topics
-  template = weekly-v1
-  sourceKind = brief
-  readingUrl = /briefs/<slug>/
-  payload = WeeklyBrief
-    |
-    v
-Template Registry
-    |
-    +-- weeklyBriefSchema.parse(payload)
-    +-- require readingUrl
-    |
-    v
-renderWeeklyV1()
-    |
-    v
-apps/slides/generated/<slug>/slides.md
-    |
-    v
-unchanged tools/build-slides
-    |
-    v
-/slides/<slug>/
+    -> toBriefPresentationDescriptor()
+    -> PresentationDescriptor
+         template = weekly-v1
+         sourceKind = brief
+         readingUrl = /briefs/<slug>/
+         payload = WeeklyBrief
+    -> Template Registry
+         weeklyBriefSchema.parse(payload)
+         require readingUrl
+    -> renderWeeklyV1()
+    -> apps/slides/generated/<slug>/slides.md
+    -> unchanged tools/build-slides
+    -> /slides/<slug>/
 ```
 
 Existing platform boundaries remain authoritative:
@@ -83,11 +68,11 @@ Existing platform boundaries remain authoritative:
 - `tools/generate-slides/index.ts` remains renderer-neutral;
 - `tools/build-slides/**` remains template-neutral;
 - `apps/web/src/lib/presentation-discovery.ts` remains generic over presentation-enabled Briefs;
-- Weekly-specific payload validation is owned by the Registry before renderer invocation.
+- Weekly payload validation belongs to the Registry before renderer invocation.
 
 ## 3. No Schema Redesign
 
-Plan 30A already established the Weekly content contract:
+Plan 30A already established:
 
 - period exactly seven calendar dates inclusive;
 - `publishedAt === period.to`;
@@ -98,40 +83,40 @@ Plan 30A already established the Weekly content contract:
 - `presentation.template === weekly-v1`;
 - Daily-only body fields rejected on Weekly.
 
-Plan 30B does not add new Weekly content fields and does not change those cardinalities.
+Plan 30B adds no Weekly content fields and changes none of these cardinalities.
 
-`packages/content-schema/**` should remain unchanged unless implementation reveals a genuine missing invariant required by the already-approved design. Any such discovery upgrades scope and requires explicit review before changing the schema.
+`packages/content-schema/**` is expected to remain unchanged. If implementation reveals a genuine missing invariant, that is a scope change and must be reviewed before modifying the schema.
 
 ## 4. Registry Contract
 
-The Template Registry will expose three explicit renderer contracts:
+The Template Registry exposes three explicit contracts:
 
 ```text
 daily-v1
-  -> dailyBriefSchema.parse(descriptor.payload)
-  -> descriptor.readingUrl required
-  -> renderDailyV1(...)
+  -> dailyBriefSchema.parse(payload)
+  -> readingUrl required
+  -> renderDailyV1()
 
 weekly-v1
-  -> weeklyBriefSchema.parse(descriptor.payload)
-  -> descriptor.readingUrl required
-  -> renderWeeklyV1(...)
+  -> weeklyBriefSchema.parse(payload)
+  -> readingUrl required
+  -> renderWeeklyV1()
 
 talk-v1
-  -> presentationContentSchema.parse(descriptor.payload)
-  -> renderTalkV1(...)
+  -> presentationContentSchema.parse(payload)
+  -> renderTalkV1()
 ```
 
-The Registry must reject:
+Registry rejection cases:
 
-- `weekly-v1` with Daily payload;
-- `weekly-v1` with standalone Talk payload;
+- `weekly-v1` + Daily payload;
+- `weekly-v1` + standalone Talk payload;
 - `weekly-v1` without `readingUrl`;
 - unsupported template names through the existing unsupported-template error.
 
-The renderer itself receives a validated `WeeklyBrief`; it should not inspect or guess cadence.
+The renderer receives a validated `WeeklyBrief`; it does not guess cadence.
 
-## 5. Weekly v1 Slide Count Contract
+## 5. Weekly v1 Slide Count
 
 Use a fixed semantic skeleton with one slide per structured Weekly section:
 
@@ -139,18 +124,18 @@ Use a fixed semantic skeleton with one slide per structured Weekly section:
 1            Cover
 2            Period + Weekly Thesis
 3            Trend Movements
-4..N         one slide per Weekly section
+4..N         Weekly Section x sections.length
 N + 1        Next Period Watch
 N + 2        References
 ```
 
-With `sections.length = S`:
+For `sections.length = S`:
 
 ```text
 slides = S + 5
 ```
 
-Because Weekly Schema already constrains `sections` to 2..6:
+The existing Weekly Schema therefore gives:
 
 ```text
 2 sections -> 7 slides
@@ -158,53 +143,41 @@ Because Weekly Schema already constrains `sections` to 2..6:
 6 sections -> 11 slides
 ```
 
-This is a hard template contract.
-
-Weekly is deliberately not fixed at 11 slides. Daily remains exactly 11 slides.
+This is a hard template contract. Weekly is not fixed at 11 slides; Daily remains exactly 11.
 
 ## 6. Slide Semantics
 
 ### 6.1 Cover
 
-Use `orbis-cover` and the existing Orbis Slidev frontmatter conventions.
-
-Expected information hierarchy:
+Use `orbis-cover` and existing Orbis frontmatter conventions.
 
 ```text
 ORBIS · WEEKLY · <publishedAt>
-
 <title>
-
 <summary>
-
 <period.from> -> <period.to>
-
 Reading ->
 ```
 
-The Cover must communicate both publication date and period. The deck's first slide must link to the real Brief Reading URL.
+The first slide must link to the real Brief Reading URL.
 
 ### 6.2 Period + Weekly Thesis
 
 Use `orbis-default`.
 
-Expected semantics:
-
 ```text
 WEEKLY THESIS
-
 <period.from> -> <period.to>
-
 <weeklyThesis>
 ```
 
-This is the executive conclusion slide. Do not duplicate sections, references or watch items onto this slide.
+This is the executive conclusion slide. It does not duplicate sections, references or watch items.
 
 ### 6.3 Trend Movements
 
-Use one slide for all 2..8 trend movements.
+Use one slide for all 2..8 movements.
 
-Direction display labels:
+Display labels:
 
 ```text
 rising        -> RISING
@@ -213,24 +186,16 @@ cooling       -> COOLING
 new-variable  -> NEW VARIABLE
 ```
 
-Each trend card contains:
+Each trend card contains only direction, topic and summary. Do not invent percentages, scores, charts or forecast quantities.
 
-- direction label;
-- topic;
-- summary.
+A small Weekly-specific grid/card utility may be added to `apps/slides/style.css` if reusing `signal-grid` would imply Daily semantics.
 
-Do not introduce percentages, scores, charts, arrows implying quantitative forecasts, or any value not represented by structured Weekly content.
+### 6.4 Weekly Sections
 
-A small Weekly-specific grid/card utility may be added to `apps/slides/style.css` if existing `signal-grid` semantics are visually misleading.
+Render each Weekly `section` on a dedicated slide and reuse the stable Brief section language from `daily-v1`:
 
-### 6.4 Weekly Section Slides
-
-Render each Weekly `section` on a dedicated slide.
-
-Reuse the stable Brief section language from `daily-v1`:
-
-- `section.layout` as eyebrow;
-- section title;
+- layout as eyebrow;
+- title;
 - conclusion;
 - facts;
 - optional limitations;
@@ -240,30 +205,25 @@ Do not merge multiple structured sections onto one slide.
 
 ### 6.5 Next Period Watch
 
-Render all 1..5 watch items on one slide.
-
-Expected semantics:
+Render all 1..5 watch items on one slide:
 
 ```text
 NEXT PERIOD WATCH
-
 <title>
 <reason>
 ```
 
-Existing `action-grid` / `action-card` may be reused where it fits visually, but the copy and template markers must remain Watch semantics.
-
-Do not label this slide `FROM SIGNALS TO ACTION`.
+Existing `action-grid` / `action-card` may be reused visually, but the semantic marker remains Watch. It must not be labeled `FROM SIGNALS TO ACTION`.
 
 ### 6.6 References
 
-Use one final references slide with all Weekly top-level references.
+Use one final references slide with all Weekly top-level references and the real Reading URL.
 
-It must contain the real Reading URL again so both the first and last slide can return to the structured Reading page.
+Both first and last slide therefore provide a path back to Reading.
 
-## 7. Weekly Must Not Inherit Daily Slide Semantics
+## 7. Weekly vs Daily Semantics
 
-A Weekly deck must contain Weekly markers:
+Weekly must contain:
 
 ```text
 ORBIS · WEEKLY
@@ -273,7 +233,7 @@ NEXT PERIOD WATCH
 REFERENCES
 ```
 
-It must not contain Daily-only template markers:
+Weekly must not contain Daily-only template markers:
 
 ```text
 FOUR SIGNALS
@@ -282,55 +242,49 @@ IMPACT × ADOPTION HORIZON
 FROM SIGNALS TO ACTION
 ```
 
-This separation is tested explicitly.
+Tests enforce this separation explicitly.
 
 ## 8. HTML / Markdown Safety
 
 `weekly-v1` follows the escaping discipline already used by `talk-v1`.
 
-Escape all structured user/content strings before interpolation into generated HTML/Markdown where raw content could become markup:
+Escape structured strings before interpolation into generated HTML/Markdown, including:
 
-- title;
-- summary;
+- title and summary;
 - weekly thesis;
-- period values when rendered into HTML-bearing strings;
-- trend topic;
-- trend direction display value;
-- trend summary;
-- section title;
-- section conclusion;
-- section facts;
-- section limitations;
+- period values when placed in HTML-bearing strings;
+- trend topic/direction/summary;
+- section title/conclusion/facts/limitations;
 - section reference title/url/supports;
 - next-period watch title/reason;
 - top-level reference title/url/supports.
 
-Frontmatter string values must be serialized safely. The title must not allow raw HTML to escape through frontmatter.
+Frontmatter strings must be serialized safely. The title must not allow raw HTML to escape through frontmatter.
 
-Renderer tests include hostile-but-schema-valid strings such as:
+Renderer tests include schema-valid hostile strings such as:
 
 ```html
 <script>alert(1)</script>
 <iframe src="https://example.com"></iframe>
 ```
 
-Generated Markdown must not contain executable/raw `<script` or `<iframe` fragments originating from those strings. Escaped forms such as `&lt;script&gt;` must be present instead.
+Generated Markdown must not contain raw executable `<script` or `<iframe` fragments originating from content. Escaped forms such as `&lt;script&gt;` must be present instead.
 
-No `v-html`, raw arbitrary HTML pass-through, external script injection or remote font dependency is introduced.
+Do not introduce `v-html`, raw arbitrary HTML pass-through, external scripts or remote fonts.
 
 ## 9. Visual System
 
-Reuse the existing Orbis Slidev system:
+Reuse:
 
 - `orbis-cover`;
 - `orbis-default`;
 - `.eyebrow`;
 - `.topic-facts`;
-- `.action-grid` / `.action-card` where semantically appropriate;
+- `.action-grid` / `.action-card` where appropriate;
 - `.reference-list`;
-- existing design tokens.
+- existing Orbis design tokens.
 
-Allowed small additions to `apps/slides/style.css`:
+Allowed small Weekly utilities may include equivalents of:
 
 ```text
 .weekly-period
@@ -339,20 +293,17 @@ Allowed small additions to `apps/slides/style.css`:
 .trend-direction
 ```
 
-Actual class names may differ, but additions must be narrowly Weekly-oriented utilities.
-
-Do not add:
-
-- a Weekly theme;
-- Weekly-only layout components;
-- another design-token package;
-- JavaScript charting;
-- external font/image dependencies;
-- a second Slidev build process.
+Do not add a Weekly theme, Weekly-only layout components, another token system, JavaScript charting, external image/font dependencies or a second Slidev build process.
 
 ## 10. Real Weekly Enablement
 
-After the renderer/Registry contract is GREEN, update the real source:
+The real source is:
+
+```text
+content/briefs/2026-09-01-weekly.yaml
+```
+
+Final state:
 
 ```yaml
 presentation:
@@ -360,19 +311,13 @@ presentation:
   template: weekly-v1
 ```
 
-for:
+Do not enable it before the template/Registry RED -> GREEN checkpoint is complete.
 
-```text
-content/briefs/2026-09-01-weekly.yaml
-```
+The Reading page already exposes a Presentation link whenever `presentation.enabled` is true, so no Weekly-specific Reading implementation is expected.
 
-Do not enable the real Weekly before the first template/Registry RED -> GREEN checkpoint is established.
+## 11. Normal Real Presentation Set
 
-The Reading page already exposes a Presentation link whenever `presentation.enabled` is true, so no Weekly-specific Reading page implementation should be required.
-
-## 11. Normal Repository Presentation Set
-
-After real Weekly enablement and after all ephemeral fixtures are cleaned, one normal build must discover exactly the three current real Presentation sources:
+After enablement and ephemeral cleanup, one normal build must contain the current three real Presentation sources:
 
 ```text
 2026-08-28
@@ -390,18 +335,13 @@ orbis-presentation-platform
   template = talk-v1
 ```
 
-The generated-source and final artifact checks must prove all three exist independently.
+Generated source and final artifact checks prove all three exist independently.
 
 ## 12. Slides Discovery
 
-No product-code change is expected in `apps/web/src/lib/presentation-discovery.ts` because it already includes every public Brief where:
+No product-code change is expected in `apps/web/src/lib/presentation-discovery.ts`; it already includes public Briefs with presentation enabled.
 
-```text
-status === published
-presentation.enabled === true
-```
-
-After Weekly enablement, `/slides/` should naturally order current real Presentations by published date:
+Expected real `/slides/` order:
 
 ```text
 2026-09-01  Weekly
@@ -409,7 +349,7 @@ After Weekly enablement, `/slides/` should naturally order current real Presenta
 2026-08-28  Daily
 ```
 
-The Weekly Slides card must expose Brief-source semantics:
+Weekly card semantics:
 
 ```text
 sourceKind = brief
@@ -418,7 +358,7 @@ Open presentation ->
 Read brief ->
 ```
 
-No Weekly-specific discovery branch is added unless tests demonstrate a real gap.
+No Weekly-specific discovery branch is added unless executable tests expose a real gap.
 
 ## 13. Homepage Semantics
 
@@ -429,16 +369,11 @@ Homepage Latest Brief        = Weekly 2026-09-01
 Homepage Latest Presentation = Weekly 2026-09-01
 ```
 
-This is intentional because the same Weekly is both the newest public Brief and the newest presentation-enabled source.
+The Weekly Presentation card exposes both Slides and Reading links.
 
-The Homepage Weekly Presentation card must expose both:
+Standalone Talk remains a Presentation without a fake Reading link.
 
-- Slides link;
-- Reading link.
-
-Standalone Talk remains a Presentation but has no fake Reading link.
-
-## 14. Reading <-> Presentation Link Integrity
+## 14. Reading <-> Presentation Integrity
 
 For the real Weekly:
 
@@ -450,32 +385,30 @@ For the real Weekly:
   -> /briefs/2026-09-01-weekly/
 ```
 
-The generated `slides.md` must contain the correct Reading path using the current preview/production site base.
+Generated `slides.md` must contain the correct Reading path using the active preview/production site base.
 
-The built Slidev deck must reference its own independent public base path and must not leak another deck's base path.
+The built Weekly deck must use its own public base path and not leak another deck's base path.
 
-## 15. Archive / RSS / Topic Identity Is Unchanged
+## 15. Archive / RSS / Topic Identity
 
-Enabling Presentation does not change the Weekly's content identity.
+Enabling Presentation does not change Weekly's content identity.
 
 Weekly remains a Brief in:
 
-- `/archive/`;
-- `/rss.xml`;
+- Archive;
+- RSS;
 - Topic aggregation;
 - Related Content.
 
-RSS continues to publish the Weekly Reading URL, not the Slides URL.
+RSS continues to publish the Weekly Reading URL, not its Slides URL.
 
-Standalone Presentation remains outside generic Archive/RSS semantics according to Plan 20 scope.
+Standalone Presentation remains outside generic Archive/RSS semantics under Plan 20.
 
 No Archive, RSS or Topic product implementation change is expected.
 
 ## 16. Daily Stable Route Isolation
 
-30B must preserve the distinction between latest Brief, latest Presentation and latest Daily.
-
-With current real content:
+Current real-content semantics after 30B:
 
 ```text
 latest public Brief          = Weekly 2026-09-01
@@ -483,32 +416,32 @@ latest public Presentation   = Weekly 2026-09-01
 latest Daily                 = Daily 2026-08-28
 ```
 
-Daily-only generated routing contracts remain:
+Daily-only generated routes remain:
 
 ```text
 /latest/                     -> /2026/08/28/
 /YYYY/MM/DD/ aliases         -> Daily only
-generated dist/site/archive.json.latest -> 2026-08-28
-generated dist/site/archive.json.issues -> Daily entries only
+dist/site/archive.json.latest -> 2026-08-28
+dist/site/archive.json.issues -> Daily entries only
 ```
 
-`dist/site/archive.json` is a generated structured compatibility/output artifact owned by the current assembler; it is not a source-of-truth content file and must not be committed.
+`dist/site/archive.json` is a generated assembler output, not source-of-truth content, and is never committed.
 
-Weekly must never create a `/2026/09/01/` Daily alias solely because its `publishedAt` is 2026-09-01.
+Weekly must not create a `/2026/09/01/` Daily alias solely because its `publishedAt` is 2026-09-01.
 
 ## 17. Mixed Presentation Integration
 
-Extend the existing `tools/multi-presentation-check/index.ts` instead of creating another independent build harness.
+Extend the existing `tools/multi-presentation-check/index.ts`; do not create another build harness.
 
-The test must identify:
+The test identifies:
 
-- a real public Daily `daily-v1` seed;
-- the real public Weekly `weekly-v1` seed;
-- a real public standalone Talk `talk-v1` seed.
+- real public Daily `daily-v1`;
+- real public Weekly `weekly-v1`;
+- real public standalone Talk `talk-v1`.
 
 It continues creating the existing ephemeral future Daily and non-public fixtures.
 
-During the mixed ephemeral build, at minimum these four public decks must coexist:
+During the ephemeral mixed build these public decks coexist:
 
 ```text
 real Daily       -> daily-v1
@@ -517,58 +450,57 @@ real Talk        -> talk-v1
 future Daily     -> daily-v1
 ```
 
-The test verifies for Weekly:
+Weekly assertions include:
 
 - generated source exists;
 - built deck exists;
-- deck uses its own public base path;
-- generated Markdown contains Weekly markers;
-- generated Markdown contains the real Reading URL;
-- Slides discovery includes the Weekly as `sourceKind=brief`, `cadence=weekly`.
+- independent public base path;
+- Weekly markers in generated Markdown;
+- real Reading URL in generated Markdown;
+- Slides discovery exposes `sourceKind=brief` and `cadence=weekly`.
 
 Existing checks remain authoritative:
 
-- duplicate slug fails before generated output is written;
-- future Daily promotes `/latest/`, date route and structured Daily archive output;
-- non-public Brief/Presentation sources do not generate or leak into public discovery;
+- duplicate slug fails before generated output;
+- future Daily promotes `/latest/`, date route and generated Daily archive output;
+- non-public Brief/Presentation sources do not generate or leak;
 - fixtures and generated artifacts are cleaned after the integration run.
 
 ## 18. Plan 30A Artifact Contract Migration
 
-`tools/weekly-brief/weekly-artifact-check.ts` currently encodes the intentional 30A boundary that the real Weekly is presentation-disabled and absent from Slides.
+`tools/weekly-brief/weekly-artifact-check.ts` currently proves the intentional 30A boundary: Weekly is presentation-disabled and absent from Slides.
 
-30B must update this existing contract rather than leave contradictory tests behind.
+30B must migrate this contract. Final assertions prove:
 
-After migration, it must prove:
-
-- Weekly Reading still has its cadence-specific semantic sections;
-- Weekly Reading links to `/slides/2026-09-01-weekly/`;
+- Weekly Reading semantic sections remain intact;
+- Reading links to Weekly Slides;
 - Weekly generated source exists;
 - Weekly built deck exists;
-- Weekly deck links back to Reading;
-- `/slides/` contains the Weekly;
+- deck links back to Reading;
+- `/slides/` contains Weekly;
 - Homepage Latest Brief remains Weekly;
 - Homepage Latest Presentation becomes Weekly;
 - Archive/RSS/Topics continue including Weekly as Brief content;
-- Daily `/latest/`, date aliases and generated structured archive output remain Daily-only;
+- Daily `/latest/`, date aliases and generated Daily archive output remain Daily-only;
 - Weekly still has no Daily previous/next adjacency.
 
-The old assertions that Weekly must be absent from Slides/generated source are removed because they represent the completed 30A boundary, not the 30B product contract.
+The old “Weekly must be absent from Slides/generated source” assertions are removed because they encode the completed 30A boundary, not the 30B product contract.
 
 ## 19. TDD Sequence
 
 ### 19.1 RED 1 — weekly-v1 capability missing
 
-Before changing the real Weekly `presentation.enabled`, add template/Registry tests that require:
+Before changing real Weekly enablement, add template/Registry tests requiring:
 
-- a `renderWeeklyV1` implementation;
+- `renderWeeklyV1`;
 - Registry dispatch for `weekly-v1`;
 - real Weekly descriptor -> weekly-v1 rendering;
-- 7..11 dynamic slide-count contract;
+- 7..11 dynamic slide counts;
 - HTML escaping;
-- wrong-payload and missing-readingUrl rejection.
+- wrong-payload rejection;
+- missing-readingUrl rejection.
 
-The first Draft PR build must fail specifically because weekly-v1/Registry support is not implemented while existing Daily/Talk baseline tests remain GREEN.
+The first Draft PR build must fail specifically because weekly-v1/Registry support is absent while existing Daily/Talk baseline contracts remain GREEN.
 
 ### 19.2 GREEN 1 — renderer + Registry
 
@@ -578,27 +510,36 @@ Implement only:
 - Registry registration;
 - narrowly required Weekly style utilities.
 
-Do not enable the real Weekly yet.
+Keep the real Weekly `presentation.enabled: false` during this checkpoint.
 
-Run the full PR build and record the first GREEN template checkpoint.
+Run the full PR build and record a GREEN template checkpoint.
 
 ### 19.3 RED 2 — real Weekly Presentation integration
 
-Then switch the real Weekly to `presentation.enabled: true` and update artifact/integration expectations first.
+With the renderer already GREEN and the real Weekly still disabled, first migrate the 30A artifact/integration tests so they now expect:
 
-The next failing checkpoint should expose any missing Slides/Homepage/mixed-build integration contract rather than template capability.
+- a generated Weekly source/deck;
+- Weekly in Slides;
+- Homepage Latest Presentation = Weekly;
+- Reading <-> Slides links.
 
-If existing product discovery already behaves correctly, no product code is added merely to create a GREEN diff.
+Run the PR build and record the expected RED caused by the real Weekly still being presentation-disabled.
+
+Only after that RED is observed, change the real Weekly to `presentation.enabled: true`.
+
+This preserves test-first ordering for the production enablement switch.
 
 ### 19.4 GREEN 2 — integration
 
-Make only the minimum changes required by observed failures.
+After enabling the real Weekly, run the same integration contracts.
 
-Final build must prove normal real-content and ephemeral mixed-content behavior.
+If existing product discovery already behaves correctly, do not modify product code merely to create a larger diff. Make only changes required by observed failures.
 
-## 20. Template Tests
+The final build proves both normal real-content and ephemeral mixed-content behavior.
 
-Add focused Weekly renderer/Registry coverage, likely under:
+## 20. Template Test Contract
+
+Add focused Weekly renderer/Registry coverage, likely:
 
 ```text
 tools/generate-slides/weekly-v1.test.ts
@@ -606,63 +547,32 @@ tools/generate-slides/weekly-v1.test.ts
 
 Required cases:
 
-### Valid real Weekly
-
-Current real Weekly has 3 sections:
-
-```text
-expected slides = 3 + 5 = 8
-```
-
-Verify Weekly markers, Reading URL, references and no Daily-only markers.
-
-### Minimum Weekly
-
-Clone/construct a valid Weekly with 2 sections:
-
-```text
-expected slides = 7
-```
-
-### Maximum Weekly
-
-Clone/construct a valid Weekly with 6 sections:
-
-```text
-expected slides = 11
-```
-
-### Escaping
-
-Use schema-valid hostile strings to prove raw script/iframe markup does not survive rendering.
-
-### Registry rejection
-
-Verify:
-
-- Weekly descriptor missing reading URL fails;
-- Daily payload with `template=weekly-v1` fails;
-- Talk payload with `template=weekly-v1` fails;
+- real Weekly: 3 sections -> 8 slides;
+- minimum Weekly: 2 sections -> 7 slides;
+- maximum Weekly: 6 sections -> 11 slides;
+- Weekly semantic markers present;
+- Daily-only markers absent;
+- real Reading URL present;
+- hostile HTML escaped;
+- Weekly missing reading URL fails;
+- Daily payload with `weekly-v1` fails;
+- Talk payload with `weekly-v1` fails;
 - existing unsupported-template behavior remains unchanged.
 
-### Daily regression
+Existing Daily exact-output / exactly-11-slide checks remain GREEN.
 
-Existing Daily renderer output equality and exactly-11-slide checks remain untouched and GREEN.
-
-### Talk regression
-
-Existing Talk `sections.length + 2` behavior remains GREEN.
+Existing Talk `sections.length + 2` checks remain GREEN.
 
 ## 21. Error Handling
 
-Fail early at the narrowest responsible boundary:
+Fail at the narrowest responsible boundary:
 
-- malformed Weekly content -> content schema/validation;
-- weekly-v1 with wrong payload -> Registry Weekly parse;
+- malformed Weekly content -> schema/content validation;
+- weekly-v1 wrong payload -> Registry Weekly parse;
 - Weekly missing Reading URL -> Registry explicit error;
 - duplicate public slug -> discovery before generated writes;
-- renderer output violation -> template unit test;
-- mixed public artifact violation -> integration/artifact checks.
+- renderer-output violation -> template unit test;
+- public artifact/discovery violation -> integration/artifact tests.
 
 Do not hide malformed content or downgrade failures to warnings.
 
@@ -671,50 +581,32 @@ Do not hide malformed content or downgrade failures to warnings.
 Expected production changes:
 
 ```text
-apps/slides/templates/weekly-v1.ts
-  NEW: dedicated Weekly renderer
-
-apps/slides/templates/registry.ts
-  MODIFY: register weekly-v1 and enforce Weekly payload/reading URL
-
-apps/slides/style.css
-  OPTIONAL MODIFY: only narrow trend/Weekly utilities
-
-content/briefs/2026-09-01-weekly.yaml
-  MODIFY: presentation.enabled false -> true
+apps/slides/templates/weekly-v1.ts             NEW
+apps/slides/templates/registry.ts              MODIFY
+apps/slides/style.css                          OPTIONAL narrow Weekly utilities
+content/briefs/2026-09-01-weekly.yaml          enabled false -> true
 ```
 
 Expected test/integration changes:
 
 ```text
-tools/generate-slides/weekly-v1.test.ts
-  NEW: Weekly renderer + Registry contract
-
-tools/generate-slides/presentation-platform.test.ts
-  MODIFY only if shared Registry assertions belong there
-
-tools/multi-presentation-check/index.ts
-  MODIFY: explicitly assert Daily + Weekly + Talk + future Daily mixed build
-
-tools/weekly-brief/weekly-artifact-check.ts
-  MODIFY: migrate 30A presentation-absent assertions to 30B presentation-present assertions
-
-tools/site-check/index.ts
-  OPTIONAL MODIFY only if generic site checks need a weekly-v1-specific assertion
-
-package.json
-  MODIFY only for focused test wiring if required
+tools/generate-slides/weekly-v1.test.ts        NEW
+tools/generate-slides/presentation-platform.test.ts  MODIFY only if shared Registry assertions belong there
+tools/multi-presentation-check/index.ts        MODIFY
+tools/weekly-brief/weekly-artifact-check.ts    MODIFY
+tools/site-check/index.ts                      OPTIONAL only for generic artifact assertions
+package.json                                   MODIFY only for focused test wiring
 ```
 
-Design documentation:
+Design document:
 
 ```text
 docs/superpowers/specs/2026-09-01-weekly-v1-presentation-design.md
 ```
 
-An implementation plan will be written only after this spec is approved.
+An implementation plan is written only after this spec is approved.
 
-## 23. Files Expected to Remain Unchanged
+## 23. Expected Unchanged Files
 
 Do not plan changes to:
 
@@ -732,7 +624,7 @@ apps/web/src/pages/topics/[id].astro
 .github/workflows/**
 ```
 
-If a failing executable contract proves one of these must change, investigate the root cause first and keep the change minimal.
+If an executable contract proves one must change, investigate the root cause first and keep any change minimal.
 
 ## 24. Non-goals
 
@@ -741,13 +633,12 @@ Plan 30B does not implement:
 - Weekly auto-generation from Daily;
 - seven-day automatic summarization;
 - new Weekly Schema fields;
-- a Weekly design system or brand-column system;
+- Weekly brand-column/design-system expansion;
 - monthly Briefs;
-- trend forecasting or quantitative trend scores;
-- charts sourced from invented metrics;
+- trend forecasting or invented quantitative scores;
 - Weekly previous/next navigation;
-- new stable date aliases for Weekly;
-- a second Presentation build pipeline;
+- new Weekly date aliases;
+- a second Presentation pipeline;
 - generic Brief renderer consolidation;
 - conversion of Weekly into standalone Presentation content;
 - changes to Daily 11-slide semantics;
@@ -755,26 +646,26 @@ Plan 30B does not implement:
 
 ## 25. Final Acceptance Matrix
 
-The final PR must provide fresh cloud evidence for all of the following:
+Fresh cloud evidence must prove:
 
 | Contract | Required result |
 | --- | --- |
 | Plan 30A Weekly schema | unchanged / GREEN |
-| daily-v1 slide count | exactly 11 |
-| talk-v1 slide count | `sections.length + 2` |
-| weekly-v1 min | 2 sections -> 7 slides |
+| daily-v1 | exactly 11 slides |
+| talk-v1 | `sections.length + 2` slides |
+| weekly-v1 minimum | 2 sections -> 7 slides |
 | real weekly-v1 | 3 sections -> 8 slides |
-| weekly-v1 max | 6 sections -> 11 slides |
+| weekly-v1 maximum | 6 sections -> 11 slides |
 | Weekly semantic markers | present |
 | Daily-only markers in Weekly | absent |
-| Weekly HTML escaping | raw hostile HTML absent, escaped content present |
-| weekly-v1 wrong Daily payload | fail |
-| weekly-v1 wrong Talk payload | fail |
+| HTML escaping | raw hostile HTML absent; escaped content present |
+| weekly-v1 + Daily payload | fail |
+| weekly-v1 + Talk payload | fail |
 | Weekly missing readingUrl | fail |
 | unsupported template | existing failure preserved |
-| normal generated decks | exactly real Daily + Weekly + Talk |
+| normal real decks | Daily + Weekly + Talk |
 | ephemeral mixed build | Daily + Weekly + Talk + future Daily coexist |
-| independent deck bases | all correct |
+| deck base paths | independent and correct |
 | Weekly Reading -> Slides | correct |
 | Weekly Slides -> Reading | correct |
 | `/slides/` | Weekly present as Brief/weekly |
@@ -782,13 +673,12 @@ The final PR must provide fresh cloud evidence for all of the following:
 | Homepage Latest Presentation | Weekly |
 | Archive | Weekly remains Brief/weekly |
 | RSS | Weekly Reading URL, not Slides URL |
-| Topic aggregation | Weekly remains included |
-| Related Content | Weekly remains Brief content |
+| Topic / Related | Weekly remains included as Brief content |
 | `/latest/` | newest Daily stable route |
 | Daily date aliases | Daily only |
 | generated `dist/site/archive.json` | Daily-only latest/issues |
-| Weekly date | does not create Daily alias |
-| non-public sources | excluded from source/deck/discovery |
+| Weekly date | no Daily alias |
+| non-public sources | excluded |
 | duplicate slug | fail before generated writes |
 | generated sources / dist | not committed |
 | tools/build-slides | unchanged |
@@ -797,7 +687,7 @@ The final PR must provide fresh cloud evidence for all of the following:
 
 ## 26. Completion Boundary
 
-When Plan 30B is merged, Plan 30 Weekly Brief is functionally complete for the first release:
+After Plan 30B merges, Plan 30 Weekly Brief is functionally complete for its first release:
 
 ```text
 Weekly structured model      complete (30A)
@@ -805,7 +695,7 @@ Weekly Reading               complete (30A)
 Weekly discovery             complete (30A)
 weekly-v1 Presentation       complete (30B)
 Daily + Weekly + Talk build  complete (30B)
-Weekly trusted Preview       complete (30B)
+Weekly Trusted Preview       complete (30B)
 ```
 
 Further Weekly work should be driven by product evidence rather than expanding this first-release scope.
