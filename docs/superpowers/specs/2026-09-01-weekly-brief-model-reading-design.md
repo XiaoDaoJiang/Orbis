@@ -42,7 +42,7 @@ Brief
 
 The important change is that `cadence: weekly` no longer falls through the current generic non-Daily schema.
 
-The implementation should use a shared metadata schema for fields that are truly cadence-neutral, then define cadence-specific bodies.
+The implementation should use a small shared metadata schema for fields that are truly cadence-neutral, then define cadence-specific bodies and presentation contracts.
 
 Conceptually:
 
@@ -54,7 +54,11 @@ briefSchema = z.discriminatedUnion('cadence', [
 ])
 ```
 
-If Zod's inferred types or transformed date fields make a literal `z.discriminatedUnion` unsuitable, an equivalent explicit union is acceptable only if tests prove cadence-exclusive validation. The product contract matters more than the helper name.
+If Zod's transformed date fields make a literal `z.discriminatedUnion` unsuitable, an equivalent explicit union is acceptable only if tests prove cadence-exclusive validation. The product contract matters more than the helper name.
+
+`weeklyBriefSchema` must reject unknown Daily-only body fields instead of silently stripping them. A Weekly document containing `signals`, `projects`, `radar`, `actions`, or `archivePicks` is invalid in Plan 30A.
+
+Daily and Ad-hoc unknown-key behavior should not be tightened as an unrelated compatibility change.
 
 ## 3. Compatibility Boundary
 
@@ -74,9 +78,9 @@ Daily semantics remain unchanged:
 
 ### 3.2 Weekly
 
-Weekly receives a dedicated schema and must not require Daily-only `signals`, `projects`, `radar`, `actions`, or `archivePicks`.
+Weekly receives a dedicated strict cadence body and must not require or accept Daily-only `signals`, `projects`, `radar`, `actions`, or `archivePicks`.
 
-A Weekly containing Daily-only body fields should fail strict cadence validation rather than silently accepting a hybrid document.
+A Weekly containing Daily-only body fields must fail validation rather than becoming a hybrid document.
 
 ### 3.3 Ad-hoc
 
@@ -94,24 +98,27 @@ No new Ad-hoc semantics are introduced in this plan.
 
 ## 4. Shared Brief Metadata
 
-Fields shared by all Brief cadences:
+Only cadence-neutral metadata belongs in the shared schema:
 
 ```text
 kind
-cadence
 publishedAt
 status
 title
 summary
 topics
-sections
 references
-presentation
 ```
 
-`sections` remains based on the existing structured Brief section schema because the current architecture/comparison/timeline/metrics/system-map semantics are useful across Daily and Weekly.
+These are intentionally **not** shared at the schema-body level:
 
-The cadence-specific schemas own their own quantity bounds for `sections`.
+```text
+cadence       -> discriminator owned by each cadence schema
+sections      -> common section type, cadence-specific quantity bounds
+presentation  -> cadence-specific template contract
+```
+
+Daily, Weekly and Ad-hoc may reuse the same `briefSectionSchema` type while owning different `sections` cardinality rules.
 
 ## 5. Weekly Content Model
 
@@ -191,7 +198,7 @@ Date arithmetic must use UTC date-only values; local timezone parsing must not b
 
 A required meaningful string representing the primary system-level judgment for the period.
 
-Recommended schema boundary:
+Schema boundary:
 
 ```text
 min 24 characters
@@ -298,7 +305,7 @@ Negative tests must prove:
 - Weekly whose `publishedAt` differs from `period.to` fails;
 - Weekly using `daily-v1` fails;
 - Daily using `weekly-v1` still fails;
-- Weekly carrying Daily-only fields such as `signals` fails if strict object validation is enabled at the cadence boundary;
+- Weekly carrying Daily-only fields such as `signals` fails;
 - existing valid Daily still parses with exactly the same output contract;
 - a representative Ad-hoc fixture still parses under its existing contract.
 
@@ -430,7 +437,7 @@ Example:
 
 ```text
 Daily publishedAt  = 2026-08-28
-Weekly publishedAt = 2026-09-06
+Weekly publishedAt = 2026-09-01
 
 Homepage Latest Brief = Weekly
 ```
@@ -563,7 +570,7 @@ invalid period
 invalid trend direction
 wrong Weekly template
 missing Weekly thesis
-wrong cadence-specific fields
+Daily-only field on Weekly
 ```
 
 No renderer or page should attempt to compensate for malformed Weekly content.
@@ -631,20 +638,21 @@ Plan 30A does not implement:
 Plan 30A is complete when:
 
 1. `weeklyBriefSchema` exists and is exported;
-2. `Brief` has cadence-exclusive Daily / Weekly / Ad-hoc validation;
-3. existing Daily schema and Daily reading semantics remain non-regressed;
-4. a representative Ad-hoc Brief still validates under the previous generic contract;
-5. Weekly does not require Daily's 4 signals / 5 sections / actions model;
-6. Weekly period is exactly seven calendar dates and ends on `publishedAt`;
-7. one real published Weekly exists in structured content;
-8. `/briefs/<weekly-slug>/` renders Weekly-specific semantics;
-9. Weekly appears in `/briefs/`, `/briefs/weekly/`, Archive, RSS and relevant Topic pages;
-10. Homepage Latest Brief can advance to the newer Weekly;
-11. `/latest/`, Daily date aliases and `archive.json.latest/issues` remain Daily-only;
-12. Weekly does not enter `/slides/` while Presentation is disabled;
-13. invalid Weekly source fails validation explicitly;
-14. PR Preview can publicly access the Weekly reading page;
-15. generated Slidev source and `dist/**` remain uncommitted.
+2. a Weekly Brief cannot be accepted through the previous generic non-Daily body contract;
+3. Weekly rejects Daily-only fields rather than silently stripping them;
+4. existing Daily schema and Daily reading semantics remain non-regressed;
+5. a representative Ad-hoc Brief still validates under the previous generic contract;
+6. Weekly does not require Daily's 4 signals / 5 sections / actions model;
+7. Weekly period is exactly seven calendar dates and ends on `publishedAt`;
+8. one real published Weekly exists in structured content;
+9. `/briefs/<weekly-slug>/` renders Weekly-specific semantics;
+10. Weekly appears in `/briefs/`, `/briefs/weekly/`, Archive, RSS and relevant Topic pages;
+11. Homepage Latest Brief can advance to the newer Weekly;
+12. `/latest/`, Daily date aliases and `archive.json.latest/issues` remain Daily-only;
+13. Weekly does not enter `/slides/` while Presentation is disabled;
+14. invalid Weekly source fails validation explicitly;
+15. PR Preview can publicly access the Weekly reading page;
+16. generated Slidev source and `dist/**` remain uncommitted.
 
 ## 23. Follow-up Boundary: Plan 30B
 
