@@ -1,10 +1,12 @@
 import { defineCollection } from 'astro:content'
 import { glob } from 'astro/loaders'
 import {
+  authorSchema,
   briefSchema,
   essaySchema,
   knowledgeSchema,
   presentationContentSchema,
+  sourceSchema,
   topicSchema,
 } from '@orbis/content-schema'
 
@@ -33,4 +35,22 @@ const knowledge = defineCollection({
   schema: knowledgeSchema,
 })
 
-export const collections = { essays, briefs, presentations, topics, knowledge }
+const sources = defineCollection({
+  loader: glob({ pattern: '*.{yaml,yml}', base: '../../content/sources' }),
+  schema: sourceSchema,
+})
+
+const authors = defineCollection({
+  loader: glob({ pattern: '*.{yaml,yml}', base: '../../content/authors' }),
+  schema: authorSchema,
+})
+
+export const collections = {
+  essays,
+  briefs,
+  presentations,
+  topics,
+  knowledge,
+  sources,
+  authors,
+}

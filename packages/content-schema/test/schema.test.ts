@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import {
   adHocBriefSchema,
+  authorSchema,
   briefSchema,
   dailyBriefSchema,
   presentationContentSchema,
+  sourceSchema,
 } from '../src/index.ts'
 
 const valid = {
@@ -99,5 +101,36 @@ assert.throws(() => presentationContentSchema.parse({
   ...validPresentation,
   sections: [{ ...validPresentation.sections[0], layout: 'raw-html' }],
 }))
+
+const validSource = {
+  name: 'Astro',
+  homepage: 'https://astro.build/',
+  type: 'official',
+  trustTier: 'primary',
+  status: 'active',
+  aliases: ['withastro'],
+  description: 'Astro official project and documentation source.',
+} as const
+
+const validAuthor = {
+  name: 'XiaoDaoJiang',
+  status: 'active',
+  url: 'https://github.com/XiaoDaoJiang',
+  bio: 'Orbis author and maintainer.',
+} as const
+
+assert.equal(sourceSchema.parse(validSource).aliases.length, 1)
+assert.equal(sourceSchema.parse({ ...validSource, status: 'archived' }).status, 'archived')
+assert.equal(authorSchema.parse(validAuthor).status, 'active')
+assert.equal(authorSchema.parse({ ...validAuthor, status: 'archived' }).status, 'archived')
+assert.throws(() => sourceSchema.parse({ ...validSource, id: 'astro' }))
+assert.throws(() => sourceSchema.parse({ ...validSource, type: 'blog' }))
+assert.throws(() => sourceSchema.parse({ ...validSource, trustTier: 'trusted' }))
+assert.throws(() => sourceSchema.parse({ ...validSource, homepage: 'not-a-url' }))
+assert.throws(() => sourceSchema.parse({ ...validSource, aliases: ['Astro'] }))
+assert.throws(() => sourceSchema.parse({ ...validSource, aliases: ['withastro', 'withastro'] }))
+assert.throws(() => authorSchema.parse({ ...validAuthor, id: 'xiaodaojiang' }))
+assert.throws(() => authorSchema.parse({ ...validAuthor, url: 'not-a-url' }))
+assert.throws(() => authorSchema.parse({ ...validAuthor, bio: 'too short' }))
 
 console.log('content-schema tests passed')

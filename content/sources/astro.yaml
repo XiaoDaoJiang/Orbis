@@ -1,0 +1,8 @@
+name: Astro
+homepage: https://astro.build/
+type: official
+trustTier: primary
+status: active
+aliases:
+  - withastro
+description: Astro official project and documentation source.
