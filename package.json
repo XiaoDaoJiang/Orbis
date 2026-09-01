@@ -21,7 +21,8 @@
     "test:multi-presentation": "tsx tools/multi-presentation-check/index.ts",
     "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts",
     "test:weekly-brief": "tsx tools/weekly-brief/weekly-schema.test.ts",
-    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope"
+    "test:weekly-artifact": "tsx tools/weekly-brief/weekly-artifact-check.ts",
+    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope && pnpm test:weekly-artifact"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",
