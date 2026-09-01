@@ -66,8 +66,16 @@ for (const marker of ['period', 'thesis', 'trends', 'sections', 'watch', 'refere
     `Weekly reading page must expose semantic section marker: ${marker}`,
   )
 }
+for (const movement of latestWeekly.brief.trendMovements) {
+  assert.ok(weeklyReading.includes(`data-trend-direction="${movement.direction}"`), `Weekly reading must expose trend direction ${movement.direction}`)
+  assert.ok(weeklyReading.includes(`data-trend-topic="${movement.topic}"`), `Weekly reading must expose trend topic ${movement.topic}`)
+}
+assert.ok(weeklyReading.includes(latestWeekly.brief.period.from), 'Weekly reading must show period.from')
+assert.ok(weeklyReading.includes(latestWeekly.brief.period.to), 'Weekly reading must show period.to')
 assert.ok(!weeklyReading.includes('Four signals'), 'Weekly reading page must not reuse Daily Four signals semantics')
 assert.ok(!weeklyReading.includes('From signals to action'), 'Weekly reading page must not reuse Daily action semantics')
+assert.doesNotMatch(weeklyReading, /data-adjacent=["']previous["']/, 'Weekly reading must not expose Daily previous adjacency')
+assert.doesNotMatch(weeklyReading, /data-adjacent=["']next["']/, 'Weekly reading must not expose Daily next adjacency')
 
 assert.ok(home.includes(`data-home-id="brief:${latestWeekly.slug}"`), 'Homepage Latest Brief must advance to the newer Weekly')
 assert.ok(briefsIndex.includes(latestWeekly.brief.title), 'Briefs index must include the published Weekly')
