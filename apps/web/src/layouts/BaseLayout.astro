@@ -1,25 +1,57 @@
 ---
 import '@orbis/design-tokens/tokens.css'
 import '../styles/global.css'
+import { buildSeoMetadata } from '../lib/seo'
 
 interface Props {
   title?: string
   description?: string
+  canonicalPath?: string
+  sharePath?: string
+  type?: 'website' | 'article'
+  imagePath?: string
 }
 
 const {
   title = 'Orbis',
   description = 'Essays, briefs, slides, topics and durable knowledge.',
+  canonicalPath,
+  sharePath,
+  type = 'website',
+  imagePath,
 } = Astro.props
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const href = (path: string) => `${base}${path}`
+const seo = await buildSeoMetadata({
+  pathname: Astro.url.pathname,
+  runtimeBase: import.meta.env.BASE_URL,
+  title,
+  description,
+  canonicalPath,
+  sharePath,
+  type,
+  imagePath,
+})
 ---
 <!doctype html>
-<html lang="zh-CN">
+<html lang={seo.locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content={description} />
+    <meta name="description" content={seo.description} />
+    <meta name="robots" content={seo.robots} />
+    <link rel="canonical" href={seo.canonicalUrl} />
+    <meta property="og:title" content={seo.title} />
+    <meta property="og:description" content={seo.description} />
+    <meta property="og:url" content={seo.shareUrl} />
+    <meta property="og:type" content={seo.type} />
+    <meta property="og:image" content={seo.imageUrl} />
+    <meta property="og:locale" content={seo.locale} />
+    <meta property="og:site_name" content={seo.siteName} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={seo.title} />
+    <meta name="twitter:description" content={seo.description} />
+    <meta name="twitter:image" content={seo.imageUrl} />
     <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
     <link rel="alternate" type="application/rss+xml" title="Orbis RSS" href={href('/rss.xml')} />
     <title>{title === 'Orbis' ? title : `${title} · Orbis`}</title>
