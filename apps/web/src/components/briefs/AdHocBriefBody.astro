@@ -8,7 +8,7 @@ interface Props {
 const { brief } = Astro.props
 ---
 <div class="article-body">
-  <h2>Signals</h2>
+  <h2>Four signals</h2>
   <ul class="signal-list">{brief.signals.map((signal) => <li><strong>{signal.title}</strong><p>{signal.summary}</p></li>)}</ul>
   {brief.sections.map((section) => (
     <section>
