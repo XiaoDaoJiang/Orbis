@@ -1,0 +1,8 @@
+name: Slidev
+homepage: https://sli.dev/
+type: official
+trustTier: primary
+status: active
+aliases:
+  - slidevjs
+description: Slidev official project and documentation source.

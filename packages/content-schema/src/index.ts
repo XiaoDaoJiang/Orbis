@@ -13,6 +13,38 @@ export const dateStringSchema = z
   .transform((value) => value instanceof Date ? value.toISOString().slice(0, 10) : value)
   .pipe(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD'))
 
+export const registryIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+export const registryIdSchema = z.string().regex(
+  registryIdPattern,
+  'Expected lowercase kebab-case registry ID',
+)
+
+const registryStatusSchema = z.enum(['active', 'archived'])
+
+const sourceAliasesSchema = z.array(registryIdSchema).default([]).superRefine((aliases, ctx) => {
+  if (new Set(aliases).size !== aliases.length) {
+    ctx.addIssue({ code: 'custom', message: 'Source aliases must be unique' })
+  }
+})
+
+export const sourceSchema = z.object({
+  name: z.string().min(2),
+  homepage: z.url(),
+  type: z.enum(['official', 'publisher', 'individual', 'community', 'aggregator']),
+  trustTier: z.enum(['primary', 'secondary', 'discovery']),
+  status: registryStatusSchema,
+  feed: z.url().optional(),
+  aliases: sourceAliasesSchema,
+  description: z.string().min(12).optional(),
+}).strict()
+
+export const authorSchema = z.object({
+  name: z.string().min(2),
+  status: registryStatusSchema,
+  url: z.url().optional(),
+  bio: z.string().min(12).optional(),
+}).strict()
+
 export const referenceSchema = z.object({
   title: z.string().min(3),
   url: z.url(),
@@ -206,6 +238,8 @@ export const knowledgeSchema = z.object({
   references: z.array(referenceSchema).default([]),
 })
 
+export type Source = z.infer<typeof sourceSchema>
+export type Author = z.infer<typeof authorSchema>
 export type Brief = z.infer<typeof briefSchema>
 export type DailyBrief = z.infer<typeof dailyBriefSchema>
 export type WeeklyBrief = z.infer<typeof weeklyBriefSchema>
