@@ -21,7 +21,7 @@
     "test:multi-presentation": "tsx tools/multi-presentation-check/index.ts",
     "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts && tsx tools/generate-slides/weekly-v1.test.ts",
     "test:weekly-brief": "tsx tools/weekly-brief/weekly-schema.test.ts && tsx tools/weekly-brief/weekly-source-validation.test.ts",
-    "test:content-registry": "tsx tools/validate-content/registry-contract.test.ts && tsx tools/validate-content/referential-integrity.test.ts",
+    "test:content-registry": "tsx tools/validate-content/registry-contract.test.ts && tsx tools/validate-content/referential-integrity-unit.test.ts && tsx tools/validate-content/referential-integrity.test.ts",
     "test:weekly-artifact": "tsx tools/weekly-brief/weekly-artifact-check.ts",
     "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope && pnpm test:weekly-artifact"
   },
