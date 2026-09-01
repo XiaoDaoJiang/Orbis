@@ -74,5 +74,5 @@ references:
     url: https://github.com/XiaoDaoJiang/Orbis/pull/12
     supports: Provides the standalone Presentation and mixed discovery evidence summarized in this Weekly.
 presentation:
-  enabled: false
+  enabled: true
   template: weekly-v1
