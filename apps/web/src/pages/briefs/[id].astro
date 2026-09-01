@@ -46,7 +46,7 @@ const dailyBrief = entry.data.cadence === 'daily' ? entry.data : undefined
 const weeklyBrief = entry.data.cadence === 'weekly' ? entry.data : undefined
 const adHocBrief = entry.data.cadence === 'ad-hoc' ? entry.data : undefined
 ---
-<BaseLayout title={entry.data.title} description={entry.data.summary}>
+<BaseLayout title={entry.data.title} description={entry.data.summary} type="article">
   <article class="article">
     <header class="article-header">
       <div class="eyebrow">Brief · {entry.data.cadence} · {entry.data.publishedAt}</div>
