@@ -54,8 +54,14 @@ p { line-height: 1.75; }
 .article-body h2 { margin-top: 2.2em; }
 .signal-list, .action-list { display: grid; gap: 14px; margin: 24px 0; padding: 0; list-style: none; }
 .signal-list li, .action-list li { background: var(--orbis-paper); border-left: 5px solid var(--orbis-orange); padding: 20px 24px; box-shadow: var(--orbis-shadow); }
+.author-byline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin: 16px 0 0; color: rgba(44,36,22,.68); font-size: .9rem; }
+.author-entry { color: var(--orbis-brown); font-weight: 800; }
 .reference-list { padding-left: 20px; }
-.reference-list li { margin-bottom: 10px; }
+.reference-list li { margin-bottom: 14px; }
+.reference-source, .reference-accessed { display: block; margin-top: 4px; color: rgba(44,36,22,.62); font-size: .78rem; line-height: 1.5; }
+.reference-source { letter-spacing: .02em; }
+.reference-accessed { font-family: var(--orbis-mono); }
+.registry-status { font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
 .adjacent-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 48px; max-width: 820px; }
 .adjacent-link { display: grid; gap: 8px; padding: 20px 22px; background: var(--orbis-paper); border-left: 5px solid var(--orbis-olive); box-shadow: var(--orbis-shadow); text-decoration: none; }
 .adjacent-link-next { text-align: right; border-left: 0; border-right: 5px solid var(--orbis-orange); }
