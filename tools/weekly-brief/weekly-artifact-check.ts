@@ -34,6 +34,8 @@ assert.ok(
 )
 
 const weeklyReadingPath = resolve(root, `dist/site/briefs/${latestWeekly.slug}/index.html`)
+const weeklyGeneratedPath = resolve(root, `${config.presentation.generatedDir}/${latestWeekly.slug}/slides.md`)
+const weeklyDeckPath = resolve(root, `dist/site/slides/${latestWeekly.slug}/index.html`)
 const homePath = resolve(root, 'dist/site/index.html')
 const briefsPath = resolve(root, 'dist/site/briefs/index.html')
 const weeklyIndexPath = resolve(root, 'dist/site/briefs/weekly/index.html')
@@ -43,11 +45,13 @@ const slidesPath = resolve(root, 'dist/site/slides/index.html')
 const latestPath = resolve(root, 'dist/site/latest/index.html')
 const archiveJsonPath = resolve(root, 'dist/site/archive.json')
 
-for (const path of [weeklyReadingPath, homePath, briefsPath, weeklyIndexPath, archivePath, rssPath, slidesPath, latestPath, archiveJsonPath]) {
+for (const path of [weeklyReadingPath, weeklyGeneratedPath, weeklyDeckPath, homePath, briefsPath, weeklyIndexPath, archivePath, rssPath, slidesPath, latestPath, archiveJsonPath]) {
   await access(path)
 }
 
 const weeklyReading = await readFile(weeklyReadingPath, 'utf8')
+const weeklyMarkdown = await readFile(weeklyGeneratedPath, 'utf8')
+const weeklyDeck = await readFile(weeklyDeckPath, 'utf8')
 const home = await readFile(homePath, 'utf8')
 const briefsIndex = await readFile(briefsPath, 'utf8')
 const weeklyIndex = await readFile(weeklyIndexPath, 'utf8')
@@ -77,25 +81,36 @@ assert.ok(!weeklyReading.includes('From signals to action'), 'Weekly reading pag
 assert.doesNotMatch(weeklyReading, /data-adjacent=["']previous["']/, 'Weekly reading must not expose Daily previous adjacency')
 assert.doesNotMatch(weeklyReading, /data-adjacent=["']next["']/, 'Weekly reading must not expose Daily next adjacency')
 
+const weeklyReadingHref = `${joinBasePath(siteBase, 'briefs', latestWeekly.slug)}/`
+const weeklySlidesHref = `${joinBasePath(siteBase, 'slides', latestWeekly.slug)}/`
+assert.ok(weeklyReading.includes(weeklySlidesHref), 'Weekly Reading must link to Weekly Slides')
+assert.ok(weeklyMarkdown.includes(weeklyReadingHref), 'Weekly generated presentation must link back to Weekly Reading')
+for (const marker of ['ORBIS · WEEKLY', 'WEEKLY THESIS', 'TREND MOVEMENTS', 'NEXT PERIOD WATCH', 'REFERENCES']) {
+  assert.ok(weeklyMarkdown.includes(marker), `Weekly generated presentation must contain marker: ${marker}`)
+}
+for (const marker of ['FOUR SIGNALS', 'OPEN SOURCE RADAR', 'IMPACT × ADOPTION HORIZON', 'FROM SIGNALS TO ACTION']) {
+  assert.ok(!weeklyMarkdown.includes(marker), `Weekly generated presentation must not contain Daily marker: ${marker}`)
+}
+assert.ok(weeklyDeck.includes(weeklySlidesHref), `Weekly built deck must reference its own base path: ${weeklySlidesHref}`)
+
 assert.ok(home.includes(`data-home-id="brief:${latestWeekly.slug}"`), 'Homepage Latest Brief must advance to the newer Weekly')
+assert.ok(home.includes(`data-home-id="presentation:${latestWeekly.slug}"`), 'Homepage Latest Presentation must advance to the presentation-enabled Weekly')
 assert.ok(briefsIndex.includes(latestWeekly.brief.title), 'Briefs index must include the published Weekly')
 assert.ok(weeklyIndex.includes(latestWeekly.brief.title), 'Weekly index must include the published Weekly')
 assert.ok(archive.includes(latestWeekly.brief.title), 'Archive must include the published Weekly')
 assert.ok(archive.includes('data-cadence="weekly"'), 'Archive must preserve Weekly cadence metadata')
 assert.ok(rss.includes(`/briefs/${latestWeekly.slug}/`), 'RSS must include the Weekly reading URL')
+assert.ok(!rss.includes(`/slides/${latestWeekly.slug}/`), 'RSS must keep Weekly identity on the Reading URL rather than the Slides URL')
 
 for (const topic of latestWeekly.brief.topics) {
   const topicHtml = await readFile(resolve(root, `dist/site/topics/${topic}/index.html`), 'utf8')
   assert.ok(topicHtml.includes(latestWeekly.brief.title), `Topic ${topic} must include the published Weekly`)
 }
 
-assert.ok(!slides.includes(latestWeekly.brief.title), 'Presentation-disabled Weekly must stay out of Slides discovery in Plan 30A')
-try {
-  await access(resolve(root, `${config.presentation.generatedDir}/${latestWeekly.slug}/slides.md`))
-  assert.fail('Presentation-disabled Weekly must not generate Slidev source in Plan 30A')
-} catch (error) {
-  if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-}
+assert.ok(slides.includes(latestWeekly.brief.title), 'Slides discovery must include the presentation-enabled Weekly')
+assert.ok(slides.includes(`data-presentation-id="${latestWeekly.slug}"`), 'Slides discovery must expose the Weekly presentation id')
+assert.ok(slides.includes('data-presentation-source="brief"'), 'Slides discovery must expose Brief source metadata')
+assert.ok(slides.includes(`Brief presentation · weekly · ${latestWeekly.brief.publishedAt}`), 'Slides discovery must expose Weekly cadence metadata')
 
 assert.equal(archiveJson.latest, latestDaily.brief.publishedAt, 'archive.json.latest must remain the newest Daily date')
 assert.ok(!archiveJson.issues.some((issue) => issue.title === latestWeekly.brief.title), 'archive.json issues must remain Daily-only')
@@ -107,6 +122,6 @@ const dailyStablePath = latestDaily.brief.publishedAt.replaceAll('-', '/')
 const expectedLatestTarget = `${joinBasePath(siteBase, dailyStablePath)}/`
 assert.ok(latest.includes(expectedLatestTarget), `/latest/ must remain on the newest Daily stable route: ${expectedLatestTarget}`)
 
-console.log(`Weekly reading contract passed: ${latestWeekly.slug}`)
-console.log(`Weekly discovery contract passed: Briefs/Weekly/Archive/RSS/Topics include ${latestWeekly.slug}`)
+console.log(`Weekly reading + presentation contract passed: ${latestWeekly.slug}`)
+console.log(`Weekly discovery contract passed: Briefs/Weekly/Archive/RSS/Topics/Slides include ${latestWeekly.slug}`)
 console.log(`Daily latest isolation passed: Weekly=${latestWeekly.brief.publishedAt}, Daily latest=${latestDaily.brief.publishedAt}`)
