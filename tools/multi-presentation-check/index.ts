@@ -3,7 +3,7 @@ import { access, readFile, rm, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
 import { stringify } from 'yaml'
-import { dailyBriefSchema, presentationContentSchema } from '@orbis/content-schema'
+import { dailyBriefSchema, presentationContentSchema, weeklyBriefSchema } from '@orbis/content-schema'
 import { listFiles, readYaml } from '../shared/content.ts'
 import { loadSiteConfig, joinBasePath, runtimeSiteBase } from '../shared/site-config.ts'
 
@@ -61,18 +61,29 @@ async function assertMissing(path: string, message: string) {
 const briefFiles = await listFiles(briefSourceDir, ['.yaml', '.yml'])
 let dailySeed: ReturnType<typeof dailyBriefSchema.parse> | undefined
 let dailySeedSlug: string | undefined
+let weeklySeed: ReturnType<typeof weeklyBriefSchema.parse> | undefined
+let weeklySeedSlug: string | undefined
 
 for (const file of briefFiles) {
-  const result = dailyBriefSchema.safeParse(await readYaml(file))
-  if (!result.success) continue
-  if (result.data.status !== 'published' || !result.data.presentation.enabled) continue
-  dailySeed = result.data
-  dailySeedSlug = basename(file).replace(/\.(yaml|yml)$/, '')
-  break
+  const raw = await readYaml(file)
+
+  const dailyResult = dailyBriefSchema.safeParse(raw)
+  if (dailyResult.success && dailyResult.data.status === 'published' && dailyResult.data.presentation.enabled && !dailySeed) {
+    dailySeed = dailyResult.data
+    dailySeedSlug = basename(file).replace(/\.(yaml|yml)$/, '')
+  }
+
+  const weeklyResult = weeklyBriefSchema.safeParse(raw)
+  if (weeklyResult.success && weeklyResult.data.status === 'published' && weeklyResult.data.presentation.enabled && !weeklySeed) {
+    weeklySeed = weeklyResult.data
+    weeklySeedSlug = basename(file).replace(/\.(yaml|yml)$/, '')
+  }
 }
 
 assert.ok(dailySeed, 'Multi-presentation check requires one published daily-v1 presentation as a seed')
 assert.ok(dailySeedSlug)
+assert.ok(weeklySeed, 'Multi-presentation check requires one published weekly-v1 presentation as a seed')
+assert.ok(weeklySeedSlug)
 
 const presentationFiles = await listFiles(presentationSourceDir, ['.yaml', '.yml'])
 let talkSeed: ReturnType<typeof presentationContentSchema.parse> | undefined
@@ -113,7 +124,7 @@ const futureDailyFixture = {
   ...dailySeed,
   publishedAt: futureDailyDate,
   title: 'Orbis future Daily integration fixture',
-  summary: 'Ephemeral CI fixture preserving future Daily promotion coverage while Daily and standalone Talk decks build through one Presentation Platform.',
+  summary: 'Ephemeral CI fixture preserving future Daily promotion coverage while Daily, Weekly and standalone Talk decks build through one Presentation Platform.',
 }
 const nonPublicBriefFixture = {
   ...dailySeed,
@@ -154,6 +165,8 @@ try {
 
   const seedBrief = resolve(root, `dist/site/briefs/${dailySeedSlug}/index.html`)
   const seedDailyDeck = resolve(root, `dist/site/slides/${dailySeedSlug}/index.html`)
+  const weeklyDeck = resolve(root, `dist/site/slides/${weeklySeedSlug}/index.html`)
+  const weeklySource = resolve(generatedRoot, weeklySeedSlug, 'slides.md')
   const talkDeck = resolve(root, `dist/site/slides/${talkSeedSlug}/index.html`)
   const talkSource = resolve(generatedRoot, talkSeedSlug, 'slides.md')
   const futureDailyBrief = resolve(root, `dist/site/briefs/${futureDailySlug}/index.html`)
@@ -171,6 +184,8 @@ try {
 
   await access(seedBrief)
   await access(seedDailyDeck)
+  await access(weeklyDeck)
+  await access(weeklySource)
   await access(talkDeck)
   await access(talkSource)
   await access(futureDailyBrief)
@@ -188,9 +203,13 @@ try {
 
   const siteBase = runtimeSiteBase(config)
   const expectedFutureDailyDeckBase = `${joinBasePath(siteBase, config.presentation.publicPath, futureDailySlug)}/`
+  const expectedWeeklyDeckBase = `${joinBasePath(siteBase, config.presentation.publicPath, weeklySeedSlug)}/`
+  const expectedWeeklyReading = `${joinBasePath(siteBase, 'briefs', weeklySeedSlug)}/`
   const expectedTalkDeckBase = `${joinBasePath(siteBase, config.presentation.publicPath, talkSeedSlug)}/`
   const seedHtml = await readFile(seedBrief, 'utf8')
   const futureDailyDeckHtml = await readFile(futureDailyDeck, 'utf8')
+  const weeklyDeckHtml = await readFile(weeklyDeck, 'utf8')
+  const weeklyMarkdown = await readFile(weeklySource, 'utf8')
   const talkDeckHtml = await readFile(talkDeck, 'utf8')
   const talkMarkdown = await readFile(talkSource, 'utf8')
   const stableHtml = await readFile(futureDailyStable, 'utf8')
@@ -203,6 +222,15 @@ try {
   }
 
   assert.ok(futureDailyDeckHtml.includes(expectedFutureDailyDeckBase), `Future Daily deck must reference its own base path: ${expectedFutureDailyDeckBase}`)
+  assert.ok(weeklyDeckHtml.includes(expectedWeeklyDeckBase), `Weekly deck must reference its own base path: ${expectedWeeklyDeckBase}`)
+  assert.ok(weeklyMarkdown.includes(expectedWeeklyReading), `Weekly deck must link to its reading page: ${expectedWeeklyReading}`)
+  assert.match(weeklyMarkdown, /ORBIS · WEEKLY/)
+  assert.match(weeklyMarkdown, /WEEKLY THESIS/)
+  assert.match(weeklyMarkdown, /TREND MOVEMENTS/)
+  assert.match(weeklyMarkdown, /NEXT PERIOD WATCH/)
+  assert.match(weeklyMarkdown, /REFERENCES/)
+  assert.ok(slidesIndexHtml.includes(`data-presentation-id="${weeklySeedSlug}"`), 'Slides discovery must include the published Weekly')
+  assert.ok(slidesIndexHtml.includes(`Brief presentation · weekly · ${weeklySeed.publishedAt}`), 'Slides discovery must expose Weekly cadence metadata')
   assert.ok(talkDeckHtml.includes(expectedTalkDeckBase), `Standalone Talk must reference its own base path: ${expectedTalkDeckBase}`)
   assert.match(talkMarkdown, /REFERENCES/)
   assert.ok(slidesIndexHtml.includes(`data-presentation-id="${talkSeedSlug}"`), 'Slides discovery must include the published standalone Talk')
@@ -219,7 +247,7 @@ try {
   assert.ok(!seedHtml.includes(nonPublicBriefFixture.title), 'needs-review Brief title must not leak into a public reading page')
   assert.ok(!seedHtml.includes(`data-related-id="brief:${nonPublicBriefSlug}"`), 'needs-review Brief must not leak into Related Content')
 
-  console.log(`Mixed Presentation integration passed: Daily=${dailySeedSlug}, Talk=${talkSeedSlug}, future Daily=${futureDailySlug}`)
+  console.log(`Mixed Presentation integration passed: Daily=${dailySeedSlug}, Weekly=${weeklySeedSlug}, Talk=${talkSeedSlug}, future Daily=${futureDailySlug}`)
   console.log(`Future Daily promotion check passed: latest=${futureDailyDate}, stable=/${futureDailyStablePath}/`)
   console.log(`Non-public source exclusion passed: Brief=${nonPublicBriefSlug}, Presentation=${nonPublicPresentationSlug}`)
 } finally {
