@@ -1,10 +1,10 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 基线：`main@241996d3b1ad3c38fcaaec7622e8f41c6641ab65`
+> 基线：`main@4dc69ad2ac24d3e6b0c301b70809327aeae754ab`
 > 基线日期：2026-09-01
 > 阶段：Product Capability Phase
-> 当前目标：完成 Plan 40 的有序合并与主分支验证
+> 当前目标：Plan 40B · Registry-backed Content UI 主分支集成恢复（PR #18）
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -22,16 +22,17 @@
 - Plan 30 · Weekly Brief：**Done**
   - 30A Weekly Schema + Reading：PR #13
   - 30B `weekly-v1` + Daily / Weekly / Talk mixed integration：PR #14
-- Plan 40 · Source & Author Registry：**In Progress · Implementation Complete / Merge Gate**
-  - 40A Registry + Referential Integrity：实现与 Preview 验证完成，PR #15 待先合并
-  - 40B Registry-backed Content UI：实现与 Preview 验证完成，stacked PR #16；#15 合并后 retarget 到 `main`
-- Plan 50 · SEO & Sharing：**Planned / After Plan 40 Merge**
+- Plan 40 · Source & Author Registry：**In Progress · Main Integration Gate**
+  - 40A Registry + Referential Integrity：**Done on main**，PR #15
+  - 40B Registry-backed Content UI：实现与 Preview 已完成；stacked PR #16 被合并到旧 feature base，未进入 `main`
+  - 40B Main Integration Recovery：**Current**，PR #18
+- Plan 50 · SEO & Sharing：**Planned / Next after Plan 40 Done**
 - Plan 60 · Knowledge Lifecycle：**Planned**
 - Plan 70 · Scheduled Content Automation：**Planned**
 
 ## 当前产品基线
 
-`main` 已经具备三个稳定内容/发布闭环：
+`main` 已经具备：
 
 ```text
 Daily Brief
@@ -49,21 +50,14 @@ Weekly Brief
 Standalone Presentation
   -> talk-v1
   -> Slides discovery
+
+Knowledge Identity Foundation
+  -> Source / Author filename IDs
+  -> Topic / Source / Author referential integrity
+  -> scheduled-agent Registry write restriction
 ```
 
-Presentation Platform 可以在一次真实 Build 中同时生成 Daily + Weekly + Talk；生成源和 `dist/**` 继续只作为构建产物，不进入 Git。
-
-Plan 40 的两个实现分支已经额外验证：
-
-```text
-Source / Author filename identity
-        ↓
-Topic / Source / Author referential integrity
-        ↓
-Essay Author byline + Reading Reference Source metadata
-```
-
-这些能力尚未进入 `main`；当前必须先合并 PR #15，再将 PR #16 retarget 到 `main` 并单独合并。
+40B 已在独立分支完成并通过公网 Preview，提供 Essay Author byline 与 Registry-backed Reference metadata；但 PR #16 合并时仍以 `feat/source-author-registry-integrity` 为 base，因此该 UI 能力尚未进入 `main`。PR #18 只负责把同一份已验证的 16-file 40B diff 正确集成到 `main`，并重新获得 main-targeted Build / Preview 证据。
 
 ## 总体目标
 
@@ -101,19 +95,20 @@ PR Preview / Review / GitHub Pages
         ↓
 30 Weekly Brief                Done
         ↓
-40 Source & Author Registry    Implementation Complete / Merge Gate
-  ├── merge PR #15
-  ├── retarget PR #16 -> main
-  └── merge PR #16 + verify main/production
+40 Source & Author Registry    Main Integration Gate
+  ├── 40A / PR #15             Done on main
+  ├── close stale duplicate    PR #17 closed
+  ├── 40B recovery             PR #18 -> main
+  └── verify main / Pages
         ↓
-50 SEO & Sharing               Next after Plan 40 Done
+50 SEO & Sharing               Next
         ↓
 60 Knowledge Lifecycle
         ↓
 70 Scheduled Content Automation
 ```
 
-40 与 50 在架构上可以部分并行，但当前不提前启动 Plan 50：先让 Source / Author / Topic 关系及其 Reading UI 在 `main` 上成为稳定合同，再让 canonical、Sitemap 与 JSON-LD 消费这些实体。
+40 与 50 在架构上可以部分并行，但当前不提前启动 Plan 50：先让 Author / Source Reading UI 在 `main` 和生产 Pages 上成为稳定合同，再让 canonical、Open Graph、Sitemap 与 JSON-LD 消费这些身份。
 
 ## 每个计划的统一交付规则
 
@@ -126,11 +121,12 @@ PR Preview / Review / GitHub Pages
 5. 新路由必须进入构建期 Artifact 检查；
 6. PR 必须通过 Path Guard、完整 `pnpm build` 和公网 Preview；
 7. 不把生成 HTML、Slidev source 或 `dist/**` 提交到仓库；
-8. 完成后更新本目录 Roadmap 状态，而不是继续维护临时迁移文档。
+8. stacked PR 必须在前置 PR 合并后确认 base，不能把“merged”状态误当成“已进入 main”；
+9. 完成后更新本目录 Roadmap 状态，而不是继续维护临时迁移文档。
 
 ## Plan 状态约定
 
 - `Planned`：范围与验收已定义，尚未开始；
 - `In Progress`：已有实现分支或 PR，或实现虽完成但尚未全部进入 `main`；
-- `Done`：全部计划 PR 已合并 `main`，并通过对应 Preview / 公网验证；
+- `Done`：全部计划 PR 已进入 `main`，并通过对应 Preview / 主分支 / 公网验证；
 - `Deferred`：明确推迟，不作为当前缺陷。
