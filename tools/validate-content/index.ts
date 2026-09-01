@@ -25,7 +25,7 @@ for (const check of checks) {
     const result = check.schema.safeParse(value)
     if (!result.success) {
       console.error(`Invalid content: ${relative(root, file)}`)
-      console.error(result.error.issues)
+      console.error(JSON.stringify(result.error.issues, null, 2))
       process.exitCode = 1
     } else {
       count += 1
