@@ -4,7 +4,7 @@
 > 基线：`main@241996d3b1ad3c38fcaaec7622e8f41c6641ab65`
 > 基线日期：2026-09-01
 > 阶段：Product Capability Phase
-> 当前目标：Plan 40A · Source & Author Registry + Referential Integrity
+> 当前目标：完成 Plan 40 的有序合并与主分支验证
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -22,16 +22,16 @@
 - Plan 30 · Weekly Brief：**Done**
   - 30A Weekly Schema + Reading：PR #13
   - 30B `weekly-v1` + Daily / Weekly / Talk mixed integration：PR #14
-- Plan 40 · Source & Author Registry：**In Progress**
-  - 40A Registry + Referential Integrity：**Current**，PR #15
-  - 40B Registry-backed Content UI：**Next**
-- Plan 50 · SEO & Sharing：**Planned**
+- Plan 40 · Source & Author Registry：**In Progress · Implementation Complete / Merge Gate**
+  - 40A Registry + Referential Integrity：实现与 Preview 验证完成，PR #15 待先合并
+  - 40B Registry-backed Content UI：实现与 Preview 验证完成，stacked PR #16；#15 合并后 retarget 到 `main`
+- Plan 50 · SEO & Sharing：**Planned / After Plan 40 Merge**
 - Plan 60 · Knowledge Lifecycle：**Planned**
 - Plan 70 · Scheduled Content Automation：**Planned**
 
 ## 当前产品基线
 
-Orbis 已经具备三个稳定内容/发布闭环：
+`main` 已经具备三个稳定内容/发布闭环：
 
 ```text
 Daily Brief
@@ -53,7 +53,17 @@ Standalone Presentation
 
 Presentation Platform 可以在一次真实 Build 中同时生成 Daily + Weekly + Talk；生成源和 `dist/**` 继续只作为构建产物，不进入 Git。
 
-Plan 40 正在补齐下一层基础：以文件名为 canonical ID 的 Source / Author Registry，以及 Topic / Source / Author 的构建期引用完整性。
+Plan 40 的两个实现分支已经额外验证：
+
+```text
+Source / Author filename identity
+        ↓
+Topic / Source / Author referential integrity
+        ↓
+Essay Author byline + Reading Reference Source metadata
+```
+
+这些能力尚未进入 `main`；当前必须先合并 PR #15，再将 PR #16 retarget 到 `main` 并单独合并。
 
 ## 总体目标
 
@@ -91,18 +101,19 @@ PR Preview / Review / GitHub Pages
         ↓
 30 Weekly Brief                Done
         ↓
-40 Source & Author Registry    In Progress
-  ├── 40A Identity / Integrity Current
-  └── 40B Existing UI consume  Next
+40 Source & Author Registry    Implementation Complete / Merge Gate
+  ├── merge PR #15
+  ├── retarget PR #16 -> main
+  └── merge PR #16 + verify main/production
         ↓
-50 SEO & Sharing
+50 SEO & Sharing               Next after Plan 40 Done
         ↓
 60 Knowledge Lifecycle
         ↓
 70 Scheduled Content Automation
 ```
 
-40 与 50 在架构上可以部分并行，但当前优先完成 40：先让 Source / Author / Topic 关系具备稳定身份和引用完整性，再让 SEO / JSON-LD 消费这些稳定实体。
+40 与 50 在架构上可以部分并行，但当前不提前启动 Plan 50：先让 Source / Author / Topic 关系及其 Reading UI 在 `main` 上成为稳定合同，再让 canonical、Sitemap 与 JSON-LD 消费这些实体。
 
 ## 每个计划的统一交付规则
 
@@ -120,6 +131,6 @@ PR Preview / Review / GitHub Pages
 ## Plan 状态约定
 
 - `Planned`：范围与验收已定义，尚未开始；
-- `In Progress`：已有实现分支或 PR；
-- `Done`：已合并 main，并通过对应 Preview / 公网验证；
+- `In Progress`：已有实现分支或 PR，或实现虽完成但尚未全部进入 `main`；
+- `Done`：全部计划 PR 已合并 `main`，并通过对应 Preview / 公网验证；
 - `Deferred`：明确推迟，不作为当前缺陷。
