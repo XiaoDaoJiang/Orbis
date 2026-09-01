@@ -1,7 +1,9 @@
 ---
 import { getCollection, render } from 'astro:content'
+import ReferenceList from '../../components/ReferenceList.astro'
 import RelatedContent from '../../components/RelatedContent.astro'
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import { buildSourceIndex } from '../../lib/content-registry'
 import {
   buildPublicDiscoveryItems,
   getRelatedContent,
@@ -10,10 +12,11 @@ import {
 } from '../../lib/content-discovery'
 
 export async function getStaticPaths() {
-  const [briefEntries, essayEntries, knowledgeEntries] = await Promise.all([
+  const [briefEntries, essayEntries, knowledgeEntries, sourceEntries] = await Promise.all([
     getCollection('briefs'),
     getCollection('essays'),
     getCollection('knowledge'),
+    getCollection('sources'),
   ])
   const base = import.meta.env.BASE_URL.replace(/\/$/, '')
   const candidates = buildPublicDiscoveryItems(briefEntries, essayEntries, knowledgeEntries, base)
@@ -22,12 +25,17 @@ export async function getStaticPaths() {
     const current = toKnowledgeDiscoveryItem(entry, base)
     return {
       params: { id: entry.id },
-      props: { entry, related: getRelatedContent(current, candidates) },
+      props: {
+        entry,
+        sourceEntries,
+        related: getRelatedContent(current, candidates),
+      },
     }
   })
 }
 
-const { entry, related } = Astro.props
+const { entry, sourceEntries, related } = Astro.props
+const sourceIndex = buildSourceIndex(sourceEntries)
 const { Content } = await render(entry)
 ---
 <BaseLayout title={entry.data.title} description={entry.data.summary}>
@@ -38,7 +46,15 @@ const { Content } = await render(entry)
       <p class="lead">{entry.data.summary}</p>
       <div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
     </header>
-    <div class="article-body"><Content /></div>
+    <div class="article-body">
+      <Content />
+      {entry.data.references.length > 0 && (
+        <section class="article-references">
+          <h2>References</h2>
+          <ReferenceList references={entry.data.references} sourceIndex={sourceIndex} />
+        </section>
+      )}
+    </div>
   </article>
   <RelatedContent items={related} />
 </BaseLayout>
