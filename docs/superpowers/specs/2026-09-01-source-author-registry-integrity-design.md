@@ -20,7 +20,7 @@ Plan 40A is the identity and integrity layer. Plan 40B will consume the same reg
 3. IDs must match `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
 4. `Reference.source` remains optional, but every declared value must resolve to a Source Registry entry.
 5. Every Essay `authors[]` value is mandatory and must resolve to an Author Registry entry.
-6. Every content `topics[]` value and every Topic `related[]` value must resolve to a Topic entry.
+6. Every content `topics[]` value, every Weekly `trendMovements[].topic`, and every Topic `related[]` value must resolve to a Topic entry.
 7. Archived Source and Author entities remain valid for historical references.
 8. New content should not intentionally adopt archived entities, but Plan 40A does not attempt Git-history-aware warning enforcement.
 9. Source and Author registries are human-governed; scheduled content agents cannot modify them.
@@ -63,7 +63,7 @@ description: Astro official project and documentation source.
 
 Required fields:
 
-- `name`: non-empty display name;
+- `name`: string, minimum 2 characters;
 - `homepage`: absolute URL;
 - `type`: `official | publisher | individual | community | aggregator`;
 - `trustTier`: `primary | secondary | discovery`;
@@ -72,8 +72,8 @@ Required fields:
 Optional fields:
 
 - `feed`: absolute URL;
-- `aliases`: slug-like strings, default `[]`;
-- `description`: meaningful text.
+- `aliases`: unique strings matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`, default `[]`;
+- `description`: string, minimum 12 characters.
 
 `type` describes what the entity is. `trustTier` is editorial governance metadata and does not automatically prove truth or reliability.
 
@@ -90,13 +90,13 @@ bio: Orbis author and maintainer.
 
 Required fields:
 
-- `name`;
+- `name`: string, minimum 2 characters;
 - `status`: `active | archived`.
 
 Optional fields:
 
 - `url`: absolute URL;
-- `bio`: meaningful text.
+- `bio`: string, minimum 12 characters.
 
 An Author does not require a public URL. Historical Essays may continue to resolve an archived Author.
 
@@ -172,7 +172,7 @@ The validator checks:
 - Presentation `topics[]`;
 - Essay `topics[]`;
 - Knowledge `topics[]`;
-- Weekly `trendMovements[].topic` because it is a Topic identity;
+- Weekly `trendMovements[].topic`;
 - Topic `related[]`.
 
 Every referenced Topic must exist. A Topic may not list itself in `related[]`.
