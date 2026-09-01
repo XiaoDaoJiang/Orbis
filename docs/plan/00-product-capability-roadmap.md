@@ -3,11 +3,11 @@
 > 状态：Active
 > 基线日期：2026-09-01
 > 基线提交：`main@241996d3b1ad3c38fcaaec7622e8f41c6641ab65`
-> 当前目标：Milestone D — Knowledge Identity / Plan 40A
+> 当前目标：Milestone D — Knowledge Identity / Ordered Merge Gate
 
 ## 1. 当前阶段判断
 
-Orbis 已经完成：
+Orbis 已经完成并合并到 `main`：
 
 - Astro + Slidev pnpm Monorepo Foundation；
 - Structured Content + Zod Schema；
@@ -24,14 +24,22 @@ Orbis 已经完成：
 - GitHub Pages Production Cutover；
 - 原 `main:/docs` Legacy HTML/Archive 兼容层彻底退役。
 
-Architecture Migration 与前三个 Product Capability Milestone 均已结束。当前正在推进 **Milestone D — Knowledge Identity**：把 Topic 之外的 Source / Author 从自由字符串升级为稳定实体和可验证关系。
+Architecture Migration 与前三个 Product Capability Milestone 均已结束。
 
-当前执行切片：
+**Milestone D — Knowledge Identity 的全部实现已经完成并分别通过完整 Build 与 Public Preview，但尚未全部进入 `main`。** 当前不是继续设计新能力，而是执行有序合并：
 
 ```text
-40A Registry + Referential Integrity   In Progress · PR #15
+40A Registry + Referential Integrity
+PR #15 · implementation complete · merge first
         ↓
-40B Registry-backed Content UI         Next
+40B Registry-backed Content UI
+PR #16 · implementation complete · stacked on #15
+        ↓
+retarget #16 -> main · verify · merge
+        ↓
+main / Pages verification
+        ↓
+Plan 40 Done -> Plan 50
 ```
 
 ## 2. 产品定义
@@ -55,7 +63,9 @@ Orbis 不是新闻站、博客模板或 Slides 仓库，而是一个面向长期
 
 > Orbis 是一个 Git-native、Agent-native 的结构化技术知识发布系统：Agent 负责发现、研究和生产受 Schema 约束的内容，Astro、Slidev 与 GitHub Actions 将同一知识源转化为阅读、演示、订阅、聚合和长期归档。
 
-## 3. 当前稳态架构
+## 3. 稳态架构与待合并扩展
+
+当前 `main` 的发布架构保持：
 
 ```text
 RSS / Web / Primary Sources
@@ -65,9 +75,6 @@ RSS / Web / Primary Sources
         content/**
              ↓
  @orbis/content-schema
-             ↓
- Referential Integrity
- Topic / Source / Author
              ↓
      ┌───────┴─────────┐
      ↓                 ↓
@@ -88,6 +95,20 @@ RSS / Web / Primary Sources
     PR Preview / GitHub Pages
 ```
 
+Plan 40 的两个已验证 PR 在 Schema 之后增加：
+
+```text
+@orbis/content-schema
+        ↓
+Referential Integrity
+Topic / Source / Author
+        ↓
+Astro Registry Consumption
+AuthorByline / ReferenceList
+        ↓
+existing Reading routes
+```
+
 核心约束：
 
 - `content/**` 是唯一可发布内容源；
@@ -96,7 +117,8 @@ RSS / Web / Primary Sources
 - 生成文件永不反向成为内容源；
 - 生产只发布经过完整 Build 和 Smoke 验证的 `dist/site`；
 - Daily stable-date/latest contract 与通用 Brief/Presentation discovery contract 分离；
-- Source / Author Registry 由人工治理，Scheduled Agent 只能引用已注册身份。
+- Source / Author Registry 由人工治理，Scheduled Agent 只能引用已注册身份；
+- Source / Author metadata 只 enrich 现有 Reading UI，不创建新的目录产品。
 
 ## 4. 原始需求与当前实现
 
@@ -120,7 +142,7 @@ RSS / Web / Primary Sources
 | Archive / Discovery / Navigation | Done / Mature | Archive、Slides、cadence indexes、Homepage、Previous/Next、Related |
 | PR Preview / Pages Governance | Done / Mature | read-only build、trusted publish、public smoke、protected main |
 | SEO / Sharing | Partial | title/description/favicon/RSS discovery；缺 canonical/OG/Sitemap/JSON-LD |
-| Source / Author Registry | In Progress | 40A 正在建立 canonical IDs、严格 Schema、Astro Collections 与关系校验 |
+| Source / Author Registry | Implementation Complete / Pending Merge | 40A canonical IDs + Integrity；40B Author/Source Reading metadata |
 | Knowledge Review Workflow | Planned | Schema 有 `reviewAt`，缺生命周期工具和可视化 |
 
 ## 5. 当前成熟度
@@ -136,11 +158,11 @@ RSS / Web / Primary Sources
 | CI / Preview / Pages / Governance | 95% |
 | Agent Content Boundary | 95% |
 | Archive / Discovery / Navigation UX | 92% |
-| Essay / Knowledge / Topic 基础 | 75% |
+| Essay / Knowledge / Topic 基础 | 78% |
 | RSS | 75% |
 | SEO / Sharing | 30% |
-| Source / Author Registry | 40% · implementation in PR #15 |
-| 完整 Orbis 内容产品 | 约 80–85% |
+| Source / Author Registry | 85% · implementation complete, merge pending |
+| 完整 Orbis 内容产品 | 约 85% |
 
 成熟度是路线判断，不是精确 KPI。后续应以真实内容规模、引用完整性、构建验证和日常使用体验替代主观百分比。
 
@@ -189,18 +211,41 @@ talk-v1
 /slides/<slug>/
 ```
 
-三条路径已经证明 Orbis 的核心产品假设成立：**Agent 生产结构化知识，平台负责验证、关系、发现与多形态发布。**
+### Knowledge Identity（已验证、待有序合并）
+
+```text
+content/sources + content/authors + topics
+                 ↓
+canonical filename IDs
+                 ↓
+repository-wide referential integrity
+                 ↓
+Essay Author byline + Reference Source metadata
+```
+
+这些路径共同证明 Orbis 的核心产品假设成立：**Agent 生产结构化知识，平台负责验证、关系、发现与多形态发布。**
 
 ## 7. 当前阶段核心问题
 
-Milestone D 重点回答“知识身份是否稳定”：
+Milestone D 的产品与技术问题已经通过 PR #15 / #16 得到实现级回答：
 
-1. Source 是否拥有稳定 ID，而不是依赖 `GitHub` / `github` / `github-docs` 等自由字符串？
-2. Author 是否拥有可解析 metadata，而不是 Essay 中的自由文本？
-3. Topic / Source / Author relation 是否能在 CI 中整体验证？
-4. Reference 是否既保留具体材料 URL，又能解析到 Source Entity？
-5. Agent 是否只能使用已注册身份，并把新增 Registry 变更交给人工评审？
-6. 稳定身份建立后，现有 Reading UI、SEO / JSON-LD 和后续生命周期能力能否直接复用？
+1. Source / Author 使用文件名 canonical ID，而不是自由字符串变体；
+2. Author、Source、Topic relation 在 CI 中整体验证；
+3. Reference 同时保留具体材料 URL 和 Source Entity；
+4. archived identity 保持历史可解析并在 UI 中显式显示；
+5. Agent 只能使用已注册身份，Registry 写入仍需人工评审；
+6. Essay / Brief / Knowledge 可以消费 Registry metadata，而不新增目录路由；
+7. 直接绕过完整校验执行 `build:web` 时，缺失 ID 仍会明确失败。
+
+当前唯一剩余问题是**交付顺序与主分支验证**，而不是功能设计：
+
+```text
+merge #15
+retarget #16
+verify #16
+merge #16
+verify main / Pages
+```
 
 ## 8. Product Capability Roadmap
 
@@ -222,22 +267,29 @@ Milestone D 重点回答“知识身份是否稳定”：
 
 退出结果：Weekly 拥有独立 Schema、跨周期语义 Reading、`weekly-v1`、RSS/Archive/Topic/Slides discovery，并与 Daily + Talk 在同一次 Build 中共存；Daily `/latest/` 与日期路由仍保持 Daily-only。
 
-### Milestone D — Knowledge Identity · In Progress
+### Milestone D — Knowledge Identity · Implementation Complete / Merge Gate
 
 对应 Plan 40。
 
 实施状态：
 
-- **40A Registry + Referential Integrity — Current，PR #15**：文件名 canonical ID、Source/Author Schema、真实 Registry、Astro Collections、Topic/Source/Author 跨文件校验与 Agent 治理。
-- **40B Registry-backed Content UI — Next**：Essay Author byline 与 Brief/Essay/Knowledge Reference Source metadata；不新增 Source/Author 目录路由。
+- **40A Registry + Referential Integrity — implementation/Preview complete，PR #15**：文件名 canonical ID、Source/Author Schema、真实 Registry、Astro Collections、Topic/Source/Author 跨文件校验与 Agent 治理。
+- **40B Registry-backed Content UI — implementation/Preview complete，stacked PR #16**：Essay Author byline、Brief/Essay/Knowledge Reference Source metadata、archived/unsourced 语义和直接 Web build 防御；不新增 Source/Author 目录路由。
 
-退出条件：内容中的 Author、Source、Topic 关系可被验证，并能被现有 Web 页面、SEO 与后续生命周期能力安全消费。
+退出前剩余：
 
-### Milestone E — Search & Share Ready · Planned
+1. 合并 PR #15；
+2. 将 PR #16 retarget 到 `main`；
+3. 验证 retarget 后 UI-only diff 和 CI；
+4. 合并 PR #16；
+5. 验证 `main` / GitHub Pages；
+6. 将 Plan 40 标记 Done。
+
+### Milestone E — Search & Share Ready · Planned / Next after Plan 40 Done
 
 对应 Plan 50。
 
-目标：使 Astro 阅读页成为公开网络中的 canonical 内容入口。
+目标：使 Astro 阅读页成为公开网络中的 canonical 内容入口，并消费稳定的 Author / Source identity。
 
 退出条件：canonical、OG、Twitter Card、Sitemap、基础 JSON-LD 均由构建自动生成并验证。
 
@@ -267,6 +319,7 @@ Milestone D 重点回答“知识身份是否稳定”：
 - 自动信任评分或事实真伪判定系统；
 - Citation graph database；
 - Source / Author 独立目录与反向内容聚合；
+- Source metadata 注入 Slidev 或 RSS；
 - 复杂搜索服务。
 
 这些能力只有在真实产品使用证据出现后才重新立项。
