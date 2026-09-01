@@ -26,8 +26,9 @@
     "test:registry-ui-fixtures": "tsx tools/registry-ui-check/fixture-build.test.ts",
     "test:registry-ui-artifact": "tsx tools/registry-ui-check/index.ts",
     "test:seo-url": "tsx tools/seo/url-contract.test.ts",
+    "test:seo-web": "tsx tools/seo/web-artifact-check.ts",
     "test:weekly-artifact": "tsx tools/weekly-brief/weekly-artifact-check.ts",
-    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact"
+    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm test:seo-web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",
