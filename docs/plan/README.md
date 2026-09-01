@@ -1,20 +1,55 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 基线：`main@78a7371deaf82f1b9b0c07c41ac55728503f18f0`
+> 基线：`main@241996d3b1ad3c38fcaaec7622e8f41c6641ab65`
+> 基线日期：2026-09-01
 > 阶段：Product Capability Phase
+> 当前目标：Plan 40 · Source & Author Registry
 
-`docs/plan/` 用于保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
+`docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
 当前不再进行 Foundation、Legacy Migration 或 Pages Cutover。架构基线由 `docs/planning/architecture-steady-state.md` 定义；本目录只规划如何在该基线上增加真实产品能力。
 
 ## 当前推进状态
 
-- Plan 10 · Archive & Discovery Experience：**In Progress**
-  - 10A Archive & Discovery Indexes：**Done**，PR #8 已合并 `main`
-  - 10B Cross-content Navigation & Related Content：**Done**，PR #9 已合并 `main`
-  - 10C Homepage Discovery：**Current**
-- Plan 20–70：**Planned**
+- Plan 10 · Archive & Discovery Experience：**Done**
+  - 10A Archive & Discovery Indexes：PR #8
+  - 10B Cross-content Navigation & Related Content：PR #9
+  - 10C Homepage Discovery：PR #10
+- Plan 20 · Presentation Platform：**Done**
+  - 20A Presentation Descriptor + Template Registry：PR #11
+  - 20B Standalone Presentation + `talk-v1`：PR #12
+- Plan 30 · Weekly Brief：**Done**
+  - 30A Weekly Schema + Reading：PR #13
+  - 30B `weekly-v1` + Daily / Weekly / Talk mixed integration：PR #14
+- Plan 40 · Source & Author Registry：**Planned / Next**
+- Plan 50 · SEO & Sharing：**Planned**
+- Plan 60 · Knowledge Lifecycle：**Planned**
+- Plan 70 · Scheduled Content Automation：**Planned**
+
+## 当前产品基线
+
+Orbis 已经具备三个稳定内容/发布闭环：
+
+```text
+Daily Brief
+  -> Reading
+  -> daily-v1 / 11 slides
+  -> RSS / Archive / Topic
+  -> Daily stable date / latest
+
+Weekly Brief
+  -> Weekly Reading
+  -> weekly-v1 / 7..11 slides
+  -> RSS / Archive / Topic
+  -> 不占用 Daily stable route
+
+Standalone Presentation
+  -> talk-v1
+  -> Slides discovery
+```
+
+Presentation Platform 可以在一次真实 Build 中同时生成 Daily + Weekly + Talk；生成源和 `dist/**` 继续只作为构建产物，不进入 Git。
 
 ## 总体目标
 
@@ -46,13 +81,13 @@ PR Preview / Review / GitHub Pages
 ## 推荐实施顺序
 
 ```text
-10 Archive & Discovery
+10 Archive & Discovery          Done
         ↓
-20 Presentation Platform
+20 Presentation Platform       Done
         ↓
-30 Weekly Brief
+30 Weekly Brief                Done
         ↓
-40 Source & Author Registry
+40 Source & Author Registry    Next
         ↓
 50 SEO & Sharing
         ↓
@@ -61,7 +96,7 @@ PR Preview / Review / GitHub Pages
 70 Scheduled Content Automation
 ```
 
-其中 40、50 在 20 完成后可以与 30 并行；60、70 应建立在前面的内容合同稳定之后。
+40 与 50 在架构上可以部分并行，但当前优先完成 40：先让 Source / Author / Topic 关系具备稳定身份和引用完整性，再让 SEO / JSON-LD 消费这些稳定实体。
 
 ## 每个计划的统一交付规则
 
@@ -80,5 +115,5 @@ PR Preview / Review / GitHub Pages
 
 - `Planned`：范围与验收已定义，尚未开始；
 - `In Progress`：已有实现分支或 PR；
-- `Done`：已合并 main，并通过对应生产/公网验证；
+- `Done`：已合并 main，并通过对应 Preview / 公网验证；
 - `Deferred`：明确推迟，不作为当前缺陷。

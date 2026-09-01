@@ -1,35 +1,37 @@
 # 30 · Weekly Brief
 
-> 状态：Planned
+> 状态：Done
 > Roadmap Milestone：C — Weekly Intelligence
-> 建议优先级：P1
-> 依赖：Plan 20 Presentation Platform
+> 完成 PR：#13 / #14
+> 依赖：Plan 20 Presentation Platform · Done
 
 ## 1. 目标
 
 实现真正表达跨时间变化的 Weekly Brief，而不是把多份 Daily 内容简单拼接。
 
-Weekly 需要回答：
+Weekly 第一版回答：
 
-- 这一周什么变化最重要？
-- 哪些方向持续升温或降温？
+- 这一周期什么变化最重要？
+- 哪些方向持续升温、稳定或降温？
 - 出现了什么新变量？
-- 哪些判断被新的证据修正？
-- 下一个周期应该继续观察什么？
+- 哪些判断需要继续观察？
+- 下一个周期应该看什么？
 
-## 2. 目标内容模型
+## 2. 30A — Weekly Model + Reading · Done
 
-Weekly 继承 Brief 基础字段，并增加：
+PR #13 `feat: add weekly brief model and reading experience` 已合并。
+
+已提供独立严格 `weeklyBriefSchema`：
 
 ```yaml
 kind: brief
 cadence: weekly
-publishedAt: 2026-09-06
+publishedAt: 2026-09-01
 status: published
 period:
-  from: 2026-08-31
-  to: 2026-09-06
-weeklyThesis: 本周最重要的系统变化
+  from: 2026-08-26
+  to: 2026-09-01
+weeklyThesis: ...
 trendMovements:
   - topic: agent-harness
     direction: rising
@@ -42,47 +44,69 @@ presentation:
   template: weekly-v1
 ```
 
-`trendMovements.direction` 第一版建议限制为：
+稳定约束：
 
-- `rising`；
-- `stable`；
-- `cooling`；
-- `new-variable`。
+- `period` 恰好覆盖七个日历日期（含首尾）；
+- `publishedAt === period.to`；
+- `trendMovements` 2..8；
+- direction 只允许 `rising | stable | cooling | new-variable`；
+- `sections` 2..6；
+- `nextPeriodWatch` 1..5；
+- Weekly 拒绝 Daily-only `signals / actions / projects / radar / archivePicks`；
+- Daily 原有 exact 4 signals / 5 sections / action contract 保持不变。
 
-## 3. 范围
+Reading 使用共享 `/briefs/:id/` shell，但 cadence-specific body 独立渲染：
 
-### 3.1 Weekly Schema
+```text
+Period
+→ Weekly Thesis
+→ Trend Movements
+→ Key Sections
+→ Next Period Watch
+→ References
+```
 
-新增并验证：
+真实 Weekly：`content/briefs/2026-09-01-weekly.yaml`。
 
-- period；
-- weeklyThesis；
-- trendMovements；
-- nextPeriodWatch；
-- Weekly 专用数量边界。
+30A 已证明 Weekly 会自然进入 Briefs、Weekly index、Archive、RSS、Topic、Related 和 Homepage Latest Brief，同时不会抢占 Daily `/latest/`、日期 alias 或生成型 `archive.json`。
 
-不要强迫 Weekly 复用 Daily 固定 4 signals / 5 sections。
+## 3. 30B — weekly-v1 + Mixed Presentation · Done
 
-### 3.2 Weekly 阅读页
+PR #14 `feat: add weekly-v1 presentation integration` 已合并。
 
-`/briefs/:id/` 根据 cadence 使用语义差异化展示：
+`weekly-v1` 通过 Plan 20 Template Registry 注册，Registry 负责：
 
-- period；
-- weeklyThesis；
-- trend movements；
-- 本周重点 sections；
-- next period watch；
-- references。
+- `weeklyBriefSchema.parse(payload)`；
+- `readingUrl` 必须存在；
+- wrong Daily / Talk payload 明确失败；
+- renderer 只接收已验证 Weekly。
 
-尽量共享组件与查询逻辑，不复制完整页面。
+### Slide 结构
 
-### 3.3 `weekly-v1`
+```text
+1            Cover
+2            Period + Weekly Thesis
+3            Trend Movements
+4..N         one slide per Weekly section
+N + 1        Next Period Watch
+N + 2        References
+```
 
-通过 Plan 20 的 Template Registry 注册。
+若 `sections.length = S`：
 
-页面结构应围绕趋势和周期判断设计，不预先把页数锁死为 11；第一版可以定义一个清晰上限并由 Schema/Template Test 固定。
+```text
+slides = S + 5
+```
 
-### 3.4 Discovery
+因此第一版合同是：
+
+- 2 sections → 7 slides；
+- 当前真实 Weekly 3 sections → 8 slides；
+- 6 sections → 11 slides。
+
+Weekly 不复用 Daily 的 `FOUR SIGNALS / OPEN SOURCE RADAR / FROM SIGNALS TO ACTION` 等模板语义。
+
+## 4. Discovery 与路由语义
 
 Weekly 自动进入：
 
@@ -90,45 +114,85 @@ Weekly 自动进入：
 - `/briefs/weekly/`；
 - `/archive/`；
 - `/rss.xml`；
-- `/slides/`（presentation enabled 时）；
-- Topic 聚合。
+- `/slides/`；
+- Homepage Latest Brief / Latest Presentation；
+- Topic 聚合；
+- Related Content。
 
-Daily 专属 `/YYYY/MM/DD/`、`/latest/` 继续只由 Daily 驱动，Weekly 不抢占 Daily latest contract。
+Daily 专属 contract 保持分离：
 
-## 4. 实现任务
+```text
+/latest/             -> newest Daily
+/YYYY/MM/DD/         -> Daily only
+dist/site/archive.json.latest / issues -> Daily only
+```
 
-1. 新增 `weeklyBriefSchema`；
-2. 加正向/负向 Schema tests；
-3. 扩展 Brief 阅读页；
-4. 实现 `weekly-v1`；
-5. 将 Weekly 纳入 Presentation Registry；
-6. 更新 RSS/Archive/Topic/Slides 聚合测试；
-7. 创建一份最小真实 Weekly Fixture 或示例内容；
-8. 验证 Daily 与 Weekly 同仓库共存；
-9. 验证 `/latest/` 仍按 Daily 语义运行。
+Weekly `publishedAt` 不会创建 Daily 日期 alias。
 
-## 5. 非目标
+## 5. Mixed Presentation 验证
+
+正常真实仓库同时存在：
+
+```text
+2026-08-28                  daily-v1  · Brief
+2026-09-01-weekly           weekly-v1 · Brief
+orbis-presentation-platform talk-v1   · standalone Presentation
+```
+
+集成 Fixture 阶段还会加入 future Daily，证明同一次构建可同时生成 4 个 public decks，并继续验证：
+
+- duplicate slug fail-before-write；
+- non-public Brief / standalone Presentation exclusion；
+- future Daily 推进 `/latest/`、Daily date route 和 `archive.json`；
+- 每个 deck 使用独立 public base path；
+- fixture cleanup 后恢复真实三 deck 状态。
+
+## 6. 安全边界
+
+`weekly-v1` 对结构化内容执行与 `talk-v1` 同级别的 escaping：
+
+- title / summary / thesis；
+- trend topic / direction / summary；
+- section title / conclusion / facts / limitations / references；
+- next-period watch；
+- top-level references；
+- Slidev frontmatter title。
+
+测试证明 schema-valid `<script>` / `<iframe>` 字符串不会以 raw executable markup 进入生成 Markdown。
+
+## 7. 非目标
+
+Plan 30 第一版不实现：
 
 - 自动从 Daily 机械合并生成 Weekly；
-- 自动总结所有过去七天内容；
-- 周报品牌化栏目系统；
+- 自动总结全部过去七天内容；
+- 趋势预测模型或量化趋势分数；
 - 月报；
-- 趋势预测模型。
+- Weekly previous / next；
+- Weekly 独立日期 alias；
+- 第二套 Presentation pipeline。
 
-未来可以让 Agent 读取本周 Daily 作为输入，但最终 Weekly 必须是独立结构化判断。
+未来 Agent 可以读取本周期 Daily 作为研究输入，但最终 Weekly 必须是独立结构化判断。
 
-## 6. 验收标准
+## 8. 验收状态
 
-- Weekly 有独立 Schema，不能被 Daily Schema 误接受；
-- Weekly 不依赖固定 4 signals / 5 sections；
-- `weekly-v1` 可独立构建；
-- Daily + Weekly + Talk 可在同一次 Build 中共存；
-- Weekly 出现在所有正确的 Web/RSS/Topic/Archive/Slides 入口；
-- Weekly 不改变 Daily `/latest/` 与日期路由语义；
-- PR Preview 能访问阅读版和演示版。
+- [x] Weekly 有独立严格 Schema，不能被 Daily 语义误接受；
+- [x] Weekly 不依赖固定 4 signals / 5 sections；
+- [x] Weekly Reading 有独立跨周期语义；
+- [x] `weekly-v1` 独立构建；
+- [x] `weekly-v1` 7..11 动态页数合同有 min / real / max 测试；
+- [x] Daily + Weekly + Talk 在正常 Build 中共存；
+- [x] Weekly 出现在正确的 Web / RSS / Topic / Archive / Slides 入口；
+- [x] Homepage Latest Brief / Presentation 可以由 Weekly 驱动；
+- [x] Weekly 不改变 Daily `/latest/`、日期路由和 `archive.json` 语义；
+- [x] Reading ↔ Weekly Slides 双向可达；
+- [x] hostile markup escaping 有负向验证；
+- [x] PR Preview 公开访问 Reading 和 Slides；
+- [x] generator / `build-slides` 保持 template-neutral。
 
-## 7. 建议 PR
+## 9. PR 记录
 
-`feat: add weekly brief model and weekly-v1 presentation`
+1. **30A · Done** — PR #13 `feat: add weekly brief model and reading experience`；
+2. **30B · Done** — PR #14 `feat: add weekly-v1 presentation integration`。
 
-如果变更过大，可先提交 Schema + Reading，再提交 Template + Integration。
+Plan 30 / Milestone C 已关闭。

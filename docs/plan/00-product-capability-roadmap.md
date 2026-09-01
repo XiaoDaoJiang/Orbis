@@ -1,8 +1,9 @@
 # 00 · Orbis Product Capability Roadmap
 
 > 状态：Active
-> 基线日期：2026-08-31
-> 基线提交：`main@78a7371deaf82f1b9b0c07c41ac55728503f18f0`
+> 基线日期：2026-09-01
+> 基线提交：`main@241996d3b1ad3c38fcaaec7622e8f41c6641ab65`
+> 当前目标：Milestone D — Knowledge Identity / Plan 40
 
 ## 1. 当前阶段判断
 
@@ -10,19 +11,22 @@ Orbis 已经完成：
 
 - Astro + Slidev pnpm Monorepo Foundation；
 - Structured Content + Zod Schema；
-- Daily Brief → Astro 阅读版 + 11 页 Slidev + RSS；
-- 多 Presentation 自动发现与构建；
-- `/YYYY/MM/DD/`、`/latest/`、`/archive.json` 的 structured-only 派生；
+- Daily Brief → Astro 阅读版 + 固定 11 页 `daily-v1` + RSS；
+- Archive / Slides / Daily / Weekly Discovery 与跨内容导航；
+- Homepage Latest Brief / Essay / Presentation / Knowledge / Topics discovery；
+- source-neutral Presentation Descriptor + Template Registry；
+- `content/presentations/**` + standalone `talk-v1`；
+- Weekly 专属 Schema、Reading、`weekly-v1`；
+- Daily + Weekly + Talk 同仓库自动发现、生成、构建与验证；
+- `/YYYY/MM/DD/`、`/latest/`、生成型 `/archive.json` 的 Daily-only structured projection；
 - Path Guard + CODEOWNERS + Agent 内容边界；
-- read-only PR Build → trusted Preview Publish → 公网 Smoke；
-- GitHub Actions Pages Production Cutover；
-- 原 `main:/docs` Legacy HTML/Archive 兼容层彻底退役；
-- Plan 10A Archive & Discovery Indexes：`/archive/`、`/slides/`、`/briefs/daily/`、`/briefs/weekly/`、共享公开内容查询与 Topic 可见性修正；
-- Plan 10B Cross-content Navigation：Daily Previous / Next、Brief / Essay / Knowledge Related、Reading ↔ Slides 稳定双向导航与非公开内容排除。
+- read-only PR Build → trusted Preview Publish → Public Smoke；
+- GitHub Pages Production Cutover；
+- 原 `main:/docs` Legacy HTML/Archive 兼容层彻底退役。
 
-因此项目已经结束 Architecture Migration，正式进入 **Product Capability Phase**，当前正在推进 Milestone A — Discoverable Orbis 的最后子阶段 10C Homepage Discovery。
+因此 Architecture Migration 与前三个 Product Capability Milestone 均已结束。当前下一条主线是 **Milestone D — Knowledge Identity**：把 Topic 之外的 Source / Author 从自由字符串升级为稳定实体和可验证关系。
 
-## 2. 产品定义回顾
+## 2. 产品定义
 
 Orbis 不是新闻站、博客模板或 Slides 仓库，而是一个面向长期积累的技术内容与知识发布系统：
 
@@ -31,15 +35,15 @@ Orbis 不是新闻站、博客模板或 Slides 仓库，而是一个面向长期
     ↓
 结构化内容
     ↓
+可验证的内容身份与关系
+    ↓
 多种发布形态
     ├── 阅读版
     ├── 演示版
-    ├── Topic 聚合
+    ├── Topic / Source / Author 聚合
     ├── 长期 Knowledge
     └── RSS
 ```
-
-当前更精确的定义是：
 
 > Orbis 是一个 Git-native、Agent-native 的结构化技术知识发布系统：Agent 负责发现、研究和生产受 Schema 约束的内容，Astro、Slidev 与 GitHub Actions 将同一知识源转化为阅读、演示、订阅、聚合和长期归档。
 
@@ -54,26 +58,23 @@ RSS / Web / Primary Sources
              ↓
  @orbis/content-schema
              ↓
-     ┌───────┴────────┐
-     ↓                ↓
-  Astro Web      Slide Generator
-     ↓                ↓
- Essays              Slidev
- Briefs               ↓
- Topics           /slides/*
- Knowledge
- RSS
-     └───────┬────────┘
-             ↓
-        assemble-site
-             ↓
- /archive.json
- /latest/
- /YYYY/MM/DD/
-             ↓
-          dist/site
-             ↓
-   PR Preview / Pages
+     ┌───────┴─────────┐
+     ↓                 ↓
+  Astro Web      Presentation Platform
+     ↓                 ↓
+ Essays           Descriptor + Registry
+ Briefs           daily / weekly / talk
+ Topics                 ↓
+ Knowledge           Slidev × N
+     └────────┬──────────┘
+              ↓
+         assemble-site
+              ↓
+ /archive.json /latest/ /YYYY/MM/DD/
+              ↓
+           dist/site
+              ↓
+    PR Preview / GitHub Pages
 ```
 
 核心约束：
@@ -82,34 +83,32 @@ RSS / Web / Primary Sources
 - Astro 与 Slidev 共享内容与设计合同，不共享 Runtime UI；
 - AI/Agent 是 Content Contributor，不是 UI/Infra Maintainer；
 - 生成文件永不反向成为内容源；
-- 生产只发布经过完整 Build 和 Smoke 验证的 `dist/site`。
+- 生产只发布经过完整 Build 和 Smoke 验证的 `dist/site`；
+- Daily stable-date/latest contract 与通用 Brief/Presentation discovery contract 分离。
 
 ## 4. 原始需求与当前实现
 
 | 能力 | 当前状态 | 已提供 |
 |---|---|---|
-| 长期技术内容系统 | Done | Essay、Brief、Topic、Knowledge 四类结构化内容 |
-| `content/**` 单一来源 | Done | 发布不读取 `docs/**`，生成物不进 Git |
+| 长期技术内容系统 | Done | Essay、Brief、Topic、Knowledge、Presentation 结构化内容 |
+| `content/**` 单一来源 | Done | 发布不读取 Legacy `docs/**`，生成物不进 Git |
 | Astro + Slidev 分层 | Done | `apps/web` / `apps/slides` 独立构建 |
 | Shared Schema | Done | `packages/content-schema` + Zod |
-| Shared Design Tokens | Done | Astro/Slidev 共用视觉 Token |
-| Essay | Done / Basic | Markdown → `/essays/:id/`，已支持 Related |
-| Daily Brief | Done / Mature | YAML → 阅读 + 11 页 Slidev + RSS + Date/Latest/Archive + Previous/Next |
-| Weekly Brief | Planned | Schema/template 名称预留，但没有 Weekly 语义模型与 `weekly-v1` 实现 |
-| Ad-hoc Brief | Partial | 基础 cadence 可表达，缺少通用 Presentation 模板 |
-| 独立 Presentation | Planned | Slidev 基础设施已有，缺 `content/presentations/**` 与 `talk-v1` |
-| Topic | Done / Basic | Topic 实体与公开 Essay/Brief/Knowledge 聚合 |
+| Shared Design Tokens | Done | Astro / Slidev 共用视觉 Token |
+| Essay | Done / Basic | Markdown → `/essays/:id/` + Related |
+| Daily Brief | Done / Mature | Reading + 11 页 Slidev + RSS + Date/Latest/Archive + Previous/Next |
+| Weekly Brief | Done / First Release | 独立 Weekly Schema + Reading + 7..11 页 `weekly-v1` + RSS/Archive/Topic/Slides |
+| Ad-hoc Brief | Partial | cadence/body contract 可表达，缺通用 Presentation 模板 |
+| 独立 Presentation | Done / Basic | `content/presentations/**` + `talk-v1` + Slides/Home discovery |
+| Presentation Platform | Done | Descriptor、Registry、Daily/Weekly/Talk 混合构建 |
+| Topic | Done / Basic | Topic 实体与公开内容聚合 |
 | Knowledge | Done / Basic | 状态、`reviewAt`、Topic、References、Related |
 | RSS 输入 | Partial | `feeds.yaml` + Agent Contract，缺 Repository Scheduled Orchestration |
-| RSS 输出 | Done | `/rss.xml` 聚合已发布内容 |
-| 阅读版 + 演示版双输出 | Done | 同一 Brief 单一事实源，Reading ↔ Slides 双向可达 |
-| 永久日期 URL / Latest / Archive data | Done | 全部由 Daily Brief 动态派生 |
-| 人类 Archive / Discovery UI | In Progress | 10A/10B 已完成 Archive、Slides、cadence 入口、Previous/Next、Related；首页发现 IA 待 10C |
-| Agent 只修改内容 | Done | Prompt + AGENTS + Path Guard |
-| 多 Deck Build | Done | 自动发现并逐个构建，已有 N>1 集成 Gate |
+| RSS 输出 | Done | `/rss.xml` 聚合公开内容 |
+| Archive / Discovery / Navigation | Done / Mature | Archive、Slides、cadence indexes、Homepage、Previous/Next、Related |
 | PR Preview / Pages Governance | Done / Mature | read-only build、trusted publish、public smoke、protected main |
 | SEO / Sharing | Partial | title/description/favicon/RSS discovery；缺 canonical/OG/Sitemap/JSON-LD |
-| Source / Author Registry | Planned | 当前仍以字符串和内联 Reference 为主 |
+| Source / Author Registry | Planned / Next | 当前仍以字符串和内联 Reference 为主 |
 | Knowledge Review Workflow | Planned | Schema 有 `reviewAt`，缺生命周期工具和可视化 |
 
 ## 5. 当前成熟度
@@ -117,122 +116,109 @@ RSS / Web / Primary Sources
 | 层级 | 评估 |
 |---|---:|
 | Monorepo / Build Foundation | 95% |
-| Structured Content Architecture | 90% |
-| Daily Brief Pipeline | 92% |
-| Astro + Slidev 双输出 | 93% |
+| Structured Content Architecture | 92% |
+| Daily Brief Pipeline | 94% |
+| Weekly Brief Pipeline | 85% |
+| Presentation Platform | 90% |
+| Astro + Slidev 双输出 | 95% |
 | CI / Preview / Pages / Governance | 95% |
 | Agent Content Boundary | 95% |
+| Archive / Discovery / Navigation UX | 92% |
 | Essay / Knowledge / Topic 基础 | 75% |
 | RSS | 75% |
-| Weekly / Ad-hoc / Talk | 20% |
-| Archive / Discovery / Navigation UX | 80% |
 | SEO / Sharing | 30% |
 | Source / Author Registry | 10% |
-| 完整 Orbis 内容产品 | 约 70–75% |
+| 完整 Orbis 内容产品 | 约 80–85% |
 
-成熟度是路线判断，不是精确 KPI。后续应以真实路由、内容规模、构建验证和日常使用体验替代主观百分比。
+成熟度是路线判断，不是精确 KPI。后续应以真实内容规模、引用完整性、构建验证和日常使用体验替代主观百分比。
 
 ## 6. 已经具备的核心产品闭环
 
-当前最成熟的是 Daily Brief Vertical Slice：
+### Daily
 
 ```text
 Research
    ↓
-content/briefs/YYYY-MM-DD.yaml
+Daily YAML
    ↓
 dailyBriefSchema
-   ├── /briefs/<id>/        Astro 阅读版
-   ├── /slides/<id>/        11 页 Slidev
-   ├── Previous / Next
-   ├── Related by Topic
-   ├── /rss.xml
-   ├── /YYYY/MM/DD/
-   ├── /archive.json
-   ├── /archive/
-   ├── /briefs/daily/
-   └── /latest/
+   ├── Reading
+   ├── daily-v1 / 11 slides
+   ├── Previous / Next / Related
+   ├── RSS / Topic / Archive
+   └── Daily-only date / latest / archive.json
 ```
 
-它已经证明 Orbis 的核心产品假设成立：**Agent 只生产结构化知识，系统负责多形态发布。**
+### Weekly
 
-## 7. 下一阶段的核心问题
+```text
+Cross-time judgment
+   ↓
+Weekly YAML
+   ↓
+weeklyBriefSchema
+   ├── Weekly Reading
+   ├── weekly-v1 / 7..11 slides
+   ├── RSS / Topic / Archive
+   └── no Daily stable alias
+```
 
-下一阶段不再回答“架构能不能工作”，而是回答：
+### Standalone Presentation
 
-1. 用户能否高效浏览和重新发现历史知识？
-2. Slides 是否能从 Daily 专用能力升级为真正 Presentation Platform？
-3. Weekly 是否能表达跨时间趋势，而不是 Daily 拼接？
-4. Topic、Source、Author、Knowledge 之间能否形成稳定知识关系？
-5. 内容能否被搜索引擎、社交分享和阅读器正确理解？
-6. Knowledge 是否能被定期复查、更新和退役？
-7. Daily 自动化是否能在不扩大 Agent 权限的前提下稳定持续运行？
+```text
+Structured Presentation YAML
+   ↓
+presentationContentSchema
+   ↓
+PresentationDescriptor
+   ↓
+talk-v1
+   ↓
+/slides/<slug>/
+```
+
+三条路径已经证明 Orbis 的核心产品假设成立：**Agent 生产结构化知识，平台负责验证、关系、发现与多形态发布。**
+
+## 7. 下一阶段核心问题
+
+下一阶段的重点从“是否能多形态发布”转向“知识身份是否稳定”：
+
+1. Source 是否拥有稳定 ID，而不是依赖 `GitHub` / `github` / `github-docs` 等自由字符串？
+2. Author 是否拥有可解析 profile，而不是 Essay 中的自由文本？
+3. Topic / Source / Author relation 是否能在 CI 中整体验证？
+4. Reference 是否既保留具体材料 URL，又能链接到 Source Entity？
+5. Agent 是否只能使用已注册身份，并把新增 Registry 变更交给人工评审？
+6. 稳定身份建立后，SEO / JSON-LD、Knowledge lifecycle 和自动化能否直接复用？
 
 ## 8. Product Capability Roadmap
 
-### Milestone A — Discoverable Orbis · In Progress
+### Milestone A — Discoverable Orbis · Done
 
-对应 Plan 10。
+对应 Plan 10。PR #8 / #9 / #10 已合并。
 
-目标：从“有内容页”变成“历史内容可浏览、可筛选、可继续探索”。
+退出结果：用户无需知道文件路径即可从 Homepage、Archive、Slides、cadence indexes、Topic 和内容页发现主要内容，并可通过 Previous / Next / Related 持续探索。
 
-实施状态：
+### Milestone B — Presentation Platform · Done
 
-- **10A Archive & Discovery Indexes — Done**：PR #8 已合并；提供 `/archive/`、`/slides/`、`/briefs/daily/`、`/briefs/weekly/`、共享公开内容规则和 Topic 可见性修正。
-- **10B Cross-content Navigation & Related Content — Done**：PR #9 已合并；提供 Previous / Next、Topic Related、阅读版 ↔ 演示版稳定双向导航及非公开关系排除。
-- **10C Homepage Discovery — Current**：首页 Latest Brief / Essay / Presentation / Knowledge updates / Topics / Archive 信息架构。
+对应 Plan 20。PR #11 / #12 已合并。
 
-主要能力：
+退出结果：Brief 和 standalone Presentation 先统一进入 `PresentationDescriptor` / Template Registry；新增 Deck template 不需要修改 `build-slides`，真实仓库已经支持 Daily + Talk，并为 Weekly 留出明确模板边界。
 
-- `/archive/`；
-- `/slides/`；
-- `/briefs/daily/`、`/briefs/weekly/`；
-- Previous / Next / Related；
-- 阅读版 ↔ 演示版双向导航；
-- 首页结构升级。
+### Milestone C — Weekly Intelligence · Done
 
-退出条件：用户不需要知道文件路径或日期即可找到主要内容、历史内容和最新内容，并能从任一内容继续探索相关内容。
+对应 Plan 30。PR #13 / #14 已合并。
 
-### Milestone B — Presentation Platform
+退出结果：Weekly 拥有独立 Schema、跨周期语义 Reading、`weekly-v1`、RSS/Archive/Topic/Slides discovery，并与 Daily + Talk 在同一次 Build 中共存；Daily `/latest/` 与日期路由仍保持 Daily-only。
 
-对应 Plan 20。
-
-目标：把现有 Daily Slide Generator 抽象为支持多 Presentation 类型的平台。
-
-主要能力：
-
-- Template Registry；
-- `content/presentations/**`；
-- `talk-v1`；
-- Brief 与独立 Presentation 统一进入 `/slides/`；
-- 不同类型 Deck 的统一发现、构建和验证。
-
-退出条件：新增一种 Deck 不再需要复制 Daily 专用生成逻辑。
-
-### Milestone C — Weekly Intelligence
-
-对应 Plan 30。
-
-目标：实现真正的 Weekly Brief，而不是七份 Daily 拼接。
-
-主要能力：
-
-- Weekly 专属 Schema；
-- 趋势变化、周期 Thesis、下周期 Watch；
-- `weekly-v1`；
-- Weekly 阅读页与筛选入口。
-
-退出条件：一份 Weekly 可以从结构化数据独立生成阅读版、演示版和 RSS。
-
-### Milestone D — Knowledge Identity
+### Milestone D — Knowledge Identity · Next
 
 对应 Plan 40。
 
 目标：从自由字符串引用升级到稳定 Source / Author 实体与引用完整性。
 
-退出条件：内容中的 Author、Source、Topic 关系可被验证并用于聚合。
+退出条件：内容中的 Author、Source、Topic 关系可被验证，并能被 Web 聚合、SEO 与后续生命周期能力安全消费。
 
-### Milestone E — Search & Share Ready
+### Milestone E — Search & Share Ready · Planned
 
 对应 Plan 50。
 
@@ -240,7 +226,7 @@ dailyBriefSchema
 
 退出条件：canonical、OG、Twitter Card、Sitemap、基础 JSON-LD 均由构建自动生成并验证。
 
-### Milestone F — Durable Knowledge
+### Milestone F — Durable Knowledge · Planned
 
 对应 Plan 60。
 
@@ -248,7 +234,7 @@ dailyBriefSchema
 
 退出条件：可以识别待复查、过期、needs-review 的知识，并提供清晰更新路径。
 
-### Milestone G — Sustainable Automation
+### Milestone G — Sustainable Automation · Planned
 
 对应 Plan 70。
 
@@ -258,37 +244,13 @@ dailyBriefSchema
 
 ## 9. 明确暂不建设
 
-继续保持原 Non-goals：
+当前继续不建设：
 
-- 在线 CMS；
-- 数据库和动态 API；
-- 登录、评论、点赞、用户画像；
-- 在线 RAG/AI 问答；
-- 多语言；
-- 重型全文搜索服务；
-- Turborepo/Nx 等任务编排器；
-- 为假想规模提前建设复杂增量构建平台。
+- 数据库 / CMS / 服务端 Runtime；
+- 登录、用户账户、收藏与个性化推荐；
+- 可视化 Slide Editor；
+- 自动信任评分或事实真伪判定系统；
+- Citation graph database；
+- 复杂搜索服务。
 
-## 10. Roadmap 完成后的目标产品形态
-
-当 10–70 全部完成后，Orbis 应具备以下完整飞轮：
-
-```text
-Feeds / Sources
-      ↓
-Agent Research
-      ↓
-Brief / Essay / Presentation / Knowledge
-      ↓
-Schema + Source/Topic/Author Integrity
-      ↓
-Astro Reading + Slidev Presentation + RSS
-      ↓
-Archive / Topic / Discovery / SEO / Sharing
-      ↓
-Knowledge Review
-      ↓
-新的研究与内容
-```
-
-此时 Orbis 才从“架构完整的内容 Vertical Slice”成长为可长期使用的个人技术知识发布系统。
+这些能力只有在真实产品使用证据出现后才重新立项。
