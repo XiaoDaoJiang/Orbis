@@ -1,10 +1,10 @@
 # 40 · Source & Author Registry
 
-> 状态：In Progress
+> 状态：In Progress · Implementation Complete / Ordered Merge Gate
 > Roadmap Milestone：D — Knowledge Identity
 > 当前基线：`main@241996d3b1ad3c38fcaaec7622e8f41c6641ab65`
-> 当前子阶段：40A — Registry + Referential Integrity
-> 当前实现：PR #15
+> 当前实现：40A PR #15 + stacked 40B PR #16
+> 下一动作：合并 #15 → 将 #16 retarget 到 `main` → 验证并合并 #16
 > 建议优先级：P1
 > 依赖：Plan 10、20、30 已完成
 
@@ -12,7 +12,7 @@
 
 把当前内容中的自由字符串 Author / Source 引用升级为稳定实体和可验证关系，使 Orbis 的知识关系不再依赖拼写一致性。
 
-核心目标不是“多建两个目录”，而是建立最小、可持续的 Referential Integrity：
+核心目标不是“多建两个目录”，而是建立最小、可持续的 Knowledge Identity：
 
 ```text
 content/**
@@ -21,10 +21,14 @@ per-file Schema
     ↓
 Topic / Source / Author relation validation
     ↓
+Registry-backed Reading UI
+    ↓
 Astro / Slidev / RSS / Archive
 ```
 
-## 2. 已确认的产品决策
+Plan 40 已完成全部实现与独立公网 Preview 验证，但尚未按顺序合并到 `main`，因此仍保持 In Progress。
+
+## 2. 已确认并实现的产品决策
 
 1. Source / Author canonical ID 来自扁平文件名与 Astro `entry.id`；YAML 不重复声明 `id`。
 2. ID 统一匹配 `^[a-z0-9]+(?:-[a-z0-9]+)*$`。
@@ -34,6 +38,8 @@ Astro / Slidev / RSS / Archive
 6. archived Source / Author 继续允许历史内容引用，不因状态变化破坏旧内容。
 7. Scheduled Content Agent 可以使用已注册 active ID，但不能创建或修改 Source / Author Registry。
 8. 第一版只 enrich 现有内容页，不新增 `/sources/`、`/authors/` 目录或详情路由。
+9. 缺失 Author / Source 即使绕过 `content:validate` 直接执行 `build:web`，也必须显式失败而非降级为原始 ID。
+10. Slidev、RSS、Archive、Topic 与 Related Content 不因 Registry UI 改变原有语义。
 
 ## 3. Canonical Identity
 
@@ -142,7 +148,7 @@ references:
 
 `source` 只是 Registry ID，不嵌入整个 Source object。
 
-没有 `source` 的 Reference 仍然合法：
+没有 `source` 的 Reference 仍然合法，并在 Reading UI 中保持无 Source metadata：
 
 ```yaml
 references:
@@ -170,7 +176,7 @@ references:
 
 ### 7.2 失败语义
 
-构建期错误必须包含内容路径、字段路径、关系类型和缺失 ID，例如：
+构建期错误包含内容路径、字段路径、关系类型和缺失 ID，例如：
 
 ```text
 Invalid relation: content/essays/example.md: authors[0] -> missing author "unknown-author"
@@ -188,14 +194,41 @@ Duplicate registry ID: source "github"
 
 - 历史 Source 引用继续通过；
 - 历史 Essay Author 继续通过；
+- Reading UI 显示明确 archived 标记；
 - 不要求批量重写旧内容；
 - 第一版不实现基于 Git diff 的“新增 archived relation” warning。
 
-## 8. Astro 与产品展示
+## 8. Registry-backed Reading UI
 
-Source / Author 注册为 Astro Content Collections，供构建期消费。
+40B 已实现构建期 Registry 消费：
 
-第一版不创建：
+```text
+Essay authors[]
+    ↓
+AuthorByline
+    ↓
+name + optional profile + status
+
+Reference.source
+    ↓
+ReferenceList
+    ↓
+Source name + homepage + type + trustTier + status
+```
+
+已覆盖：
+
+- Essay Author byline；
+- Daily / Weekly / Ad-hoc 顶层 References；
+- Essay frontmatter References；
+- Knowledge frontmatter References；
+- active / archived Author；
+- linked / unlinked Author；
+- active / archived Source；
+- unsourced Reference；
+- 直接 `build:web` 时 unknown Author / Source 明确失败。
+
+未新增：
 
 ```text
 /sources/
@@ -204,11 +237,7 @@ Source / Author 注册为 Astro Content Collections，供构建期消费。
 /authors/:id/
 ```
 
-40B 只在现有页面展示：
-
-- Essay Author display name、可选 profile URL、状态；
-- Reference Source name / type / trustTier / status；
-- 无 source 的 Reference 保持原显示。
+Section-level References 继续用于事实依据、关系校验和 Slide rendering，本轮没有增加新的 Astro 展示密度。
 
 ## 9. Agent Governance
 
@@ -226,13 +255,11 @@ Agent Contract 明确：
 - 新 Registry identity 必须进入人工评审；
 - generated Slidev / Web artifact 继续禁止提交。
 
-## 10. 实现拆分
+## 10. 实现与验证状态
 
-### 40A — Registry + Referential Integrity · Current
+### 40A — Registry + Referential Integrity · Implementation Complete
 
 PR #15：`feat: add source and author registry integrity`
-
-范围：
 
 - [x] `sourceSchema` / `authorSchema`；
 - [x] canonical filename ID contract；
@@ -243,32 +270,47 @@ PR #15：`feat: add source and author registry integrity`
 - [x] invalid / duplicate / nested / missing relation 负向合同；
 - [x] archived 与 unsourced Reference 正向合同；
 - [x] Agent governance；
-- [ ] PR #15 合并 main。
+- [x] 完整 `pnpm build`；
+- [x] Trusted Public Preview；
+- [ ] 合并 PR #15 到 `main`。
 
-40A 不修改 Reading UI，不新增 Source/Author 路由。
+Final head：`97056620da87f9f2e939f6f45f07c62185d4c4c1`。
 
-### 40B — Registry-backed Content UI · Next
+### 40B — Registry-backed Content UI · Implementation Complete / Stacked
 
-建议 PR：
+PR #16：`feat: render registry-backed author and source metadata`
+
+- [x] 纯 Web Registry resolver；
+- [x] Essay Author byline；
+- [x] 共享 Reference rendering component；
+- [x] Daily / Weekly / Ad-hoc Reading Source metadata；
+- [x] Essay / Knowledge Reference Source metadata；
+- [x] archived 状态显示；
+- [x] linked / unlinked Author；
+- [x] unsourced Reference 兼容；
+- [x] direct `build:web` missing-ID defense；
+- [x] artifact / Preview 验证；
+- [x] 不新增 Registry 路由；
+- [ ] PR #15 合并后将 #16 retarget 到 `main`；
+- [ ] 确认 retarget 后 diff / CI；
+- [ ] 合并 PR #16 到 `main`。
+
+Final stacked head：`56a89d2259b0489a61ca2a867a06740f5c2de2eb`。
+
+## 11. 有序合并协议
+
+Plan 40 不能把 stacked PR #16 直接先合并到 feature base。正确顺序：
 
 ```text
-feat: render registry-backed author and source metadata
+1. Merge PR #15 -> main
+2. Retarget PR #16 from feat/source-author-registry-integrity to main
+3. Confirm GitHub recalculates #16 as the 16-file UI-only diff
+4. Confirm/re-run latest CI and Trusted Preview if GitHub emits a new merge base
+5. Merge PR #16 -> main
+6. Verify main/Pages, mark Plan 40 Done, advance to Plan 50
 ```
 
-范围：
-
-- [ ] Essay Author byline；
-- [ ] 共享 Reference rendering component；
-- [ ] Daily / Weekly / Ad-hoc Reading Source metadata；
-- [ ] Essay / Knowledge Reference Source metadata；
-- [ ] archived 状态显示；
-- [ ] unsourced Reference 兼容；
-- [ ] artifact / Preview 验证；
-- [ ] 不新增 Registry 路由。
-
-40B 必须建立在已合并的 40A identity contract 上，不重新定义 canonical IDs 或校验规则。
-
-## 11. 非目标
+## 12. 非目标
 
 - 自动信任评分模型；
 - 来源真实性自动判定；
@@ -278,26 +320,30 @@ feat: render registry-backed author and source metadata
 - ORCID / Google Scholar 集成；
 - 用户账号体系；
 - aliases 自动关系解析；
-- Git-history-aware archived warnings。
+- Git-history-aware archived warnings；
+- Source metadata 注入 Slidev 或 RSS。
 
-## 12. Plan 40 验收标准
+## 13. Plan 40 验收状态
 
-### 40A
+### 已满足
 
-- Source / Author 有严格 Schema 和唯一 canonical ID；
-- 所有 Essay Author 均可解析；
-- 所有声明 `source` 的 Reference 均可解析；
-- 所有 Topic relation 均可解析；
-- invalid / duplicate / nested Registry identity 会使 Build 失败；
-- archived identity 保持历史可解析；
-- Agent 默认不能修改 Source / Author Registry；
-- Daily / Weekly / Talk、RSS、Archive 与 Preview 无回归。
+- [x] Source / Author 有严格 Schema 和唯一 canonical ID；
+- [x] 所有 Essay Author 均可解析；
+- [x] 所有声明 `source` 的 Reference 均可解析；
+- [x] 所有 Topic relation 均可解析；
+- [x] invalid / duplicate / nested Registry identity 会使 Build 失败；
+- [x] archived identity 保持历史可解析并可显示；
+- [x] Agent 默认不能修改 Source / Author Registry；
+- [x] Essay 使用 Registry Author metadata；
+- [x] Reading References 使用 Registry Source metadata；
+- [x] unsourced 与 archived 显示语义明确；
+- [x] 不新增 Source / Author 目录系统；
+- [x] Daily / Weekly / Talk、RSS、Archive 与 Preview 无回归；
+- [x] 40A 与 40B 均完成独立 Public Preview。
 
-### 40B / Milestone D 最终退出条件
+### 尚未满足
 
-- Essay 使用 Registry Author metadata；
-- Reading References 使用 Registry Source metadata；
-- unsourced 与 archived 显示语义明确；
-- 不存在悬空 Topic / Source / Author relation；
-- 不新增无真实需求的 Source / Author 目录系统；
-- Plan 40 所有 PR 合并 main 并完成公网验证。
+- [ ] PR #15 合并 `main`；
+- [ ] PR #16 retarget 并合并 `main`；
+- [ ] 合并后主分支 / GitHub Pages 最终验证；
+- [ ] Plan 40 标记 Done 并推进 Plan 50。
