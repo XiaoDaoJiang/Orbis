@@ -1,0 +1,78 @@
+kind: brief
+cadence: weekly
+publishedAt: 2026-09-01
+status: published
+title: Orbis Weekly — Presentation Becomes a Platform Boundary
+summary: A weekly judgment on how Orbis moved from a Daily-only slide path toward a reusable structured publishing and discovery platform.
+topics:
+  - agent-harness
+  - coding-agent
+period:
+  from: 2026-08-26
+  to: 2026-09-01
+weeklyThesis: The most important change this period is that presentation generation stopped being a Daily-specific output path and became a reusable boundary between structured content, rendering, discovery and verification.
+trendMovements:
+  - topic: agent-harness
+    direction: rising
+    summary: Presentation generation now converges through source-neutral descriptors and an explicit template registry instead of a Daily-only rendering path.
+  - topic: coding-agent
+    direction: new-variable
+    summary: Standalone structured Presentations now publish beside Brief-derived decks without committing generated Slidev sources or adding a second build pipeline.
+sections:
+  - id: descriptor-boundary
+    layout: architecture
+    title: Descriptor and registry replace Daily-specific dispatch
+    conclusion: Presentation generation now has a source-neutral contract before rendering, which makes new sources and templates additive rather than invasive.
+    facts:
+      - PR 11 introduced PresentationDescriptor and Template Registry while keeping daily-v1 output and build-slides behavior stable.
+      - The generator adapts Brief content before template dispatch instead of embedding Daily rendering decisions in the build stage.
+    limitations:
+      - The registry currently covers daily-v1 and talk-v1; Weekly rendering remains the next planned template capability.
+    references:
+      - title: PR 11 — Presentation registry and descriptor
+        url: https://github.com/XiaoDaoJiang/Orbis/pull/11
+        supports: Implements the source-neutral descriptor and template registry foundation.
+  - id: standalone-source
+    layout: system-map
+    title: A second structured source validates the platform boundary
+    conclusion: Standalone Presentation content now reaches the same generated Slidev and public Slides surfaces without becoming a duplicate reading-content system.
+    facts:
+      - PR 12 added content/presentations and talk-v1 while keeping build-slides template-agnostic.
+      - Slides discovery now lists both Brief-derived and standalone Presentation sources with independent public base paths.
+    limitations:
+      - Standalone Presentation remains intentionally outside generic Archive, Topic and RSS semantics.
+    references:
+      - title: PR 12 — Standalone presentations and talk-v1
+        url: https://github.com/XiaoDaoJiang/Orbis/pull/12
+        supports: Implements the first standalone Presentation source, talk-v1 and mixed Presentation discovery.
+  - id: verification-contract
+    layout: timeline
+    title: Verification becomes part of the product contract
+    conclusion: Each platform expansion is now guarded by source validation, negative cases, mixed builds and trusted Preview evidence rather than only by successful rendering.
+    facts:
+      - Plan 20 validation covers invalid sources, unsupported templates, duplicate slugs, non-public visibility and independent deck base paths.
+      - Trusted Preview publishing rebuilds from the read-only PR artifact and performs public availability smoke checks before surfacing the URL.
+    limitations:
+      - Weekly-specific rendering and mixed Daily plus Weekly plus Talk presentation verification are intentionally deferred to Plan 30B.
+    references:
+      - title: Plan 20 — Presentation Platform
+        url: https://github.com/XiaoDaoJiang/Orbis/blob/planning/product-capability-roadmap/docs/plan/20-presentation-platform.md
+        supports: Defines the Presentation Platform acceptance and validation boundaries completed by PR 11 and PR 12.
+nextPeriodWatch:
+  - title: Weekly semantics through the shared content system
+    reason: A real Weekly should prove cadence-specific judgment can reuse Brief discovery, RSS, Topic and Archive infrastructure without inheriting Daily body semantics.
+  - title: weekly-v1 through the existing registry
+    reason: Plan 30B should add Weekly presentation rendering without changing build-slides or weakening the Daily 11-slide contract.
+references:
+  - title: Plan 30 — Weekly Brief
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/planning/product-capability-roadmap/docs/plan/30-weekly-brief.md
+    supports: Defines Weekly as an independent cross-time judgment rather than a mechanical Daily merge.
+  - title: PR 11 — Presentation registry and descriptor
+    url: https://github.com/XiaoDaoJiang/Orbis/pull/11
+    supports: Provides the descriptor and registry platform foundation summarized in this Weekly.
+  - title: PR 12 — Standalone presentations and talk-v1
+    url: https://github.com/XiaoDaoJiang/Orbis/pull/12
+    supports: Provides the standalone Presentation and mixed discovery evidence summarized in this Weekly.
+presentation:
+  enabled: false
+  template: weekly-v1
