@@ -1,6 +1,14 @@
 import { readFile, readdir } from 'node:fs/promises'
-import { extname, join } from 'node:path'
+import { extname, join, relative } from 'node:path'
 import { parse } from 'yaml'
+
+export function normalizePath(path: string): string {
+  return path.replaceAll('\\', '/')
+}
+
+export function repoRelative(root: string, path: string): string {
+  return normalizePath(relative(root, path))
+}
 
 export async function listFiles(directory: string, extensions: string[]): Promise<string[]> {
   const result: string[] = []
