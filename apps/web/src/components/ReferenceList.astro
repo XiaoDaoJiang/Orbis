@@ -1,0 +1,46 @@
+---
+import {
+  resolveReferenceSource,
+  type ResolvedSource,
+} from '../lib/content-registry'
+
+interface ReferenceItem {
+  title: string
+  url: string
+  source?: string
+  supports: string
+  accessedAt?: string
+}
+
+interface Props {
+  references: ReferenceItem[]
+  sourceIndex: ReadonlyMap<string, ResolvedSource>
+}
+
+const { references, sourceIndex } = Astro.props
+---
+<ol class="reference-list">
+  {references.map((reference) => {
+    const source = resolveReferenceSource(reference.source, sourceIndex)
+    return (
+      <li
+        data-source-id={source?.id}
+        data-source-type={source?.type}
+        data-trust-tier={source?.trustTier}
+        data-source-status={source?.status}
+      >
+        <a href={reference.url}>{reference.title}</a>
+        <span> — {reference.supports}</span>
+        {source && (
+          <small class="reference-source">
+            Source: <a href={source.homepage}>{source.name}</a> · {source.type} · {source.trustTier}
+            {source.status === 'archived' && <span class="registry-status"> · archived</span>}
+          </small>
+        )}
+        {reference.accessedAt && (
+          <small class="reference-accessed">accessed {reference.accessedAt}</small>
+        )}
+      </li>
+    )
+  })}
+</ol>
