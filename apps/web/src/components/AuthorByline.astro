@@ -1,0 +1,31 @@
+---
+import type { ResolvedAuthor } from '../lib/content-registry'
+
+interface Props {
+  authors: ResolvedAuthor[]
+}
+
+const { authors } = Astro.props
+---
+<p class="author-byline" data-author-count={authors.length}>
+  <span>By</span>
+  {authors.map((author, index) => (
+    <span class="author-entry">
+      {index > 0 && <span aria-hidden="true"> · </span>}
+      {author.url ? (
+        <a
+          href={author.url}
+          data-author-id={author.id}
+          data-author-status={author.status}
+        >
+          {author.name}
+        </a>
+      ) : (
+        <span data-author-id={author.id} data-author-status={author.status}>
+          {author.name}
+        </span>
+      )}
+      {author.status === 'archived' && <span class="registry-status"> archived</span>}
+    </span>
+  ))}
+</p>

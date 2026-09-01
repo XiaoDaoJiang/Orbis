@@ -6,6 +6,7 @@ import AdHocBriefBody from '../../components/briefs/AdHocBriefBody.astro'
 import DailyBriefBody from '../../components/briefs/DailyBriefBody.astro'
 import WeeklyBriefBody from '../../components/briefs/WeeklyBriefBody.astro'
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import { buildSourceIndex } from '../../lib/content-registry'
 import {
   buildPublicDiscoveryItems,
   getDailyAdjacency,
@@ -15,10 +16,11 @@ import {
 } from '../../lib/content-discovery'
 
 export async function getStaticPaths() {
-  const [briefEntries, essayEntries, knowledgeEntries] = await Promise.all([
+  const [briefEntries, essayEntries, knowledgeEntries, sourceEntries] = await Promise.all([
     getCollection('briefs'),
     getCollection('essays'),
     getCollection('knowledge'),
+    getCollection('sources'),
   ])
   const base = import.meta.env.BASE_URL.replace(/\/$/, '')
   const candidates = buildPublicDiscoveryItems(briefEntries, essayEntries, knowledgeEntries, base)
@@ -29,6 +31,7 @@ export async function getStaticPaths() {
       params: { id: entry.id },
       props: {
         entry,
+        sourceEntries,
         related: getRelatedContent(current, candidates),
         adjacent: entry.data.cadence === 'daily' ? getDailyAdjacency(briefEntries, entry.id, base) : {},
       },
@@ -36,7 +39,8 @@ export async function getStaticPaths() {
   })
 }
 
-const { entry, related, adjacent } = Astro.props
+const { entry, sourceEntries, related, adjacent } = Astro.props
+const sourceIndex = buildSourceIndex(sourceEntries)
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const dailyBrief = entry.data.cadence === 'daily' ? entry.data : undefined
 const weeklyBrief = entry.data.cadence === 'weekly' ? entry.data : undefined
@@ -51,9 +55,9 @@ const adHocBrief = entry.data.cadence === 'ad-hoc' ? entry.data : undefined
       <div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
       {entry.data.presentation.enabled && <p><a href={`${base}/slides/${entry.id}/`}>打开演示版 →</a></p>}
     </header>
-    {dailyBrief && <DailyBriefBody brief={dailyBrief} />}
-    {weeklyBrief && <WeeklyBriefBody brief={weeklyBrief} />}
-    {adHocBrief && <AdHocBriefBody brief={adHocBrief} />}
+    {dailyBrief && <DailyBriefBody brief={dailyBrief} sourceIndex={sourceIndex} />}
+    {weeklyBrief && <WeeklyBriefBody brief={weeklyBrief} sourceIndex={sourceIndex} />}
+    {adHocBrief && <AdHocBriefBody brief={adHocBrief} sourceIndex={sourceIndex} />}
   </article>
   <AdjacentContentNav previous={adjacent.previous} next={adjacent.next} />
   <RelatedContent items={related} />

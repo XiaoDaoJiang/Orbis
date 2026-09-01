@@ -1,11 +1,14 @@
 ---
 import type { WeeklyBrief } from '@orbis/content-schema'
+import ReferenceList from '../ReferenceList.astro'
+import type { ResolvedSource } from '../../lib/content-registry'
 
 interface Props {
   brief: WeeklyBrief
+  sourceIndex: ReadonlyMap<string, ResolvedSource>
 }
 
-const { brief } = Astro.props
+const { brief, sourceIndex } = Astro.props
 ---
 <div class="article-body">
   <section data-weekly-section="period">
@@ -55,6 +58,6 @@ const { brief } = Astro.props
 
   <section data-weekly-section="references">
     <h2>References</h2>
-    <ol class="reference-list">{brief.references.map((reference) => <li><a href={reference.url}>{reference.title}</a> — {reference.supports}</li>)}</ol>
+    <ReferenceList references={brief.references} sourceIndex={sourceIndex} />
   </section>
 </div>

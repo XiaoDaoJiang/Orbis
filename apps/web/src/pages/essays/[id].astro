@@ -1,7 +1,14 @@
 ---
 import { getCollection, render } from 'astro:content'
+import AuthorByline from '../../components/AuthorByline.astro'
+import ReferenceList from '../../components/ReferenceList.astro'
 import RelatedContent from '../../components/RelatedContent.astro'
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import {
+  buildAuthorIndex,
+  buildSourceIndex,
+  resolveAuthors,
+} from '../../lib/content-registry'
 import {
   buildPublicDiscoveryItems,
   getRelatedContent,
@@ -10,10 +17,12 @@ import {
 } from '../../lib/content-discovery'
 
 export async function getStaticPaths() {
-  const [briefEntries, essayEntries, knowledgeEntries] = await Promise.all([
+  const [briefEntries, essayEntries, knowledgeEntries, authorEntries, sourceEntries] = await Promise.all([
     getCollection('briefs'),
     getCollection('essays'),
     getCollection('knowledge'),
+    getCollection('authors'),
+    getCollection('sources'),
   ])
   const base = import.meta.env.BASE_URL.replace(/\/$/, '')
   const candidates = buildPublicDiscoveryItems(briefEntries, essayEntries, knowledgeEntries, base)
@@ -22,12 +31,20 @@ export async function getStaticPaths() {
     const current = toEssayDiscoveryItem(entry, base)
     return {
       params: { id: entry.id },
-      props: { entry, related: getRelatedContent(current, candidates) },
+      props: {
+        entry,
+        authorEntries,
+        sourceEntries,
+        related: getRelatedContent(current, candidates),
+      },
     }
   })
 }
 
-const { entry, related } = Astro.props
+const { entry, authorEntries, sourceEntries, related } = Astro.props
+const authorIndex = buildAuthorIndex(authorEntries)
+const sourceIndex = buildSourceIndex(sourceEntries)
+const authors = resolveAuthors(entry.data.authors, authorIndex)
 const { Content } = await render(entry)
 ---
 <BaseLayout title={entry.data.title} description={entry.data.description}>
@@ -36,9 +53,18 @@ const { Content } = await render(entry)
       <div class="eyebrow">Essay · {entry.data.publishedAt}</div>
       <h1>{entry.data.title}</h1>
       <p class="lead">{entry.data.description}</p>
+      <AuthorByline authors={authors} />
       <div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
     </header>
-    <div class="article-body"><Content /></div>
+    <div class="article-body">
+      <Content />
+      {entry.data.references.length > 0 && (
+        <section class="article-references">
+          <h2>References</h2>
+          <ReferenceList references={entry.data.references} sourceIndex={sourceIndex} />
+        </section>
+      )}
+    </div>
   </article>
   <RelatedContent items={related} />
 </BaseLayout>
