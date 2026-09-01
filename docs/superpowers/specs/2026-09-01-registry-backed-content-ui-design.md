@@ -1,9 +1,10 @@
 # Plan 40B — Registry-backed Content UI Design
 
-> Status: Approved chat design; implementation starts only after Plan 40A is merged
+> Status: Approved; stacked implementation on final Plan 40A head
 > Date: 2026-09-01
 > Roadmap: Plan 40 / Milestone D — Knowledge Identity
 > Depends on: `docs/superpowers/specs/2026-09-01-source-author-registry-integrity-design.md`
+> Merge order: Plan 40A PR #15 first, then retarget this PR to `main`
 
 ## 1. Purpose
 
@@ -290,24 +291,15 @@ Source-less References remain the only intentional no-resolution path.
 
 ## 11. TDD and acceptance
 
-Plan 40B uses a focused RED -> GREEN sequence.
+Plan 40B uses two focused RED stages.
 
-### RED 1 — Registry metadata not rendered
+### RED 1 — Web Registry consumption capability missing
 
-Add build-artifact assertions for:
-
-- the real Essay Author ID resolving to `XiaoDaoJiang` and its profile URL;
-- the real Daily Reference source IDs resolving to Registry names and trust metadata;
-- source-less References remaining free of fake Source metadata;
-- no `/sources/` or `/authors/` routes.
-
-The current Web output should fail these assertions because it renders raw Author IDs nowhere and renders References without Source metadata.
+Add a focused contract for the pure resolver and component boundaries before the helper/components exist. Existing Plan 40A and publishing contracts remain green, then the new contract fails at the missing Web helper.
 
 ### GREEN 1 — Helper and shared components
 
-Implement the pure resolver, `AuthorByline`, `ReferenceList` and page integration.
-
-Unit contracts cover:
+Implement the pure resolver, `AuthorByline` and `ReferenceList` without wiring reading routes yet. Unit contracts cover:
 
 - active linked Author;
 - active unlinked Author;
@@ -316,9 +308,25 @@ Unit contracts cover:
 - declared archived Source;
 - omitted Source;
 - unknown Author and Source failures;
+- duplicate Web index IDs;
 - declared author order preservation.
 
-Artifact contracts cover Brief, Essay and Knowledge integration without changing existing route/discovery behavior.
+### RED 2 — Registry metadata not rendered
+
+Add build-artifact and temporary-fixture assertions for:
+
+- the real Essay Author ID resolving to `XiaoDaoJiang` and its profile URL;
+- the real Daily Reference source IDs resolving to Registry names and trust metadata;
+- source-less References remaining free of fake Source metadata;
+- archived Author/Source visible rendering;
+- direct `build:web` unknown Author/Source failures;
+- no `/sources/` or `/authors/` routes.
+
+Before route integration, these contracts fail because pages still render no Author byline or Source metadata.
+
+### GREEN 2 — Reading surface integration
+
+Wire Brief, Essay and Knowledge reading pages to the helper/components and make all fixture/artifact contracts pass.
 
 ### Final full-build acceptance
 
@@ -332,7 +340,8 @@ A fresh `pnpm build` must prove:
 - Essay displays Registry-backed Author metadata;
 - declared Web References display Registry-backed Source metadata;
 - unsourced References render without fabricated metadata;
-- archived entity rendering is covered by unit/fixture tests;
+- archived entity rendering is covered by a real temporary build fixture;
+- direct `build:web` fails explicitly for missing Author/Source IDs;
 - no Registry routes exist;
 - no generated source or `dist/**` is committed.
 
@@ -356,6 +365,8 @@ apps/web/src/styles/global.css
 Expected tests/documentation:
 
 ```text
+tools/registry-ui-check/content-registry.test.ts
+tools/registry-ui-check/fixture-build.test.ts
 tools/registry-ui-check/index.ts
 package.json
 docs/superpowers/plans/2026-09-01-registry-backed-content-ui.md
