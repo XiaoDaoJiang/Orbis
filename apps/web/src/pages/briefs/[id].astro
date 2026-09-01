@@ -2,6 +2,9 @@
 import { getCollection } from 'astro:content'
 import AdjacentContentNav from '../../components/AdjacentContentNav.astro'
 import RelatedContent from '../../components/RelatedContent.astro'
+import AdHocBriefBody from '../../components/briefs/AdHocBriefBody.astro'
+import DailyBriefBody from '../../components/briefs/DailyBriefBody.astro'
+import WeeklyBriefBody from '../../components/briefs/WeeklyBriefBody.astro'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import {
   buildPublicDiscoveryItems,
@@ -35,6 +38,9 @@ export async function getStaticPaths() {
 
 const { entry, related, adjacent } = Astro.props
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const dailyBrief = entry.data.cadence === 'daily' ? entry.data : undefined
+const weeklyBrief = entry.data.cadence === 'weekly' ? entry.data : undefined
+const adHocBrief = entry.data.cadence === 'ad-hoc' ? entry.data : undefined
 ---
 <BaseLayout title={entry.data.title} description={entry.data.summary}>
   <article class="article">
@@ -45,22 +51,9 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '')
       <div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
       {entry.data.presentation.enabled && <p><a href={`${base}/slides/${entry.id}/`}>打开演示版 →</a></p>}
     </header>
-    <div class="article-body">
-      <h2>Four signals</h2>
-      <ul class="signal-list">{entry.data.signals.map((signal) => <li><strong>{signal.title}</strong><p>{signal.summary}</p></li>)}</ul>
-      {entry.data.sections.map((section) => (
-        <section>
-          <h2>{section.title}</h2>
-          <p><strong>{section.conclusion}</strong></p>
-          <ul>{section.facts.map((fact) => <li>{fact}</li>)}</ul>
-          {section.limitations.length > 0 && <p><small>限制：{section.limitations.join('；')}</small></p>}
-        </section>
-      ))}
-      <h2>From signals to action</h2>
-      <ul class="action-list">{entry.data.actions.map((action) => <li><strong>{action.title}</strong><p>{action.description}</p></li>)}</ul>
-      <h2>References</h2>
-      <ol class="reference-list">{entry.data.references.map((reference) => <li><a href={reference.url}>{reference.title}</a> — {reference.supports}</li>)}</ol>
-    </div>
+    {dailyBrief && <DailyBriefBody brief={dailyBrief} />}
+    {weeklyBrief && <WeeklyBriefBody brief={weeklyBrief} />}
+    {adHocBrief && <AdHocBriefBody brief={adHocBrief} />}
   </article>
   <AdjacentContentNav previous={adjacent.previous} next={adjacent.next} />
   <RelatedContent items={related} />
