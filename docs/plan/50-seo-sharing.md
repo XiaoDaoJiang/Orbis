@@ -1,149 +1,261 @@
 # 50 · SEO & Sharing
 
-> 状态：Planned
+> 状态：Design Review
 > Roadmap Milestone：E — Search & Share Ready
+> 当前基线：`main@0c867438fc6cac83b6f97b76cb55e29118b64b87`
+> 设计：[`docs/superpowers/specs/2026-09-01-seo-sharing-design.md`](../superpowers/specs/2026-09-01-seo-sharing-design.md)
 > 建议优先级：P1
-> 依赖：Plan 10；建议在核心路由稳定后实施
+> 生产依赖：Plan 40 Production Pages deploy/smoke 通过后再进入可合并实现阶段
 
 ## 1. 目标
 
-让 Astro 阅读页成为公开网络中的 canonical 内容入口，并保证搜索引擎、社交平台和 Feed Reader 能正确理解 Orbis 内容。
+让 Astro Reading 成为 Orbis 在公开网络中的稳定内容身份，并让搜索、社交分享、RSS 与结构化数据共享同一套可验证 URL contract。
 
-Slidev 负责演示体验，主要 SEO 权重应落到对应 Astro 页面。
+Slidev 继续负责演示体验；Brief-derived Slides 不与对应 Reading 页面争夺 canonical identity。
 
-## 2. 当前基础
+## 2. 已确认的核心设计
 
-当前 `BaseLayout` 已有：
+### 2.1 Production 与 Preview 身份分离
+
+Production：
+
+```text
+canonical = production URL
+og:url    = production URL
+robots    = index,follow
+```
+
+PR Preview：
+
+```text
+canonical = corresponding production URL
+og:url    = current raw.githack Preview URL
+robots    = noindex,nofollow
+```
+
+Preview 可以分享和验收，但不成为搜索引擎中的长期内容身份。
+
+### 2.2 URL 继续复用现有 SiteConfig / Runtime Contract
+
+现有 `config/site.yaml` 已定义：
+
+- production `site.origin`；
+- production `site.basePath`；
+- locale；
+- Preview origin/repository/branch prefix。
+
+现有 PR Build 已通过 `SITE_ORIGIN` / `SITE_BASE` 注入 Preview runtime 地址。
+
+Plan 50 不建立第二套 URL 配置，也不允许页面硬编码 `/Orbis/`、raw.githack host 或 PR number。
+
+### 2.3 第一版 Social Image
+
+使用一个静态 1200×630 Brand Social Image。
+
+第一版不为每篇内容动态生成 OG Image。
+
+## 3. Canonical Taxonomy
+
+### Canonical public resources
+
+- `/`；
+- Essay indexes/details；
+- Brief indexes/details；
+- Knowledge indexes/details；
+- Topic indexes/details；
+- `/archive/`；
+- `/slides/`；
+- standalone `talk-v1` deck，因为它没有伪造的 Reading page。
+
+### Alias / non-primary resources
+
+- `/latest/` canonical → 当前 Daily Reading；
+- `/YYYY/MM/DD/` canonical → 对应 Daily `/briefs/:id/`；
+- 两类 alias 均不进入 Sitemap。
+
+### Brief-derived Slides
+
+Daily / Weekly Slidev：
+
+- 保留 Reading backlink；
+- canonical → 对应 Astro Reading；
+- 不以独立 canonical entry 进入 Sitemap；
+- 第一版不默认全量 `noindex`，先用 canonical/backlink 解决重复身份。
+
+### Standalone Talk
+
+`talk-v1` 没有 Reading page：
+
+- deck self-canonical；
+- 可以进入 Sitemap；
+- 不伪造不存在的 Reading URL。
+
+## 4. Metadata Contract
+
+`BaseLayout.astro` 扩展为统一 Astro `<head>` renderer，负责：
 
 - title；
 - description；
-- favicon；
-- RSS discovery link。
-
-还缺：
-
 - canonical；
+- robots；
 - Open Graph；
 - Twitter Card；
-- Sitemap；
-- JSON-LD；
-- 分享图策略；
-- Slide → Reading canonical/backlink 合同。
+- RSS discovery；
+- 50B 的 JSON-LD。
 
-## 3. 范围
-
-### 3.1 Site Metadata Contract
-
-扩展 `config/site.yaml`，集中定义：
-
-- site origin；
-- base path；
-- default title；
-- default description；
-- default social image；
-- locale；
-- author/brand metadata（只保存站点级配置）。
-
-所有 URL 必须通过 site config/runtime base 推导，禁止内容硬编码 `/Orbis/`。
-
-### 3.2 Canonical
-
-为以下页面生成 canonical：
-
-- 首页；
-- Essay；
-- Brief；
-- Topic；
-- Knowledge；
-- Archive/Slides indexes；
-- Presentation 对应阅读页。
-
-日期 alias `/YYYY/MM/DD/` 和 `/latest/` 不应被当作主要 canonical 内容页。
-
-### 3.3 Open Graph / Twitter
-
-至少生成：
-
-- `og:title`；
-- `og:description`；
-- `og:url`；
-- `og:type`；
-- `og:image`；
-- `twitter:card`；
-- `twitter:title`；
-- `twitter:description`；
-- `twitter:image`。
-
-第一版允许使用统一 Brand Social Image，不要求每篇动态生成图片。
-
-### 3.4 Sitemap
-
-构建输出：
+至少输出：
 
 ```text
-/sitemap-index.xml 或 /sitemap.xml
+og:title
+og:description
+og:url
+og:type
+og:image
+og:locale
+og:site_name
+twitter:card = summary_large_image
+twitter:title
+twitter:description
+twitter:image
 ```
 
-只包含可公开且 canonical 的页面，不包含 draft、needs-review 私有态或 Preview-only 路由。
+内容页只传 route/content intent，不自行拼绝对 URL。
 
-### 3.5 JSON-LD
+## 5. Sitemap
 
-第一版只做简单、正确、可验证的结构化数据：
+第一版输出单个：
 
+```text
+/sitemap.xml
+```
+
+由 structured content + 明确路由 taxonomy 构建，不通过扫描 `dist/site` 猜测 canonical 页面。
+
+只包含公开 canonical resources；排除：
+
+- draft / needs-review / 非公开 archived content；
+- `/latest/`；
+- 日期 alias；
+- Brief-derived Slide deck duplicate；
+- Preview URL；
+- RSS 和 asset。
+
+即使在 PR Preview build 中，Sitemap `<loc>` 也始终使用 Production URL。
+
+## 6. RSS
+
+Production：item link 等于 Production Reading canonical。
+
+Preview：item link 继续使用 Preview Reading URL，保证 Preview feed 可实际点击验证。
+
+RSS 不再依赖硬编码 fallback origin。
+
+## 7. JSON-LD · 50B
+
+只使用现有真实 Schema 字段：
+
+- Site → `WebSite`；
 - Essay → `Article`；
-- Brief → `Article` 或适合的 CreativeWork；
-- Knowledge → `Article`/`TechArticle`（根据字段可表达程度选择）；
-- Site → `WebSite`。
+- Brief → `Article`；
+- Knowledge → `TechArticle`。
 
-不要为了 Schema.org 覆盖率加入没有真实数据的字段。
+Essay Author 从 Plan 40 Author Registry 解析，保持 frontmatter 声明顺序。
 
-### 3.6 Slide SEO Boundary
+不伪造：
 
-Slidev 页面至少应：
+- Brief / Knowledge 作者；
+- Source Registry 作为 Orbis Article publisher；
+- standalone Talk Reading page；
+- `reviewAt` 的错误 Schema.org 映射。
 
-- 明确对应 reading URL；
-- 可通过 UI 回到 reading page；
-- 不与 Astro 页面争夺主 canonical。
+## 8. Delivery Split
 
-是否给 Slidev 注入 `noindex` 需要先验证实际分享需求；第一版优先 canonical/backlink，不武断屏蔽。
+### 50A — SEO Foundation
 
-## 4. 实现任务
+建议 PR：
 
-1. 扩展 SiteConfig；
-2. 抽象 Astro SEO metadata helper；
-3. 扩展 BaseLayout head；
-4. 为各内容页传入 canonical/OG metadata；
-5. 增加 sitemap；
-6. 增加基础 JSON-LD；
-7. 给 Slidev 生成 reading URL metadata/backlink；
-8. 更新 `site-check` 验证 canonical、OG、sitemap；
-9. 验证 GitHub Pages base path 与 PR Preview base path 都正确；
-10. 公网检查最终生成 URL 不含本地或错误 origin。
+```text
+feat: add canonical seo metadata and sitemap
+```
 
-## 5. 非目标
+范围：
 
-- 动态服务端 OG Image；
+- SiteConfig metadata；
+- Production/runtime URL helpers；
+- BaseLayout SEO head；
+- canonical + robots；
+- OG / Twitter；
+- static social image；
+- Sitemap；
+- RSS canonical alignment；
+- Slide canonical boundary；
+- Production/Preview focused + artifact tests。
+
+50A 不包含 JSON-LD。
+
+### 50B — Structured Data
+
+建议 PR：
+
+```text
+feat: add structured data for published content
+```
+
+范围：
+
+- WebSite JSON-LD；
+- Essay Article + Author Registry；
+- Brief Article；
+- Knowledge TechArticle；
+- JSON parse / canonical consistency tests。
+
+50B 消费 50A URL contract，不重新定义 canonical 语义。
+
+## 9. Build Invariants
+
+构建必须拒绝：
+
+- 非绝对 HTTP(S) production origin；
+- relative canonical；
+- canonical 丢失 configured base path；
+- Preview canonical 指向 raw.githack / preview-pr-*；
+- Production canonical 含 Preview identity；
+- Sitemap 泄露 alias、non-public content 或 Brief-derived Slide duplicate；
+- 默认 Social Image 缺失；
+- JSON-LD 非合法 JSON；
+- JSON-LD URL 与 Production canonical 不一致。
+
+## 10. 非目标
+
+- 动态 OG image 服务；
+- 每篇内容自动生成图片；
 - SEO 排名承诺；
-- 自动关键词堆砌；
-- 多语言 hreflang；
-- Analytics 平台；
-- 广告/营销 tracking。
+- keyword stuffing；
+- hreflang / 多语言路由；
+- Analytics / marketing tracking；
+- 数据库 / CMS / 搜索服务；
+- Source / Author directory；
+- Slidev 全量 noindex 策略。
 
-## 6. 验收标准
+## 11. Plan 50 验收
 
-- 所有主要 Astro 公共页有绝对 canonical；
-- canonical 在 Production 与 PR Preview 都使用正确 origin/base contract；
-- Essay/Brief/Knowledge 至少有基本 OG/Twitter metadata；
-- Sitemap 只包含公开 canonical pages；
-- JSON-LD 可以解析为合法 JSON；
-- `/rss.xml` 中的 item link 与 canonical 阅读 URL 一致；
-- Slidev 可以返回对应阅读页；
-- `pnpm build` 对错误 canonical/base 有自动检查。
+- 所有主要公共 Astro 页面有绝对 Production canonical；
+- Preview canonical → Production，同时 `robots=noindex,nofollow`；
+- Preview `og:url` 仍为实际 Preview URL；
+- OG/Twitter 使用有效绝对 URL 与 1200×630 Brand Image；
+- Sitemap 只包含 public canonical resources；
+- Production RSS links 与 Reading canonical 一致；
+- Daily/Weekly Slides canonical/backlink → Reading；
+- standalone Talk self-canonical；
+- WebSite/Essay/Brief/Knowledge JSON-LD 只使用真实字段并可解析；
+- Essay JSON-LD 使用 Author Registry；
+- `pnpm build`、PR Preview 和最终 Production Pages 验证均能捕获 origin/base/canonical 回归。
 
-## 7. 建议 PR
+## 12. 当前 Gate
 
-`feat: add canonical seo metadata and sitemap`
+设计已收敛并写入正式 Spec。
 
-如果 JSON-LD 让 PR 过大，可作为第二个小 PR：
+进入 implementation plan 前需要：
 
-`feat: add structured data for published content`
+1. 人工 review `docs/superpowers/specs/2026-09-01-seo-sharing-design.md`；
+2. Plan 40 Production Pages 新 run 必须出现 `Deploy to GitHub Pages = success`，而不是 Build success + Deploy skipped。
