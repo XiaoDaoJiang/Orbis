@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict'
-import { briefSchema, dailyBriefSchema, presentationContentSchema } from '../src/index.ts'
+import {
+  adHocBriefSchema,
+  briefSchema,
+  dailyBriefSchema,
+  presentationContentSchema,
+} from '../src/index.ts'
 
 const valid = {
   kind: 'brief',
@@ -47,6 +52,20 @@ assert.equal(briefSchema.parse(valid).sections.length, 5)
 assert.throws(() => briefSchema.parse({ ...valid, signals: valid.signals.slice(0, 3) }))
 assert.throws(() => briefSchema.parse({ ...valid, sections: valid.sections.slice(0, 4) }))
 assert.throws(() => briefSchema.parse({ ...valid, presentation: { enabled: true, template: 'weekly-v1' } }))
+
+const validAdHoc = {
+  ...valid,
+  cadence: 'ad-hoc',
+  title: 'A valid ad-hoc brief schema fixture',
+  signals: valid.signals.slice(0, 1),
+  sections: valid.sections.slice(0, 1),
+  actions: valid.actions.slice(0, 1),
+  presentation: { enabled: false, template: 'talk-v1' },
+} as const
+
+assert.equal(adHocBriefSchema.parse(validAdHoc).cadence, 'ad-hoc')
+assert.equal(adHocBriefSchema.parse(validAdHoc).signals.length, 1)
+assert.equal(briefSchema.parse(validAdHoc).actions.length, 1)
 
 const validPresentation = {
   kind: 'presentation',
