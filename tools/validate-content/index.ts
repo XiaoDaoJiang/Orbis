@@ -1,4 +1,4 @@
-import { resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 import {
   authorSchema,
   briefSchema,
@@ -8,7 +8,7 @@ import {
   sourceSchema,
   topicSchema,
 } from '@orbis/content-schema'
-import { listFiles, readMarkdownFrontmatter, readYaml, repoRelative } from '../shared/content.ts'
+import { listFiles, readMarkdownFrontmatter, readYaml } from '../shared/content.ts'
 import {
   validateReferentialIntegrity,
   type ParsedContentEntry,
@@ -32,6 +32,10 @@ const checks = [
   markdown: boolean
 }>
 
+function displayPath(path: string) {
+  return relative(root, path).replaceAll('\\', '/')
+}
+
 const entries: ParsedContentEntry[] = []
 let count = 0
 let hasSchemaErrors = false
@@ -42,14 +46,14 @@ for (const check of checks) {
     const value = check.markdown ? (await readMarkdownFrontmatter(file)).data : await readYaml(file)
     const result = check.schema.safeParse(value)
     if (!result.success) {
-      console.error(`Invalid content: ${repoRelative(root, file)}`)
+      console.error(`Invalid content: ${displayPath(file)}`)
       console.error(JSON.stringify(result.error?.issues, null, 2))
       hasSchemaErrors = true
       continue
     }
 
     count += 1
-    console.log(`✓ ${repoRelative(root, file)}`)
+    console.log(`✓ ${displayPath(file)}`)
     entries.push({ kind: check.kind, path: file, value: result.data } as ParsedContentEntry)
   }
 }

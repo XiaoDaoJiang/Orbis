@@ -9,7 +9,6 @@ import {
   type Source,
   type Topic,
 } from '@orbis/content-schema'
-import { normalizePath, repoRelative } from '../shared/content.ts'
 
 export type ParsedContentEntry =
   | { kind: 'brief'; path: string; value: Brief }
@@ -24,6 +23,14 @@ export type ParsedContentKind = ParsedContentEntry['kind']
 
 type RegistryKind = 'source' | 'author'
 type ReferenceSource = { fieldPath: string; source: string }
+
+function normalizePath(path: string) {
+  return path.replaceAll('\\', '/')
+}
+
+function displayPath(root: string, path: string) {
+  return normalizePath(relative(root, path))
+}
 
 function removeYamlExtension(path: string) {
   const extension = extname(path)
@@ -40,16 +47,16 @@ function deriveRegistryId(
   errors: string[],
 ): string | undefined {
   const relativePath = normalizePath(relative(registryDirectory(root, entry.kind), entry.path))
-  const displayPath = repoRelative(root, entry.path)
+  const path = displayPath(root, entry.path)
 
   if (relativePath.includes('/')) {
-    errors.push(`Invalid registry path: ${displayPath} -> nested ${entry.kind} entries are not supported`)
+    errors.push(`Invalid registry path: ${path} -> nested ${entry.kind} entries are not supported`)
     return undefined
   }
 
   const id = removeYamlExtension(relativePath)
   if (!registryIdPattern.test(id)) {
-    errors.push(`Invalid registry ID: ${displayPath} -> "${id}" must match ${registryIdPattern.source}`)
+    errors.push(`Invalid registry ID: ${path} -> "${id}" must match ${registryIdPattern.source}`)
     return undefined
   }
 
@@ -143,12 +150,12 @@ function validateContentTopics(
   topicIndex: ReadonlyMap<string, unknown>,
   errors: string[],
 ) {
-  const displayPath = repoRelative(root, entry.path)
+  const path = displayPath(root, entry.path)
 
   if (entry.kind === 'brief' || entry.kind === 'presentation' || entry.kind === 'essay' || entry.kind === 'knowledge') {
     entry.value.topics.forEach((topic, index) => {
       if (!topicIndex.has(topic)) {
-        errors.push(`Invalid relation: ${displayPath}: topics[${index}] -> missing topic "${topic}"`)
+        errors.push(`Invalid relation: ${path}: topics[${index}] -> missing topic "${topic}"`)
       }
     })
   }
@@ -156,7 +163,7 @@ function validateContentTopics(
   if (entry.kind === 'brief' && entry.value.cadence === 'weekly') {
     entry.value.trendMovements.forEach((movement, index) => {
       if (!topicIndex.has(movement.topic)) {
-        errors.push(`Invalid relation: ${displayPath}: trendMovements[${index}].topic -> missing topic "${movement.topic}"`)
+        errors.push(`Invalid relation: ${path}: trendMovements[${index}].topic -> missing topic "${movement.topic}"`)
       }
     })
   }
@@ -168,16 +175,16 @@ function validateTopicRelations(
   topicIndex: ReadonlyMap<string, unknown>,
   errors: string[],
 ) {
-  const displayPath = repoRelative(root, entry.path)
+  const path = displayPath(root, entry.path)
   const currentId = deriveTopicId(root, entry)
 
   entry.value.related.forEach((related, index) => {
     if (related === currentId) {
-      errors.push(`Invalid relation: ${displayPath}: related[${index}] -> topic "${currentId}" cannot reference itself`)
+      errors.push(`Invalid relation: ${path}: related[${index}] -> topic "${currentId}" cannot reference itself`)
       return
     }
     if (!topicIndex.has(related)) {
-      errors.push(`Invalid relation: ${displayPath}: related[${index}] -> missing topic "${related}"`)
+      errors.push(`Invalid relation: ${path}: related[${index}] -> missing topic "${related}"`)
     }
   })
 }
@@ -196,19 +203,19 @@ export function validateReferentialIntegrity(root: string, entries: ParsedConten
     }
 
     if (entry.kind === 'essay') {
-      const displayPath = repoRelative(root, entry.path)
+      const path = displayPath(root, entry.path)
       entry.value.authors.forEach((author, index) => {
         if (!authorIndex.has(author)) {
-          errors.push(`Invalid relation: ${displayPath}: authors[${index}] -> missing author "${author}"`)
+          errors.push(`Invalid relation: ${path}: authors[${index}] -> missing author "${author}"`)
         }
       })
     }
 
     if (entry.kind === 'brief' || entry.kind === 'presentation' || entry.kind === 'essay' || entry.kind === 'knowledge') {
-      const displayPath = repoRelative(root, entry.path)
+      const path = displayPath(root, entry.path)
       for (const relation of collectReferenceSources(entry)) {
         if (!sourceIndex.has(relation.source)) {
-          errors.push(`Invalid relation: ${displayPath}: ${relation.fieldPath} -> missing source "${relation.source}"`)
+          errors.push(`Invalid relation: ${path}: ${relation.fieldPath} -> missing source "${relation.source}"`)
         }
       }
     }
