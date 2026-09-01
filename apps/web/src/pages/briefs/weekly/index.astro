@@ -15,7 +15,7 @@ const entries = sortDiscoveryNewestFirst(
 <BaseLayout title="Weekly Briefs" description="Published Orbis Weekly Briefs">
   <div class="eyebrow">Brief archive · Weekly</div>
   <h1>Weekly Briefs</h1>
-  <p class="lead">Weekly 将用于跨日趋势、周期判断与下一周期 Watch；路由先保持稳定，内容按 Schema 成熟度逐步进入。</p>
+  <p class="lead">Weekly 聚焦跨时间变化、趋势移动、判断修正与下一周期 Watch，形成独立于 Daily 的结构化周期判断。</p>
   {entries.length > 0 ? (
     <div class="grid">
       {entries.map((entry) => (
@@ -30,7 +30,7 @@ const entries = sortDiscoveryNewestFirst(
   ) : (
     <div class="empty-state">
       <strong>No weekly briefs have been published yet.</strong>
-      <p>Weekly Intelligence 将在专属 Schema 与 `weekly-v1` 就绪后开始发布。</p>
+      <p>Weekly Intelligence 会在形成独立的结构化周期判断后发布。</p>
     </div>
   )}
 </BaseLayout>

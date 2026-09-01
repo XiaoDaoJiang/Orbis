@@ -71,31 +71,59 @@ export const actionSchema = z.object({
   description: z.string().min(8),
 })
 
+export const trendMovementSchema = z.object({
+  topic: z.string().min(2),
+  direction: z.enum(['rising', 'stable', 'cooling', 'new-variable']),
+  summary: z.string().min(12),
+}).strict()
+
+export const nextPeriodWatchSchema = z.object({
+  title: z.string().min(3),
+  reason: z.string().min(12),
+}).strict()
+
+export const weeklyPeriodSchema = z.object({
+  from: dateStringSchema,
+  to: dateStringSchema,
+}).strict().superRefine((period, ctx) => {
+  const from = Date.parse(`${period.from}T00:00:00Z`)
+  const to = Date.parse(`${period.to}T00:00:00Z`)
+  if (to - from !== 6 * 24 * 60 * 60 * 1000) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Weekly period must contain exactly seven calendar dates',
+    })
+  }
+})
+
 export const presentationSchema = z.object({
   enabled: z.boolean(),
   template: z.enum(['daily-v1', 'weekly-v1', 'talk-v1']),
 })
 
-const briefBaseSchema = z.object({
+const briefSharedSchema = z.object({
   kind: z.literal('brief'),
-  cadence: z.enum(['daily', 'weekly', 'ad-hoc']),
   publishedAt: dateStringSchema,
   status: publicationStatusSchema,
   title: z.string().min(5),
   summary: z.string().min(12),
   topics: z.array(z.string().min(2)).min(1),
+  references: z.array(referenceSchema).min(1),
+})
+
+const legacyBriefBody = {
   signals: z.array(signalSchema).min(1).max(8),
   sections: z.array(briefSectionSchema).min(1).max(8),
   projects: z.array(projectSchema).max(6).default([]),
   radar: z.array(radarItemSchema).max(8).default([]),
   actions: z.array(actionSchema).min(1).max(8),
-  references: z.array(referenceSchema).min(1),
   archivePicks: z.array(archivePickSchema).max(6).default([]),
   presentation: presentationSchema,
-})
+}
 
-export const dailyBriefSchema = briefBaseSchema.extend({
+export const dailyBriefSchema = briefSharedSchema.extend({
   cadence: z.literal('daily'),
+  ...legacyBriefBody,
   signals: z.array(signalSchema).length(4),
   sections: z.array(briefSectionSchema).length(5),
   actions: z.array(actionSchema).min(3).max(5),
@@ -105,11 +133,33 @@ export const dailyBriefSchema = briefBaseSchema.extend({
   }),
 })
 
-const nonDailyBriefSchema = briefBaseSchema.extend({
-  cadence: z.enum(['weekly', 'ad-hoc']),
+export const weeklyBriefSchema = briefSharedSchema.extend({
+  cadence: z.literal('weekly'),
+  period: weeklyPeriodSchema,
+  weeklyThesis: z.string().min(24),
+  trendMovements: z.array(trendMovementSchema).min(2).max(8),
+  sections: z.array(briefSectionSchema).min(2).max(6),
+  nextPeriodWatch: z.array(nextPeriodWatchSchema).min(1).max(5),
+  presentation: z.object({
+    enabled: z.boolean(),
+    template: z.literal('weekly-v1'),
+  }).strict(),
+}).strict().superRefine((brief, ctx) => {
+  if (brief.publishedAt !== brief.period.to) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['publishedAt'],
+      message: 'Weekly publishedAt must equal period.to',
+    })
+  }
 })
 
-export const briefSchema = z.union([dailyBriefSchema, nonDailyBriefSchema])
+export const adHocBriefSchema = briefSharedSchema.extend({
+  cadence: z.literal('ad-hoc'),
+  ...legacyBriefBody,
+})
+
+export const briefSchema = z.union([dailyBriefSchema, weeklyBriefSchema, adHocBriefSchema])
 
 export const presentationContentSchema = z.object({
   kind: z.literal('presentation'),
@@ -158,6 +208,8 @@ export const knowledgeSchema = z.object({
 
 export type Brief = z.infer<typeof briefSchema>
 export type DailyBrief = z.infer<typeof dailyBriefSchema>
+export type WeeklyBrief = z.infer<typeof weeklyBriefSchema>
+export type AdHocBrief = z.infer<typeof adHocBriefSchema>
 export type PresentationContent = z.infer<typeof presentationContentSchema>
 export type Essay = z.infer<typeof essaySchema>
 export type Topic = z.infer<typeof topicSchema>

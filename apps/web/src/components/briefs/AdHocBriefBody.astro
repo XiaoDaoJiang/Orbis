@@ -1,0 +1,25 @@
+---
+import type { AdHocBrief } from '@orbis/content-schema'
+
+interface Props {
+  brief: AdHocBrief
+}
+
+const { brief } = Astro.props
+---
+<div class="article-body">
+  <h2>Four signals</h2>
+  <ul class="signal-list">{brief.signals.map((signal) => <li><strong>{signal.title}</strong><p>{signal.summary}</p></li>)}</ul>
+  {brief.sections.map((section) => (
+    <section>
+      <h2>{section.title}</h2>
+      <p><strong>{section.conclusion}</strong></p>
+      <ul>{section.facts.map((fact) => <li>{fact}</li>)}</ul>
+      {section.limitations.length > 0 && <p><small>限制：{section.limitations.join('；')}</small></p>}
+    </section>
+  ))}
+  <h2>From signals to action</h2>
+  <ul class="action-list">{brief.actions.map((action) => <li><strong>{action.title}</strong><p>{action.description}</p></li>)}</ul>
+  <h2>References</h2>
+  <ol class="reference-list">{brief.references.map((reference) => <li><a href={reference.url}>{reference.title}</a> — {reference.supports}</li>)}</ol>
+</div>

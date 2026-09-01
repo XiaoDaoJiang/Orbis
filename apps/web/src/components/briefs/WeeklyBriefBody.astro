@@ -1,0 +1,60 @@
+---
+import type { WeeklyBrief } from '@orbis/content-schema'
+
+interface Props {
+  brief: WeeklyBrief
+}
+
+const { brief } = Astro.props
+---
+<div class="article-body">
+  <section data-weekly-section="period">
+    <h2>Period</h2>
+    <p><strong>{brief.period.from} → {brief.period.to}</strong></p>
+  </section>
+
+  <section data-weekly-section="thesis">
+    <h2>Weekly Thesis</h2>
+    <p><strong>{brief.weeklyThesis}</strong></p>
+  </section>
+
+  <section data-weekly-section="trends">
+    <h2>Trend Movements</h2>
+    <div class="grid">
+      {brief.trendMovements.map((movement) => (
+        <article
+          class="card"
+          data-trend-direction={movement.direction}
+          data-trend-topic={movement.topic}
+        >
+          <small>{movement.direction} · {movement.topic}</small>
+          <p>{movement.summary}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section data-weekly-section="sections">
+    <h2>Key Sections</h2>
+    {brief.sections.map((section) => (
+      <section>
+        <h3>{section.title}</h3>
+        <p><strong>{section.conclusion}</strong></p>
+        <ul>{section.facts.map((fact) => <li>{fact}</li>)}</ul>
+        {section.limitations.length > 0 && <p><small>限制：{section.limitations.join('；')}</small></p>}
+      </section>
+    ))}
+  </section>
+
+  <section data-weekly-section="watch">
+    <h2>Next Period Watch</h2>
+    <ul class="action-list">
+      {brief.nextPeriodWatch.map((watch) => <li><strong>{watch.title}</strong><p>{watch.reason}</p></li>)}
+    </ul>
+  </section>
+
+  <section data-weekly-section="references">
+    <h2>References</h2>
+    <ol class="reference-list">{brief.references.map((reference) => <li><a href={reference.url}>{reference.title}</a> — {reference.supports}</li>)}</ol>
+  </section>
+</div>
