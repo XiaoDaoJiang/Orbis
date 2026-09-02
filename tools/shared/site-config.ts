@@ -70,10 +70,8 @@ export function absoluteSiteUrl(origin: string, basePath: string, routePath: str
   return new URL(pathname, `${normalizedOrigin}/`).href
 }
 
-export async function loadSiteConfig(): Promise<SiteConfig> {
-  const path = resolve(root, 'config/site.yaml')
-  const value = parse(await readFile(path, 'utf8')) as SiteConfig
-  if (value?.version !== 1) throw new Error(`Unsupported site config version in ${path}`)
+export function validateSiteConfig(value: SiteConfig, source = 'site config'): SiteConfig {
+  if (value?.version !== 1) throw new Error(`Unsupported site config version in ${source}`)
   if (!value.site?.origin || !value.site?.basePath) throw new Error('site.origin and site.basePath are required')
   if (!value.site?.name || !value.site?.locale || !value.site?.defaultTitle || !value.site?.defaultDescription || !value.site?.defaultSocialImage || !value.site?.brandName) {
     throw new Error('site metadata is required')
@@ -90,6 +88,12 @@ export async function loadSiteConfig(): Promise<SiteConfig> {
   }
   normalizeSiteOrigin(value.preview.origin)
   return value
+}
+
+export async function loadSiteConfig(): Promise<SiteConfig> {
+  const path = resolve(root, 'config/site.yaml')
+  const value = parse(await readFile(path, 'utf8')) as SiteConfig
+  return validateSiteConfig(value, path)
 }
 
 export function runtimeSiteBase(config: SiteConfig): string {
