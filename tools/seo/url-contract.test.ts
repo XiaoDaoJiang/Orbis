@@ -56,9 +56,18 @@ assert.equal(
 
 const oldOrigin = process.env.SITE_ORIGIN
 const oldBase = process.env.SITE_BASE
-process.env.SITE_ORIGIN = 'https://raw.githack.com'
-process.env.SITE_BASE = '/XiaoDaoJiang/Orbis/preview-pr-50'
+
 try {
+  delete process.env.SITE_ORIGIN
+  delete process.env.SITE_BASE
+  assert.equal(isPreviewRuntime(config), false)
+  assert.equal(
+    runtimeSiteUrl(config, '/briefs/example/'),
+    'https://xiaodaojiang.github.io/Orbis/briefs/example/',
+  )
+
+  process.env.SITE_ORIGIN = 'https://raw.githack.com'
+  process.env.SITE_BASE = '/XiaoDaoJiang/Orbis/preview-pr-50'
   assert.equal(isPreviewRuntime(config), true)
   assert.equal(
     runtimeSiteUrl(config, '/briefs/example/'),
