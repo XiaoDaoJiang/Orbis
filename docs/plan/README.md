@@ -1,10 +1,10 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 基线：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
+> 基线：`main@bb85751266f90ec25e56f087bd078a935d8f31cd`
 > 基线日期：2026-09-02
 > 阶段：Product Capability Phase
-> 当前目标：Plan 50B · Structured Data
+> 当前目标：Plan 50 · 50B Production Gate
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -14,13 +14,16 @@
 - Plan 20 · Presentation Platform：**Done** — PR #11 / #12
 - Plan 30 · Weekly Brief：**Done** — PR #13 / #14
 - Plan 40 · Source & Author Registry：**Done** — PR #15 / #19
-- Plan 50 · SEO & Sharing：**In Progress**
+- Plan 50 · SEO & Sharing：**Production Gate**
   - 50A SEO Foundation：**Done** — PR #21
     - main：`16de75931c984f64cd1458769b6eb87bfa5fe572`
-    - Site Build：`33586301122` Passed
     - Production Pages：`33588705346` Build + Deploy + public smoke Passed
-  - 50B Structured Data：**Current**
-- Plan 60 · Knowledge Lifecycle：**Planned**
+  - 50B Structured Data：**Merged / Production Gate** — PR #22
+    - main：`bb85751266f90ec25e56f087bd078a935d8f31cd`
+    - Site Build：`33601715928` Passed
+    - Artifact：`9835467039`
+    - Production Pages：exact-SHA `deploy=true` Pending
+- Plan 60 · Knowledge Lifecycle：**Planned / Next**
 - Plan 70 · Scheduled Content Automation：**Planned**
 
 ## 当前产品基线
@@ -40,14 +43,18 @@ SEO URL Contract
   ├── RSS identity
   └── Slide / alias canonical
           ↓
-50B Structured Data
+Structured Data
   ├── WebSite
   ├── Essay Article + Author Registry
   ├── Brief Article
   └── Knowledge TechArticle
+          ↓
+Production exact-SHA gate
 ```
 
-50A 生产验证针对 exact `main@16de75931c984f64cd1458769b6eb87bfa5fe572`：Production run `33588705346` 成功部署 GitHub Pages，并 smoke `/`、`/latest/`、`/archive.json`、`/rss.xml`、favicon 与 `/2026/08/28/`。
+50A 已完成 `main@16de75931c984f64cd1458769b6eb87bfa5fe572` 的 Production deploy/smoke。
+
+50B 已合入 `main@bb85751266f90ec25e56f087bd078a935d8f31cd`；fresh Site Build `33601715928` 再次通过 SEO URL、JSON-LD builder、Web SEO、assembled canonical 与 structured-data artifact contracts。当前仅剩 governed Production Pages 的 exact-SHA Build → Deploy → public Smoke。
 
 ## Roadmap
 
@@ -71,11 +78,11 @@ SEO URL Contract
         ↓
 40 Source & Author Registry    Done
         ↓
-50 SEO & Sharing               In Progress
+50 SEO & Sharing               Production Gate
   ├── 50A SEO Foundation       Done
-  └── 50B Structured Data      Current
+  └── 50B Structured Data      Merged / Production Gate
         ↓
-60 Knowledge Lifecycle
+60 Knowledge Lifecycle         Next after Plan 50 gate
         ↓
 70 Scheduled Content Automation
 ```
@@ -96,5 +103,6 @@ SEO URL Contract
 
 - `Planned`：尚未开始；
 - `In Progress`：已有设计、计划、分支或 PR；
+- `Production Gate`：实现与 main Build 已完成，但 exact-SHA Production Pages 验证尚未完成；
 - `Done`：全部计划 PR 已进入 `main`，并完成对应 Preview / main / Production 验证；
 - `Deferred`：明确推迟。
