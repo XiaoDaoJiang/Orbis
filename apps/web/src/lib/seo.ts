@@ -1,15 +1,10 @@
-import { parse } from 'yaml'
-import siteConfigSource from '../../../../config/site.yaml?raw'
 import {
   isPreviewRuntime,
   normalizeBasePath,
   productionSiteUrl,
   runtimeSiteUrl,
-  validateSiteConfig,
 } from '../../../../tools/shared/site-config.ts'
-import type { SiteConfig } from '../../../../tools/shared/site-config.ts'
-
-const config = validateSiteConfig(parse(siteConfigSource) as SiteConfig, 'config/site.yaml')
+import { webSiteConfig } from './site-config.ts'
 
 export type SeoPageType = 'website' | 'article'
 
@@ -47,14 +42,14 @@ export async function buildSeoMetadata(input: {
 }): Promise<SeoMetadata> {
   const currentRoute = routePathFromRuntimePathname(input.pathname, input.runtimeBase)
   return {
-    title: input.title ?? config.site.defaultTitle,
-    description: input.description ?? config.site.defaultDescription,
-    canonicalUrl: productionSiteUrl(config, input.canonicalPath ?? currentRoute),
-    shareUrl: runtimeSiteUrl(config, input.sharePath ?? currentRoute),
-    imageUrl: runtimeSiteUrl(config, input.imagePath ?? config.site.defaultSocialImage),
+    title: input.title ?? webSiteConfig.site.defaultTitle,
+    description: input.description ?? webSiteConfig.site.defaultDescription,
+    canonicalUrl: productionSiteUrl(webSiteConfig, input.canonicalPath ?? currentRoute),
+    shareUrl: runtimeSiteUrl(webSiteConfig, input.sharePath ?? currentRoute),
+    imageUrl: runtimeSiteUrl(webSiteConfig, input.imagePath ?? webSiteConfig.site.defaultSocialImage),
     type: input.type ?? 'website',
-    robots: isPreviewRuntime(config) ? 'noindex,nofollow' : 'index,follow',
-    locale: config.site.locale,
-    siteName: config.site.brandName,
+    robots: isPreviewRuntime(webSiteConfig) ? 'noindex,nofollow' : 'index,follow',
+    locale: webSiteConfig.site.locale,
+    siteName: webSiteConfig.site.brandName,
   }
 }
