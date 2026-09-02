@@ -4,7 +4,7 @@
 > 基线：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
 > 基线日期：2026-09-02
 > 阶段：Product Capability Phase
-> 当前目标：Plan 50A · Production Gate → Plan 50B · Structured Data
+> 当前目标：Plan 50B · Structured Data
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -13,67 +13,41 @@
 - Plan 10 · Archive & Discovery Experience：**Done** — PR #8 / #9 / #10
 - Plan 20 · Presentation Platform：**Done** — PR #11 / #12
 - Plan 30 · Weekly Brief：**Done** — PR #13 / #14
-- Plan 40 · Source & Author Registry：**Done**
-  - 40A Registry + Referential Integrity：PR #15
-  - 40B Registry-backed Content UI：最终通过 PR #19 正确进入 `main`
-  - Production Pages：run `33495089941` Build + Deploy + public smoke 全部 Passed
-  - 历史 `feat/*` / `refactor/*` 分支已清理；closeout Issue #20 已完成
+- Plan 40 · Source & Author Registry：**Done** — PR #15 / #19
 - Plan 50 · SEO & Sharing：**In Progress**
-  - 正式设计：`docs/superpowers/specs/2026-09-01-seo-sharing-design.md`
-  - 50A SEO Foundation：**Merged · Production Gate** — PR #21
-    - merge：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
-    - fresh main Site Build：run `33586301122` Passed
-    - main Artifact：`9830214428` / `sha256:ea1bc7092e23f31536a136a0cf6f48c78e398b5f3a2cbed4d27ff3f653ee31ed`
-    - Production Pages：需要针对 `16de75931c984f64cd1458769b6eb87bfa5fe572` 新建 `deploy=true` workflow dispatch
-  - 50B Structured Data：**Next after 50A Production Gate**
+  - 50A SEO Foundation：**Done** — PR #21
+    - main：`16de75931c984f64cd1458769b6eb87bfa5fe572`
+    - Site Build：`33586301122` Passed
+    - Production Pages：`33588705346` Build + Deploy + public smoke Passed
+  - 50B Structured Data：**Current**
 - Plan 60 · Knowledge Lifecycle：**Planned**
 - Plan 70 · Scheduled Content Automation：**Planned**
 
 ## 当前产品基线
 
 ```text
-Daily Brief
-  -> Reading
-  -> daily-v1 / 11 slides
-  -> RSS / Archive / Topic
-  -> Daily stable date / latest
-
-Weekly Brief
-  -> Weekly Reading
-  -> weekly-v1 / 7..11 slides
-  -> RSS / Archive / Topic
-  -> 不占用 Daily stable route
-
-Standalone Presentation
-  -> talk-v1
-  -> Slides discovery
-
-Knowledge Identity
-  -> Source / Author filename IDs
-  -> Topic / Source / Author referential integrity
-  -> Essay AuthorByline
-  -> Registry-backed Reference metadata
-  -> scheduled-agent Registry write restriction
-
-Search & Sharing
-  -> Production Reading canonical identity
-  -> Preview noindex + Preview share identity
-  -> Open Graph / Twitter Card
-  -> Production-only Sitemap identity
-  -> runtime absolute RSS links
-  -> Brief-derived Slide canonical -> Reading
-  -> standalone Talk self-canonical
-  -> Daily/latest aliases canonical -> Reading
-
-Delivery
-  -> read-only PR Build
-  -> Trusted Preview Publish
-  -> Public Smoke
-  -> fresh main Site Build
-  -> governed Production Pages deploy
+Structured Content + Registry
+          ↓
+Referential Integrity
+          ↓
+Reading / Presentation / RSS / Discovery
+          ↓
+SEO URL Contract
+  ├── Production canonical
+  ├── Preview noindex + Preview share URL
+  ├── Open Graph / Twitter
+  ├── Sitemap
+  ├── RSS identity
+  └── Slide / alias canonical
+          ↓
+50B Structured Data
+  ├── WebSite
+  ├── Essay Article + Author Registry
+  ├── Brief Article
+  └── Knowledge TechArticle
 ```
 
-Plan 50A 已通过 PR #21 合并到 `main@16de75931c984f64cd1458769b6eb87bfa5fe572`。合并后的 Site Build run `33586301122` 成功执行完整 `pnpm build`，其中 SEO URL、Web Artifact 与 assembled-site canonical contracts 全部通过；Production Pages 尚需对 exact SHA 执行新的显式 `deploy=true` gate。
+50A 生产验证针对 exact `main@16de75931c984f64cd1458769b6eb87bfa5fe572`：Production run `33588705346` 成功部署 GitHub Pages，并 smoke `/`、`/latest/`、`/archive.json`、`/rss.xml`、favicon 与 `/2026/08/28/`。
 
 ## Roadmap
 
@@ -98,8 +72,8 @@ Plan 50A 已通过 PR #21 合并到 `main@16de75931c984f64cd1458769b6eb87bfa5fe5
 40 Source & Author Registry    Done
         ↓
 50 SEO & Sharing               In Progress
-  ├── 50A SEO Foundation       Merged · Production Gate
-  └── 50B Structured Data      Next after Production Gate
+  ├── 50A SEO Foundation       Done
+  └── 50B Structured Data      Current
         ↓
 60 Knowledge Lifecycle
         ↓
@@ -108,20 +82,19 @@ Plan 50A 已通过 PR #21 合并到 `main@16de75931c984f64cd1458769b6eb87bfa5fe5
 
 ## 每个计划的统一交付规则
 
-1. 通过独立分支和 PR 实现，不在一个 PR 中跨多个大 Workstream；
+1. 独立分支与 PR；
 2. 不破坏 `content/** → dist/site` 单向构建图；
-3. 不引入数据库、CMS 或服务端 Runtime，除非后续有新的真实需求；
-4. 新内容模型必须由 Schema 约束，并提供正反测试；
-5. 新路由必须进入构建期 Artifact 检查；
-6. PR 必须通过 Path Guard、完整 `pnpm build` 和公网 Preview；
-7. 不提交生成 HTML、Slidev source 或 `dist/**`；
-8. stacked PR 在前置 PR 合并后必须重新确认 base；
-9. Production Pages 继续通过显式 deployment gate；
-10. 完成后更新 Roadmap 状态。
+3. 不引入数据库、CMS 或服务端 Runtime，除非出现新的真实需求；
+4. 新内容模型与新关系必须有可执行合同；
+5. 新公开输出必须进入 Artifact 检查；
+6. PR 必须通过 Path Guard、完整 `pnpm build` 与 Trusted Preview；
+7. 不提交 generated Slidev source 或 `dist/**`；
+8. Production Pages 继续通过显式 deployment gate；
+9. 完成后同步 Roadmap 状态。
 
 ## Plan 状态约定
 
-- `Planned`：范围与验收已定义，尚未开始；
-- `In Progress`：已有设计、实施分支或 PR；
-- `Done`：全部计划 PR 已进入 `main`，并通过 Preview / 主分支 / 公网生产验证；
-- `Deferred`：明确推迟，不作为当前缺陷。
+- `Planned`：尚未开始；
+- `In Progress`：已有设计、计划、分支或 PR；
+- `Done`：全部计划 PR 已进入 `main`，并完成对应 Preview / main / Production 验证；
+- `Deferred`：明确推迟。
