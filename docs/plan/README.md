@@ -1,10 +1,10 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 基线：`main@0c867438fc6cac83b6f97b76cb55e29118b64b87`
-> 基线日期：2026-09-01
+> 基线：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
+> 基线日期：2026-09-02
 > 阶段：Product Capability Phase
-> 当前目标：Plan 50A · SEO Foundation
+> 当前目标：Plan 50A · Production Gate → Plan 50B · Structured Data
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -16,14 +16,16 @@
 - Plan 40 · Source & Author Registry：**Done**
   - 40A Registry + Referential Integrity：PR #15
   - 40B Registry-backed Content UI：最终通过 PR #19 正确进入 `main`
-  - 历史 stacked/recovery：#16 为旧 feature-base merge；#17、#18 已关闭
-  - merge 后 Site Build：run `33489504298` Passed
   - Production Pages：run `33495089941` Build + Deploy + public smoke 全部 Passed
   - 历史 `feat/*` / `refactor/*` 分支已清理；closeout Issue #20 已完成
-- Plan 50 · SEO & Sharing：**In Progress · Design Approved / Planning 50A**
+- Plan 50 · SEO & Sharing：**In Progress**
   - 正式设计：`docs/superpowers/specs/2026-09-01-seo-sharing-design.md`
-  - 50A SEO Foundation：Current
-  - 50B Structured Data：Next
+  - 50A SEO Foundation：**Merged · Production Gate** — PR #21
+    - merge：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
+    - fresh main Site Build：run `33586301122` Passed
+    - main Artifact：`9830214428` / `sha256:ea1bc7092e23f31536a136a0cf6f48c78e398b5f3a2cbed4d27ff3f653ee31ed`
+    - Production Pages：需要针对 `16de75931c984f64cd1458769b6eb87bfa5fe572` 新建 `deploy=true` workflow dispatch
+  - 50B Structured Data：**Next after 50A Production Gate**
 - Plan 60 · Knowledge Lifecycle：**Planned**
 - Plan 70 · Scheduled Content Automation：**Planned**
 
@@ -53,14 +55,25 @@ Knowledge Identity
   -> Registry-backed Reference metadata
   -> scheduled-agent Registry write restriction
 
+Search & Sharing
+  -> Production Reading canonical identity
+  -> Preview noindex + Preview share identity
+  -> Open Graph / Twitter Card
+  -> Production-only Sitemap identity
+  -> runtime absolute RSS links
+  -> Brief-derived Slide canonical -> Reading
+  -> standalone Talk self-canonical
+  -> Daily/latest aliases canonical -> Reading
+
 Delivery
   -> read-only PR Build
   -> Trusted Preview Publish
   -> Public Smoke
+  -> fresh main Site Build
   -> governed Production Pages deploy
 ```
 
-Plan 40 的最终生产部署针对 `main@0c867438fc6cac83b6f97b76cb55e29118b64b87`。Pages run `33495089941` 成功部署 exact SHA，随后 smoke `/`、`/latest/`、`/archive.json`、`/rss.xml`、`/favicon.svg` 与 `/2026/08/28/` 全部通过。
+Plan 50A 已通过 PR #21 合并到 `main@16de75931c984f64cd1458769b6eb87bfa5fe572`。合并后的 Site Build run `33586301122` 成功执行完整 `pnpm build`，其中 SEO URL、Web Artifact 与 assembled-site canonical contracts 全部通过；Production Pages 尚需对 exact SHA 执行新的显式 `deploy=true` gate。
 
 ## Roadmap
 
@@ -85,8 +98,8 @@ Plan 40 的最终生产部署针对 `main@0c867438fc6cac83b6f97b76cb55e29118b64b
 40 Source & Author Registry    Done
         ↓
 50 SEO & Sharing               In Progress
-  ├── 50A SEO Foundation       Current
-  └── 50B Structured Data      Next
+  ├── 50A SEO Foundation       Merged · Production Gate
+  └── 50B Structured Data      Next after Production Gate
         ↓
 60 Knowledge Lifecycle
         ↓
