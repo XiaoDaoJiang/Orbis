@@ -1,20 +1,19 @@
 import type { ResolvedAuthor } from './content-registry.ts'
-import { webSiteConfig } from './site-config.ts'
-import { productionSiteUrl } from '../../../../tools/shared/site-config.ts'
+import { productionSiteUrl, type SiteConfig } from '../../../../tools/shared/site-config.ts'
 
 export type JsonLdValue = Record<string, unknown> | Array<Record<string, unknown>>
 
-function canonicalUrl(path: string): string {
-  return productionSiteUrl(webSiteConfig, path)
+function canonicalUrl(config: SiteConfig, path: string): string {
+  return productionSiteUrl(config, path)
 }
 
-function baseDocument(type: 'Article' | 'TechArticle', input: {
+function baseDocument(config: SiteConfig, type: 'Article' | 'TechArticle', input: {
   title: string
   description: string
   publishedAt: string
   canonicalPath: string
 }): Record<string, unknown> {
-  const url = canonicalUrl(input.canonicalPath)
+  const url = canonicalUrl(config, input.canonicalPath)
   return {
     '@context': 'https://schema.org',
     '@type': type,
@@ -23,22 +22,22 @@ function baseDocument(type: 'Article' | 'TechArticle', input: {
     datePublished: input.publishedAt,
     mainEntityOfPage: url,
     url,
-    inLanguage: webSiteConfig.site.locale,
+    inLanguage: config.site.locale,
   }
 }
 
-export function buildWebSiteJsonLd(): Record<string, unknown> {
+export function buildWebSiteJsonLd(config: SiteConfig): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: webSiteConfig.site.brandName,
-    url: canonicalUrl('/'),
-    description: webSiteConfig.site.defaultDescription,
-    inLanguage: webSiteConfig.site.locale,
+    name: config.site.brandName,
+    url: canonicalUrl(config, '/'),
+    description: config.site.defaultDescription,
+    inLanguage: config.site.locale,
   }
 }
 
-export function buildEssayJsonLd(input: {
+export function buildEssayJsonLd(config: SiteConfig, input: {
   title: string
   description: string
   publishedAt: string
@@ -47,7 +46,7 @@ export function buildEssayJsonLd(input: {
   authors: ResolvedAuthor[]
 }): Record<string, unknown> {
   return {
-    ...baseDocument('Article', input),
+    ...baseDocument(config, 'Article', input),
     dateModified: input.updatedAt ?? input.publishedAt,
     author: input.authors.map((author) => ({
       '@type': 'Person',
@@ -57,16 +56,16 @@ export function buildEssayJsonLd(input: {
   }
 }
 
-export function buildBriefJsonLd(input: {
+export function buildBriefJsonLd(config: SiteConfig, input: {
   title: string
   description: string
   publishedAt: string
   canonicalPath: string
 }): Record<string, unknown> {
-  return baseDocument('Article', input)
+  return baseDocument(config, 'Article', input)
 }
 
-export function buildKnowledgeJsonLd(input: {
+export function buildKnowledgeJsonLd(config: SiteConfig, input: {
   title: string
   description: string
   publishedAt: string
@@ -74,7 +73,7 @@ export function buildKnowledgeJsonLd(input: {
   canonicalPath: string
 }): Record<string, unknown> {
   return {
-    ...baseDocument('TechArticle', input),
+    ...baseDocument(config, 'TechArticle', input),
     dateModified: input.updatedAt ?? input.publishedAt,
   }
 }
