@@ -1,10 +1,11 @@
 # 60 · Knowledge Lifecycle
 
-> 状态：Current · Design Review
+> 状态：In Progress · 60A Merged / Production Gate
 > Roadmap Milestone：F — Durable Knowledge
 > 建议优先级：P2
-> 基线：`main@bb85751266f90ec25e56f087bd078a935d8f31cd`
+> 基线：`main@f468a45049035bc7816a52225ca41f4f381b0ae6`
 > 依赖：Plan 40 Source & Author Registry · Done；Plan 50 SEO & Sharing · Done
+> 设计：[`docs/superpowers/specs/2026-09-02-knowledge-lifecycle-design.md`](../superpowers/specs/2026-09-02-knowledge-lifecycle-design.md)
 
 ## 1. 目标
 
@@ -12,197 +13,235 @@
 
 核心原则：**Knowledge 的价值来自持续维护，而不是永久发布后不再检查。**
 
-## 2. 当前基础
+## 2. 已批准核心模型
 
-Knowledge Schema 已经具备：
+### Persisted Editorial State
 
-- `status`；
-- `publishedAt`；
-- `updatedAt`；
-- `reviewAt`；
-- topics；
-- references。
-
-当前 `publicationStatusSchema` 已包含 `draft / published / needs-review / archived / active`，而公开 Knowledge 目前只把 `published / active` 作为可发现内容；`needs-review / archived` 尚未形成稳定公开语义。
-
-当前缺少：
-
-- Review 到期识别；
-- needs-review 可视化；
-- 更新历史/变更说明；
-- 从 Brief/Essay 沉淀 Knowledge 的明确流程；
-- 退役与替代关系；
-- CI/Automation 中的生命周期提示。
-
-## 3. 当前设计问题
-
-Plan 60 在实现前必须先锁定一个关键边界：
-
-**`needs-review` 是作者显式维护的持久化状态，还是根据 `reviewAt` 与构建日期动态推导的状态？**
-
-推荐方向：
+源数据 `status` 表示编辑判断，不由日期自动改写：
 
 ```text
-持久化 status        = active | archived | draft ...
-review health         = current | due-soon | overdue
-editorial flag        = needs-review（仅在人工明确判断需要复查时持久化）
+draft / published / active / needs-review / archived
 ```
 
-也就是说，日期到期本身只产生 review health / warning，不自动改写 `status`。这样静态内容不会因为“今天是哪一天”而改变其源数据语义，也避免构建自动修改 Git 内容。
+`needs-review` 是显式 editorial state；`reviewAt` 到期不会自动把 `active` 改成 `needs-review`。
 
-该边界需要在 Design Review 中确认后再进入 Schema / tooling 实现。
+### Derived Review Health
 
-## 4. 生命周期模型
-
-现有草案：
+构建/工具层根据显式 evaluation date 推导：
 
 ```text
-draft
-  ↓
-active
-  ↓
-needs-review
-  ├──→ active       # 复查后确认/更新
-  └──→ archived     # 已失效或被替代
+current → due-soon → overdue
 ```
 
-Design Review 建议改为把“发布状态”和“复查健康度”分开：
+首版 due-soon threshold = 14 days，使用 UTC calendar-date 语义。
 
-```text
-Publication / Editorial State
-  draft → active → archived
-            ↕
-       needs-review   # 显式 editorial state
+### Replacement Relation
 
-Derived Review Health
-  current → due-soon → overdue
-```
-
-`published` 继续作为兼容 PublicationStatus；Knowledge 新增能力不应要求第一版立即迁移全部历史内容。
-
-## 5. Schema 扩展
-
-现有建议字段：
+唯一持久化 edge：
 
 ```yaml
-reviewAt: 2026-11-01
-reviewIntervalDays: 90
-supersedes:
-  - old-entry-id
-supersededBy: new-entry-id
-changeNote: 更新了 MCP 生命周期和授权边界
+supersededBy: replacement-knowledge-id
 ```
 
-不要求所有字段第一版同时存在。建议第一阶段优先：
+反向 `supersedes[]` 只从全体 Knowledge 自动推导，不在 source 中双写。
 
-- 保留现有 `reviewAt`；
-- 新增 replacement relation（具体单向还是双向由设计确认）；
-- `changeNote` / history 暂不强制进入 Schema；
-- `reviewIntervalDays` 只有在明确需要自动计算下一次 review date 时再引入。
+## 3. 60A — Knowledge Lifecycle Contract · Merged / Production Gate
 
-重点是先定义稳定、可验证、不会被日期自动改写的 review contract。
-
-## 6. Review Detection
-
-新增构建期/工具层检测：
-
-- `reviewAt < today` 且内容仍为公开现行 Knowledge；
-- `reviewAt` 即将到期；
-- 显式 `needs-review` 内容；
-- archived 内容被 active 内容引用时的风险；
-- replacement relation 悬空或冲突。
-
-第一阶段不要因为“到期”直接阻断整个生产 Build，避免日期问题导致站点无法发布。
-
-建议分级：
+PR #23 已于 `2026-09-02T09:34:57Z` 合并：
 
 ```text
-ERROR   结构或关系不合法
-WARN    reviewAt 已过期 / explicit needs-review
-INFO    即将到期
+PR                                #23 merged
+implementation head               b0da8fa4e706459abf1eb39a365ea2d2ecb203a9
+main                              f468a45049035bc7816a52225ca41f4f381b0ae6
+post-merge Site Build             33614900003 success
+main Artifact                     9840548845
+main Artifact SHA-256             ca3f942db3466e0634da8e724a18e4c333d46ef274246dd8d5acf31d74101541
+Production Pages                  pending exact-SHA deploy=true gate
 ```
 
-CI 可以生成 Review Report；真正改变 source status 仍由内容 PR 完成。
+60A 已落地：
 
-## 7. Web Experience
+- pure `evaluateReviewHealth`；
+- explicit evaluation date；
+- UTC/calendar-date validation；
+- `current / due-soon / overdue`；
+- `reviewAt` 缺失保持 unscheduled/current；
+- editorial state 与 review health 分离；
+- Knowledge Schema `supersededBy?`；
+- missing replacement target → validation ERROR；
+- self replacement → validation ERROR；
+- inverse `supersedes[]` deterministic derivation；
+- `knowledge:review` human-readable report；
+- machine-readable `buildKnowledgeReviewReport` / JSON CLI；
+- overdue / due-soon advisory，零退出；
+- structure/relation invalid 继续由 `content:validate` fatal fail。
 
-Knowledge Index 建议增加：
+### TDD Evidence
 
-- Active；
+RED 1 — run `33612906709`：
+
+```text
+Knowledge lifecycle helper must exist
+```
+
+GREEN 1 — run `33613130194`：full PR Build success。
+
+RED 2 — run `33613368654`：
+
+```text
+Knowledge lifecycle evaluator contract passed
+AssertionError: Knowledge schema must preserve supersededBy
+```
+
+GREEN 2 — run `33613680081`：full PR Build success。
+
+RED 3 — run `33613960582`：
+
+```text
+Knowledge lifecycle evaluator contract passed
+Knowledge supersession relation contract passed
+AssertionError: Knowledge review report helper must exist
+```
+
+Final PR GREEN — run `33614266765`：
+
+```text
+Knowledge lifecycle evaluator contract passed
+Knowledge supersession relation contract passed
+Knowledge review report contract passed
+```
+
+Preview Artifact：
+
+```text
+ID       9840310311
+SHA-256  ae00a521342d662c0646067966e51c76592ef025b6a2809f8d7791ee2fb79eb4
+```
+
+Trusted Preview smoke passed after the final artifact was published。
+
+### Fresh main GREEN
+
+Post-merge Site Build `33614900003` exact checkout：
+
+```text
+main@f468a45049035bc7816a52225ca41f4f381b0ae6
+```
+
+并再次通过：
+
+```text
+Knowledge lifecycle evaluator contract passed
+Knowledge supersession relation contract passed
+Knowledge review report contract passed
+SEO URL contract passed
+JSON-LD builder contract passed
+Web SEO artifact contract passed
+Assembled SEO canonical contract passed
+Structured data artifact contract passed
+```
+
+真实 source review report：
+
+```text
+Knowledge review report · 2026-09-02
+current=1 due-soon=0 overdue=0 needs-review=0
+OK verification-loop · status=active · review=2026-11-01 · current (60d)
+```
+
+## 4. 60B — Knowledge Lifecycle UI · Next after 60A Production Gate
+
+60B 只消费 60A 已稳定的 lifecycle contract，不在 Astro 页面重新实现日期判断。
+
+目标公开体验：
+
+### Knowledge Index
+
+- Current / Active Knowledge；
 - Needs Review；
-- Recently Updated。
+- Review Due Soon / Overdue 可视化；
+- Recently Updated；
+- archived 不与 current conclusions 混排。
 
-公开 Knowledge 页面显示：
+### Knowledge Detail
 
-- Published / Updated；
-- Next review；
-- Review health；
-- Editorial status；
-- Topics；
-- References；
-- Superseded / archived notice（如存在）。
+显示：
 
-Archived 页面可以继续保持永久 URL，但清晰提示不再推荐作为当前结论。
+- editorial status；
+- review health；
+- published / updated；
+- next review；
+- overdue / needs-review notice；
+- archived notice；
+- `supersededBy` replacement link；
+- derived `supersedes[]` links；
+- Topics / References / Related Content 保持现有能力。
 
-## 8. Knowledge Promotion Workflow
+### Stable URL Policy
 
-定义从短周期内容沉淀为长期知识的人工/Agent 辅助流程：
+- `active / published / needs-review / archived` Knowledge 的已有 detail URL 保持稳定；
+- archived / superseded 页面不删除、不自动 redirect；
+- 页面通过明确 notice 指向推荐 replacement；
+- discovery/index 可降低 archived prominence，但不能破坏永久 URL。
 
-```text
-Repeated Brief signals
-      ↓
-Essay / research evidence
-      ↓
-Candidate Knowledge
-      ↓
-Human review
-      ↓
-active Knowledge
-      ↓
-periodic review
-```
+## 5. Agent / Governance Boundary
 
-Agent 可以提出 Knowledge PR，但不能自动把未经评审的内容标记为长期有效结论。
+Agent 可以：
 
-## 9. 实现任务（设计批准后）
+- 发现 overdue / due-soon；
+- 生成 review report；
+- 提出修改 Knowledge 的 PR；
+- 建议 `needs-review / archived / supersededBy`。
 
-1. 固化 Knowledge editorial state 与 derived review health 语义；
-2. 根据最终 relation 设计扩展 Schema；
-3. 新增 `tools/knowledge-review-check` 或整合到 content validation；
-4. 输出 machine-readable + human-readable review report；
-5. 实现 overdue / due-soon / needs-review 检测；
-6. 实现 replacement relation validation；
-7. 升级 Knowledge Index；
-8. 升级 Knowledge Detail；
-9. 更新 Agent 内容规范；
-10. 添加时间边界测试，固定 UTC/calendar-date 语义，避免时区误判。
+Agent 不可以仅因为日期变化而：
 
-## 10. 非目标
+- 自动修改 `status`；
+- 自动提交 source 变更；
+- 自动删除 archived Knowledge；
+- 未经评审把 Candidate 提升成长期有效结论。
 
-- 自动修改 Knowledge 状态；
-- LLM 自动判断事实是否仍真实；
-- 自动删除 archived 内容；
+## 6. 非目标
+
+- LLM 自动判断事实仍然真实；
 - 数据库任务队列；
 - 复杂审批系统；
-- 因 reviewAt 到期而自动提交 source content 变更。
+- 自动修改 Knowledge source；
+- 双向 persisted supersession graph；
+- 因 overdue 直接阻断发布；
+- 60B 重写 Plan 60A lifecycle evaluator。
 
-## 11. 验收标准
+## 7. Plan 60 验收
 
-- 到期 Knowledge 可以被稳定识别；
-- 到期本身不会无理由阻断站点发布；
-- derived review health 与持久化 editorial state 不混淆；
-- needs-review / archived 在 UI 中有明确提示；
-- replacement relation 不允许悬空或自引用；
-- Archived 页面保持稳定 URL；
-- Agent 不会在无评审情况下自动把 Candidate 提升为长期有效 Knowledge；
-- Review Report 可以在 CI 或本地命令中读取；
-- 相同基准日期在不同时区得到相同检测结果。
+60A 已满足：
 
-## 12. 建议 PR 拆分
+- 到期可确定性识别；
+- date health 与 editorial state 分离；
+- due-soon / overdue 时间边界测试；
+- missing/self replacement fatal validation；
+- canonical one-way replacement edge；
+- inverse supersedes derivation；
+- review report 可由本地/CI读取；
+- overdue advisory / zero exit；
+- PR Preview 与 fresh main Build 全绿。
 
-设计批准后建议两段：
+60A 尚未满足：
 
-1. `feat: add knowledge review lifecycle validation`
-2. `feat: surface knowledge review status in web`
+- `main@f468a45049035bc7816a52225ca41f4f381b0ae6` governed Production Pages exact-SHA Build → Deploy → public Smoke。
 
-第一段负责 Schema / pure lifecycle evaluator / report / relation validation；第二段只消费已稳定的生命周期结果做 Web UI，不让日期判断散落在 Astro 页面中。
+60B 尚未开始实现：
+
+- Knowledge lifecycle index/detail UI；
+- needs-review / due-soon / overdue / archived notices；
+- replacement navigation；
+- stable archived URL artifact contracts。
+
+## 8. 当前 Gate
+
+- [x] Plan 60 design approved；
+- [x] 60A implementation plan；
+- [x] 60A TDD implementation + PR #23；
+- [x] PR #23 merged to `main@f468a45049035bc7816a52225ca41f4f381b0ae6`；
+- [x] fresh main Site Build `33614900003` passed；
+- [ ] Production Pages `deploy=true` for exact `f468a45049035bc7816a52225ca41f4f381b0ae6` + public smoke；
+- [ ] mark 60A Done；
+- [ ] enter 60B implementation。
