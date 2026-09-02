@@ -1,10 +1,10 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 基线：`main@bb85751266f90ec25e56f087bd078a935d8f31cd`
+> 基线：`main@f468a45049035bc7816a52225ca41f4f381b0ae6`
 > 基线日期：2026-09-02
 > 阶段：Product Capability Phase
-> 当前目标：Plan 60 · Knowledge Lifecycle · Design Review
+> 当前目标：Plan 60 · 60A Production Gate
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -15,12 +15,14 @@
 - Plan 30 · Weekly Brief：**Done** — PR #13 / #14
 - Plan 40 · Source & Author Registry：**Done** — PR #15 / #19
 - Plan 50 · SEO & Sharing：**Done** — PR #21 / #22
-  - main：`bb85751266f90ec25e56f087bd078a935d8f31cd`
-  - Site Build：`33601715928` Passed
-  - Main Artifact：`9835467039`
-  - Production Pages：`33603472306` Build + Deploy + public smoke Passed
-  - Production Artifact：`9836095734`
-- Plan 60 · Knowledge Lifecycle：**Current · Design Review**
+- Plan 60 · Knowledge Lifecycle：**In Progress · 60A Production Gate**
+  - 60A Knowledge Lifecycle Contract：**Merged / Production Gate** — PR #23
+    - main：`f468a45049035bc7816a52225ca41f4f381b0ae6`
+    - Site Build：`33614900003` Passed
+    - Main Artifact：`9840548845`
+    - Artifact SHA-256：`ca3f942db3466e0634da8e724a18e4c333d46ef274246dd8d5acf31d74101541`
+    - Production Pages：exact-SHA `deploy=true` Pending
+  - 60B Knowledge Lifecycle UI：**Planned / Next after 60A Production Gate**
 - Plan 70 · Scheduled Content Automation：**Planned**
 
 ## 当前产品基线
@@ -32,30 +34,24 @@ Referential Integrity
           ↓
 Reading / Presentation / RSS / Discovery
           ↓
-SEO URL Contract
-  ├── Production canonical
-  ├── Preview noindex + Preview share URL
-  ├── Open Graph / Twitter
-  ├── Sitemap
-  ├── RSS identity
-  └── Slide / alias canonical
+SEO / Structured Data
           ↓
-Structured Data
-  ├── WebSite
-  ├── Essay Article + Author Registry
-  ├── Brief Article
-  └── Knowledge TechArticle
+Knowledge Lifecycle Contract
+  ├── persisted editorial state
+  ├── derived review health
+  │   ├── current
+  │   ├── due-soon
+  │   └── overdue
+  ├── supersededBy canonical edge
+  ├── derived supersedes[]
+  └── advisory review report
           ↓
-Knowledge Lifecycle · Plan 60
-  ├── review contract
-  ├── overdue / due-soon detection
-  ├── lifecycle relationships
-  └── durable Knowledge UI
+Knowledge Lifecycle UI · 60B
 ```
 
-Plan 50 最终生产验证针对 exact `main@bb85751266f90ec25e56f087bd078a935d8f31cd`：Production run `33603472306` 成功构建并部署 GitHub Pages；Pages deployment 明确使用 `pages_build_version=bb85751266f90ec25e56f087bd078a935d8f31cd`，并 smoke `/`、`/latest/`、`/archive.json`、`/rss.xml`、favicon 与 `/2026/08/28/`。
+60A 已合入 `main@f468a45049035bc7816a52225ca41f4f381b0ae6`。fresh Site Build `33614900003` 再次通过 lifecycle evaluator、supersession relation、review report 以及 Plan 10–50 全部既有合同；当前 `knowledge:review` 输出当前 Knowledge 为 `current (60d)`，并保持零退出。
 
-同一 Production build 再次通过 `SEO URL contract`、`JSON-LD builder contract`、`Web SEO artifact contract`、`Assembled SEO canonical contract` 与 `Structured data artifact contract`。因此 Milestone E / Plan 50 已关闭。
+当前只剩 governed Production Pages 对 exact main SHA 的 Build → Deploy → public Smoke。该 gate 通过后，60A 才标记 Done，并正式进入 60B Web UI 实现。
 
 ## Roadmap
 
@@ -81,7 +77,9 @@ Plan 50 最终生产验证针对 exact `main@bb85751266f90ec25e56f087bd078a935d8
         ↓
 50 SEO & Sharing               Done
         ↓
-60 Knowledge Lifecycle         Current · Design Review
+60 Knowledge Lifecycle         In Progress
+  ├── 60A Contract             Merged / Production Gate
+  └── 60B Web UI               Next after gate
         ↓
 70 Scheduled Content Automation
 ```
@@ -101,7 +99,7 @@ Plan 50 最终生产验证针对 exact `main@bb85751266f90ec25e56f087bd078a935d8
 ## Plan 状态约定
 
 - `Planned`：尚未开始；
-- `Design Review`：当前计划已成为产品目标，正在锁定语义与边界，尚未进入实现；
+- `Design Review`：当前计划已成为产品目标，正在锁定语义与边界；
 - `In Progress`：设计已批准，已有实施计划、分支或 PR；
 - `Production Gate`：实现与 main Build 已完成，但 exact-SHA Production Pages 验证尚未完成；
 - `Done`：全部计划 PR 已进入 `main`，并完成对应 Preview / main / Production 验证；
