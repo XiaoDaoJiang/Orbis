@@ -8,7 +8,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "validate": "pnpm --filter @orbis/content-schema test && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:seo-url && pnpm test:structured-data && pnpm content:validate && pnpm test:registry-ui-fixtures",
+    "validate": "pnpm --filter @orbis/content-schema test && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm content:validate && pnpm test:registry-ui-fixtures",
     "content:validate": "tsx tools/validate-content/index.ts",
     "path:guard": "tsx tools/path-guard/index.ts",
     "generate:slides": "tsx tools/generate-slides/index.ts",
@@ -30,6 +30,7 @@
     "test:seo-site": "tsx tools/seo/site-artifact-check.ts",
     "test:structured-data": "tsx tools/seo/json-ld-contract.test.ts",
     "test:structured-data-artifact": "tsx tools/seo/structured-data-artifact-check.ts",
+    "test:knowledge-lifecycle": "tsx tools/knowledge-lifecycle/lifecycle-contract.test.ts",
     "test:weekly-artifact": "tsx tools/weekly-brief/weekly-artifact-check.ts",
     "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm test:seo-web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact"
   },
