@@ -5,6 +5,10 @@ site:
   origin: https://xiaodaojiang.github.io
   basePath: /Orbis
   locale: zh-CN
+  defaultTitle: Orbis
+  defaultDescription: Essays, briefs, slides, topics and durable knowledge.
+  defaultSocialImage: /social/orbis-default.png
+  brandName: Orbis
 
 content:
   briefsDir: content/briefs

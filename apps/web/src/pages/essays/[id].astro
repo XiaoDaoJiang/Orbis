@@ -47,7 +47,7 @@ const sourceIndex = buildSourceIndex(sourceEntries)
 const authors = resolveAuthors(entry.data.authors, authorIndex)
 const { Content } = await render(entry)
 ---
-<BaseLayout title={entry.data.title} description={entry.data.description}>
+<BaseLayout title={entry.data.title} description={entry.data.description} type="article">
   <article class="article">
     <header class="article-header">
       <div class="eyebrow">Essay · {entry.data.publishedAt}</div>

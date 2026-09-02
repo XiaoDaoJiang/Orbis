@@ -1,7 +1,8 @@
-import { mkdir, readdir, rm } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { spawn } from 'node:child_process'
 import { loadSiteConfig, joinBasePath, runtimeSiteBase } from '../shared/site-config.ts'
+import type { PresentationSeoManifest } from '../generate-slides/presentation-seo.ts'
 
 const root = resolve(import.meta.dirname, '../..')
 const config = await loadSiteConfig()
@@ -11,12 +12,35 @@ const outputRoot = resolve(root, config.presentation.outputDir)
 const siteBase = runtimeSiteBase(config)
 const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
 async function run(args: string[]) {
   await new Promise<void>((resolvePromise, reject) => {
     const child = spawn(pnpm, args, { cwd: slidesRoot, stdio: 'inherit' })
     child.once('error', reject)
     child.once('exit', (code) => code === 0 ? resolvePromise() : reject(new Error(`Command failed with exit code ${code}: pnpm ${args.join(' ')}`)))
   })
+}
+
+async function injectSeo(slug: string, out: string) {
+  const manifestPath = resolve(generatedRoot, slug, 'seo.json')
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as PresentationSeoManifest
+  const htmlPath = resolve(out, 'index.html')
+  const html = await readFile(htmlPath, 'utf8')
+
+  if (!html.includes('</head>')) throw new Error(`Slidev output is missing </head>: ${slug}`)
+  if (/<link\s+rel=["']canonical["']/i.test(html)) {
+    throw new Error(`Slidev output already contains canonical metadata: ${slug}`)
+  }
+
+  const metadata = `<link rel="canonical" href="${escapeHtmlAttribute(manifest.canonicalUrl)}"><meta name="robots" content="${escapeHtmlAttribute(manifest.robots)}">`
+  await writeFile(htmlPath, html.replace('</head>', `${metadata}</head>`), 'utf8')
 }
 
 const entries = (await readdir(generatedRoot, { withFileTypes: true }))
@@ -51,6 +75,7 @@ for (const slug of entries) {
     out,
     '--without-notes',
   ])
+  await injectSeo(slug, out)
   console.log(`Built Slidev deck: ${slug} -> ${base}`)
 }
 

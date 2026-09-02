@@ -38,7 +38,7 @@ const { entry, sourceEntries, related } = Astro.props
 const sourceIndex = buildSourceIndex(sourceEntries)
 const { Content } = await render(entry)
 ---
-<BaseLayout title={entry.data.title} description={entry.data.summary}>
+<BaseLayout title={entry.data.title} description={entry.data.summary} type="article">
   <article class="article">
     <header class="article-header">
       <div class="eyebrow">Knowledge · review {entry.data.reviewAt ?? 'not scheduled'}</div>

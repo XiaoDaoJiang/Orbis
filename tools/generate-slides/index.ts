@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { renderPresentation } from '../../apps/slides/templates/registry.ts'
 import { loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
 import { discoverPresentationDescriptors } from './discover-presentations.ts'
+import { buildPresentationSeoManifest } from './presentation-seo.ts'
 
 const root = resolve(import.meta.dirname, '../..')
 const config = await loadSiteConfig()
@@ -23,6 +24,11 @@ for (const descriptor of descriptors) {
   await writeFile(
     resolve(directory, 'slides.md'),
     renderPresentation(descriptor, { siteBase }),
+    'utf8',
+  )
+  await writeFile(
+    resolve(directory, 'seo.json'),
+    `${JSON.stringify(buildPresentationSeoManifest(descriptor, config), null, 2)}\n`,
     'utf8',
   )
 
