@@ -1,10 +1,15 @@
+import { parse } from 'yaml'
+import siteConfigSource from '../../../../config/site.yaml?raw'
 import {
   isPreviewRuntime,
-  loadSiteConfig,
   normalizeBasePath,
   productionSiteUrl,
   runtimeSiteUrl,
+  validateSiteConfig,
 } from '../../../../tools/shared/site-config.ts'
+import type { SiteConfig } from '../../../../tools/shared/site-config.ts'
+
+const config = validateSiteConfig(parse(siteConfigSource) as SiteConfig, 'config/site.yaml')
 
 export type SeoPageType = 'website' | 'article'
 
@@ -40,7 +45,6 @@ export async function buildSeoMetadata(input: {
   imagePath?: string
   type?: SeoPageType
 }): Promise<SeoMetadata> {
-  const config = await loadSiteConfig()
   const currentRoute = routePathFromRuntimePathname(input.pathname, input.runtimeBase)
   return {
     title: input.title ?? config.site.defaultTitle,
