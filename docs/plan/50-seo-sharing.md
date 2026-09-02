@@ -1,12 +1,10 @@
 # 50 · SEO & Sharing
 
-> 状态：In Progress · 50A Merged / Production Gate
+> 状态：In Progress · 50A Done / 50B Current
 > Roadmap Milestone：E — Search & Share Ready
 > 当前基线：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
 > 设计：[`docs/superpowers/specs/2026-09-01-seo-sharing-design.md`](../superpowers/specs/2026-09-01-seo-sharing-design.md)
-> 生产依赖：50A exact main SHA 必须完成 Production Pages Build → Deploy → public Smoke
-> 当前交付：50A SEO Foundation · Production Gate
-> 后续交付：50B Structured Data
+> 当前交付：50B Structured Data
 
 ## 1. 目标
 
@@ -34,8 +32,6 @@ robots    = noindex,nofollow
 
 Preview 可以分享和验收，但不成为长期搜索身份。
 
-现有 PR Build 通过 `SITE_ORIGIN` / `SITE_BASE` 注入 runtime Preview URL，因此 Plan 50 复用现有 SiteConfig / Astro runtime contract，不新增第二套 URL 配置。
-
 ## 3. Canonical Taxonomy
 
 Canonical public resources：
@@ -55,105 +51,37 @@ Alias / non-primary：
 - `/YYYY/MM/DD/` canonical → 对应 Daily `/briefs/:id/`；
 - alias 不进入 Sitemap。
 
-Brief-derived Slides：
+Brief-derived Slides canonical → Astro Reading；standalone Talk self-canonical。
 
-- canonical → Astro Reading；
-- 不作为独立 sitemap canonical。
+## 4. 50A — SEO Foundation · Done
 
-Standalone Talk：
-
-- 无 fake Reading page；
-- deck self-canonical；
-- 可进入 Sitemap。
-
-## 4. Metadata Contract
-
-`BaseLayout.astro` 作为 Astro `<head>` 单一 renderer，50A 已负责：
-
-- title / description；
-- canonical；
-- robots；
-- Open Graph；
-- Twitter Card；
-- RSS discovery。
-
-50B 将在同一边界加入 JSON-LD，不重新定义 canonical。
-
-50A 输出：
+PR #21 已合并并完成生产验证：
 
 ```text
-og:title
-og:description
-og:url
-og:type
-og:image
-og:locale
-og:site_name
-twitter:card = summary_large_image
-twitter:title
-twitter:description
-twitter:image
+main                              16de75931c984f64cd1458769b6eb87bfa5fe572
+PR                                #21 merged
+post-merge Site Build             33586301122 success
+main Artifact                     9830214428
+main Artifact SHA-256             ea1bc7092e23f31536a136a0cf6f48c78e398b5f3a2cbed4d27ff3f653ee31ed
+Production Pages                  33588705346 success
+Production Pages artifact         9831008743
+Production artifact SHA-256       83cdb5f5495dc8658ee8e77768ecb2627a05753017a6d5d2b33910da8cf99d81
 ```
 
-第一版使用静态 1200×630 Brand Social Image；不做 per-content 动态生成。
-
-## 5. Sitemap
-
-50A 已输出单个 `/sitemap.xml`，由 structured content + 明确 route taxonomy 构建，不扫描 `dist/site` 猜 canonical。
-
-排除：
-
-- non-public content；
-- `/latest/`；
-- 日期 alias；
-- Brief-derived Slide duplicates；
-- Preview URL；
-- RSS / assets。
-
-Preview build 中 sitemap `<loc>` 始终是 Production URL。
-
-## 6. RSS
-
-Production：item link = Production Reading canonical。
-
-Preview：item link = Preview Reading URL，保持 Preview feed 可点击验收。
-
-RSS 不再依赖硬编码 fallback origin。
-
-## 7. Delivery Split
-
-### 50A — SEO Foundation · Merged / Production Gate
-
-PR #21 已于 2026-09-02 合并：
+Production run `33588705346` 精确部署 `16de75931c984f64cd1458769b6eb87bfa5fe572`，并通过：
 
 ```text
-main = 16de75931c984f64cd1458769b6eb87bfa5fe572
+Build production artifact         success
+Deploy to GitHub Pages            success
+PASS /
+PASS /latest/
+PASS /archive.json
+PASS /rss.xml
+PASS /favicon.svg
+PASS /2026/08/28/
 ```
 
-已落地：
-
-- SiteConfig metadata；
-- Production/runtime URL helpers；
-- BaseLayout SEO head；
-- canonical + robots；
-- OG / Twitter；
-- static social image；
-- Sitemap；
-- RSS runtime/canonical alignment；
-- Slide canonical boundary；
-- Daily/latest alias canonical；
-- Production/Preview focused + artifact tests。
-
-Fresh main Site Build：
-
-```text
-run      = 33586301122
-result   = success
-artifact = 9830214428
-sha256   = ea1bc7092e23f31536a136a0cf6f48c78e398b5f3a2cbed4d27ff3f653ee31ed
-```
-
-同一 main build 明确通过：
+同一 Production build 再次通过：
 
 ```text
 SEO URL contract passed
@@ -161,11 +89,22 @@ Web SEO artifact contract passed
 Assembled SEO canonical contract passed
 ```
 
-50A 尚未标记 Done：当前最新 `Orbis Pages Production` 仍是 run `33495089941`，对应旧 `main@0c867438fc6cac83b6f97b76cb55e29118b64b87`。必须针对 `16de75931c984f64cd1458769b6eb87bfa5fe572` 新建一次 `deploy=true` workflow dispatch 并完成 public smoke。
+50A 已落地：
 
-### 50B — Structured Data · Next after 50A Production Gate
+- SiteConfig metadata；
+- Production/runtime URL helpers；
+- BaseLayout canonical / robots / OG / Twitter；
+- 1200×630 static social image；
+- `/sitemap.xml`；
+- Production/Preview RSS URL identity；
+- Brief-derived Slide canonical → Reading；
+- standalone Talk self-canonical；
+- Daily/latest alias canonical；
+- Preview noindex 与 Production URL 回归测试。
 
-建议 PR：
+## 5. 50B — Structured Data · Current
+
+目标 PR：
 
 ```text
 feat: add structured data for published content
@@ -174,14 +113,15 @@ feat: add structured data for published content
 范围：
 
 - WebSite JSON-LD；
-- Essay Article + Author Registry；
-- Brief Article；
-- Knowledge TechArticle；
-- JSON parse / canonical consistency tests。
+- Essay → `Article`；
+- Brief → `Article`；
+- Knowledge → `TechArticle`；
+- Essay Author 从 Plan 40 Author Registry 解析并保持声明顺序；
+- JSON-LD parse / canonical consistency / Preview-safe artifact tests。
 
 50B 消费 50A URL contract，不重新定义 canonical。
 
-## 8. JSON-LD Contract · 50B
+## 6. JSON-LD Contract
 
 只使用现有真实 Schema 字段：
 
@@ -190,58 +130,72 @@ feat: add structured data for published content
 - Brief → `Article`；
 - Knowledge → `TechArticle`。
 
-Essay Author 从 Plan 40 Author Registry 解析并保持声明顺序。
+Essay Author 从 Author Registry 得到 `name` 与可选 `url`。
 
-不伪造 Brief / Knowledge author、Source publisher、standalone Talk Reading page 或 `reviewAt` 映射。
+明确不伪造：
 
-## 9. Build Invariants
+- Brief / Knowledge author；
+- Source publisher；
+- standalone Talk Reading page；
+- `reviewAt` → Schema.org date；
+- 未存在的 organization/publisher identity。
+
+JSON-LD 中的页面 URL 必须与页面 Production canonical 一致，即使在 Preview Build 中也是如此。
+
+## 7. Build Invariants
 
 构建必须拒绝：
 
-- 非绝对 HTTP(S) production origin；
-- relative canonical；
-- canonical 丢失 configured base path；
-- Preview canonical 指向 raw.githack / preview-pr-*；
-- Production canonical 含 Preview identity；
-- Sitemap 泄露 alias、non-public content 或 Brief-derived Slide duplicate；
-- default Social Image 缺失；
-- 50B JSON-LD 非合法 JSON 或 URL 与 Production canonical 不一致。
+- JSON-LD 非合法 JSON；
+- `url` 与 Production canonical 不一致；
+- Preview JSON-LD URL 泄露 raw.githack / `preview-pr-*`；
+- Essay Author 顺序或 Registry metadata 丢失；
+- Brief / Knowledge 被伪造 author/publisher；
+- 非公开内容进入公开 JSON-LD artifact；
+- 50B 重新定义 50A canonical / Sitemap / RSS contract。
 
-## 10. 非目标
+## 8. 非目标
 
-- 动态 OG image 服务；
+- 动态 OG image；
 - per-content image generation；
 - SEO ranking promises；
-- keyword stuffing；
 - hreflang；
-- Analytics / marketing tracking；
-- 数据库 / CMS / 搜索服务；
+- Analytics / tracking；
 - Source / Author directory；
-- Slidev 全量 noindex。
+- standalone Presentation JSON-LD detail page；
+- 数据库 / CMS / 服务端 Runtime。
 
-## 11. Plan 50 验收
+## 9. Plan 50 验收
 
-- 所有主要 public Astro 页面有绝对 Production canonical；
-- Preview canonical → Production + `robots=noindex,nofollow`；
-- Preview `og:url` = actual Preview URL；
-- OG/Twitter 使用有效绝对 URL 与 1200×630 Brand Image；
-- Sitemap 只包含 public canonical resources；
-- Production RSS links 与 Reading canonical 一致；
-- Daily/Weekly Slides canonical → Reading；
-- standalone Talk self-canonical；
-- WebSite/Essay/Brief/Knowledge JSON-LD 只使用真实字段；
-- Essay JSON-LD 使用 Author Registry；
-- `pnpm build`、PR Preview、Production Pages 自动捕获 URL identity 回归。
+50A 已满足：
 
-## 12. 当前 Gate
+- Production canonical / Preview noindex；
+- OG / Twitter；
+- Sitemap；
+- RSS identity；
+- Slides / alias canonical；
+- Production Pages exact-SHA deploy/smoke。
 
-- [x] Plan 40 Production Pages deploy/smoke complete：run `33495089941`；
+50B 退出条件：
+
+- 首页输出合法 `WebSite` JSON-LD；
+- Essay 输出合法 `Article` + Registry Author；
+- Brief 输出合法 `Article`，不伪造 author；
+- Knowledge 输出合法 `TechArticle`，不伪造 author；
+- JSON-LD URL 与 Production canonical 一致；
+- Preview JSON-LD 不泄露 Preview identity；
+- `pnpm build`、Trusted Preview、fresh main Build 与 Production Pages 均通过。
+
+## 10. 当前 Gate
+
 - [x] Plan 50 design approved；
-- [x] formal design spec committed；
 - [x] 50A implementation plan；
 - [x] 50A TDD implementation + PR #21；
-- [x] PR #21 merged to `main@16de75931c984f64cd1458769b6eb87bfa5fe572`；
-- [x] fresh main Site Build `33586301122` passed；
-- [ ] 50A Production Pages `deploy=true` for `16de75931c984f64cd1458769b6eb87bfa5fe572` + public smoke；
-- [ ] mark 50A Done；
-- [ ] 50B implementation plan + PR。
+- [x] PR #21 merged；
+- [x] fresh main Site Build `33586301122`；
+- [x] Production Pages `33588705346` exact-SHA Build → Deploy → public smoke；
+- [x] mark 50A Done；
+- [ ] 50B implementation plan；
+- [ ] 50B TDD implementation + PR；
+- [ ] 50B Production Pages verification；
+- [ ] mark Milestone E / Plan 50 Done。
