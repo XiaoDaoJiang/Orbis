@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import type { SiteConfig } from '../shared/site-config.ts'
 
 let module: Record<string, unknown>
 try {
@@ -14,8 +15,8 @@ type ResolvedAuthorFixture = {
   url?: string
 }
 
-type BuildWebSiteJsonLd = () => Record<string, unknown>
-type BuildEssayJsonLd = (input: {
+type BuildWebSiteJsonLd = (config: SiteConfig) => Record<string, unknown>
+type BuildEssayJsonLd = (config: SiteConfig, input: {
   title: string
   description: string
   publishedAt: string
@@ -23,13 +24,13 @@ type BuildEssayJsonLd = (input: {
   canonicalPath: string
   authors: ResolvedAuthorFixture[]
 }) => Record<string, unknown>
-type BuildBriefJsonLd = (input: {
+type BuildBriefJsonLd = (config: SiteConfig, input: {
   title: string
   description: string
   publishedAt: string
   canonicalPath: string
 }) => Record<string, unknown>
-type BuildKnowledgeJsonLd = (input: {
+type BuildKnowledgeJsonLd = (config: SiteConfig, input: {
   title: string
   description: string
   publishedAt: string
@@ -37,6 +38,35 @@ type BuildKnowledgeJsonLd = (input: {
   canonicalPath: string
 }) => Record<string, unknown>
 type SerializeJsonLd = (value: Record<string, unknown>) => string
+
+const config: SiteConfig = {
+  version: 1,
+  site: {
+    name: 'Orbis',
+    origin: 'https://xiaodaojiang.github.io',
+    basePath: '/Orbis',
+    locale: 'zh-CN',
+    defaultTitle: 'Orbis',
+    defaultDescription: 'Essays, briefs, slides, topics and durable knowledge.',
+    defaultSocialImage: '/social/orbis-default.png',
+    brandName: 'Orbis',
+  },
+  content: {
+    briefsDir: 'content/briefs',
+    presentationsDir: 'content/presentations',
+  },
+  presentation: {
+    generatedDir: 'apps/slides/generated',
+    outputDir: 'dist/slides',
+    publicPath: 'slides',
+  },
+  preview: {
+    provider: 'raw.githack',
+    origin: 'https://raw.githack.com',
+    repositoryPath: '/XiaoDaoJiang/Orbis',
+    branchPrefix: 'preview-pr-',
+  },
+}
 
 const buildWebSiteJsonLd = module.buildWebSiteJsonLd as BuildWebSiteJsonLd | undefined
 const buildEssayJsonLd = module.buildEssayJsonLd as BuildEssayJsonLd | undefined
@@ -54,7 +84,7 @@ for (const [name, value] of Object.entries({
   assert.equal(typeof value, 'function', `${name} must be exported`)
 }
 
-const home = buildWebSiteJsonLd!()
+const home = buildWebSiteJsonLd!(config)
 assert.equal(home['@context'], 'https://schema.org')
 assert.equal(home['@type'], 'WebSite')
 assert.equal(home.name, 'Orbis')
@@ -66,7 +96,7 @@ const authors: ResolvedAuthorFixture[] = [
   { id: 'author-a', name: 'Author A', status: 'active', url: 'https://example.com/a' },
   { id: 'author-b', name: 'Author B', status: 'archived' },
 ]
-const essay = buildEssayJsonLd!({
+const essay = buildEssayJsonLd!(config, {
   title: 'Essay title',
   description: 'Essay description long enough.',
   publishedAt: '2026-08-01',
@@ -88,7 +118,7 @@ assert.deepEqual(essay.author, [
   { '@type': 'Person', name: 'Author B' },
 ])
 
-const essayWithoutUpdate = buildEssayJsonLd!({
+const essayWithoutUpdate = buildEssayJsonLd!(config, {
   title: 'Essay without update',
   description: 'Essay fallback date contract.',
   publishedAt: '2026-08-03',
@@ -97,7 +127,7 @@ const essayWithoutUpdate = buildEssayJsonLd!({
 })
 assert.equal(essayWithoutUpdate.dateModified, '2026-08-03')
 
-const brief = buildBriefJsonLd!({
+const brief = buildBriefJsonLd!(config, {
   title: 'Brief title',
   description: 'Brief summary long enough.',
   publishedAt: '2026-08-04',
@@ -110,7 +140,7 @@ assert.equal(brief.datePublished, '2026-08-04')
 assert.equal('author' in brief, false)
 assert.equal('publisher' in brief, false)
 
-const knowledge = buildKnowledgeJsonLd!({
+const knowledge = buildKnowledgeJsonLd!(config, {
   title: 'Knowledge title',
   description: 'Knowledge summary long enough.',
   publishedAt: '2026-08-05',
