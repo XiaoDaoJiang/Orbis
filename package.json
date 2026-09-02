@@ -29,8 +29,9 @@
     "test:seo-web": "tsx tools/seo/web-artifact-check.ts",
     "test:seo-site": "tsx tools/seo/site-artifact-check.ts",
     "test:structured-data": "tsx tools/seo/json-ld-contract.test.ts",
+    "test:structured-data-artifact": "tsx tools/seo/structured-data-artifact-check.ts",
     "test:weekly-artifact": "tsx tools/weekly-brief/weekly-artifact-check.ts",
-    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm test:seo-web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site"
+    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm test:seo-web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",
