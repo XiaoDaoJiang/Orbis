@@ -1,10 +1,10 @@
 # 50 · SEO & Sharing
 
-> 状态：In Progress · 50A Done / 50B Current
+> 状态：In Progress · 50A Done / 50B Merged / Production Gate
 > Roadmap Milestone：E — Search & Share Ready
-> 当前基线：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
+> 当前基线：`main@bb85751266f90ec25e56f087bd078a935d8f31cd`
 > 设计：[`docs/superpowers/specs/2026-09-01-seo-sharing-design.md`](../superpowers/specs/2026-09-01-seo-sharing-design.md)
-> 当前交付：50B Structured Data
+> 当前交付：50B Structured Data · Production Gate
 
 ## 1. 目标
 
@@ -20,6 +20,7 @@ Slidev 继续负责演示体验；Brief-derived Slides 不与对应 Reading 页�
 canonical = production URL
 og:url    = production URL
 robots    = index,follow
+JSON-LD   = production canonical identity
 ```
 
 ### PR Preview
@@ -28,6 +29,7 @@ robots    = index,follow
 canonical = corresponding production URL
 og:url    = current raw.githack Preview URL
 robots    = noindex,nofollow
+JSON-LD   = production canonical identity
 ```
 
 Preview 可以分享和验收，但不成为长期搜索身份。
@@ -68,26 +70,7 @@ Production Pages artifact         9831008743
 Production artifact SHA-256       83cdb5f5495dc8658ee8e77768ecb2627a05753017a6d5d2b33910da8cf99d81
 ```
 
-Production run `33588705346` 精确部署 `16de75931c984f64cd1458769b6eb87bfa5fe572`，并通过：
-
-```text
-Build production artifact         success
-Deploy to GitHub Pages            success
-PASS /
-PASS /latest/
-PASS /archive.json
-PASS /rss.xml
-PASS /favicon.svg
-PASS /2026/08/28/
-```
-
-同一 Production build 再次通过：
-
-```text
-SEO URL contract passed
-Web SEO artifact contract passed
-Assembled SEO canonical contract passed
-```
+Production run `33588705346` 精确部署 `16de75931c984f64cd1458769b6eb87bfa5fe572` 并完成 public smoke。
 
 50A 已落地：
 
@@ -102,26 +85,116 @@ Assembled SEO canonical contract passed
 - Daily/latest alias canonical；
 - Preview noindex 与 Production URL 回归测试。
 
-## 5. 50B — Structured Data · Current
+## 5. 50B — Structured Data · Merged / Production Gate
 
-目标 PR：
+PR #22 已于 `2026-09-02T07:03:38Z` 合并：
 
 ```text
-feat: add structured data for published content
+PR                                #22 merged
+main                              bb85751266f90ec25e56f087bd078a935d8f31cd
+implementation head                04b89db28fff734ef496d06984622155efbd05f1
+post-merge Site Build              33601715928 success
+main Artifact                      9835467039
+main Artifact SHA-256              eea4501fb7f88032aa920f140a955e5ac5d171afddbab14179a06eca181f65f3
+Production Pages                   pending exact-SHA deploy=true gate
 ```
 
-范围：
+50B 已落地：
 
-- WebSite JSON-LD；
+- Homepage → Schema.org `WebSite`；
 - Essay → `Article`；
 - Brief → `Article`；
 - Knowledge → `TechArticle`；
 - Essay Author 从 Plan 40 Author Registry 解析并保持声明顺序；
-- JSON-LD parse / canonical consistency / Preview-safe artifact tests。
+- Author optional URL semantics；
+- Essay/Knowledge `dateModified = updatedAt ?? publishedAt`；
+- Brief / Knowledge 不伪造 author / publisher；
+- `reviewAt` 不错误映射到 Schema.org；
+- JSON-LD URL 与 Production canonical 一致；
+- Preview JSON-LD 不泄露 raw.githack / `preview-pr-*`；
+- script-safe JSON serialization；
+- pure builder contract + final artifact contract。
 
-50B 消费 50A URL contract，不重新定义 canonical。
+50B 消费 50A URL contract，没有重新定义 canonical。
 
-## 6. JSON-LD Contract
+## 6. TDD / Verification Evidence
+
+### RED 1
+
+Run `33599571799`：旧能力先通过，新 contract 精确失败于：
+
+```text
+JSON-LD helper must exist
+```
+
+### Builder boundary correction
+
+Run `33599754021` 暴露 pure `tsx` test 不应直接依赖 Vite-only YAML raw import。Builder 改为显式接受 validated SiteConfig，不引入 Node/Vite 特例。
+
+### GREEN 1
+
+Run `33599931293`：
+
+```text
+JSON-LD builder contract passed
+```
+
+### RED 2
+
+Run `33600187919`：builder 与 50A 全绿，最后只失败于：
+
+```text
+Homepage must emit JSON-LD
+```
+
+### Final PR GREEN
+
+Run `33600661082`：
+
+```text
+SEO URL contract passed
+JSON-LD builder contract passed
+Web SEO artifact contract passed
+Assembled SEO canonical contract passed
+Structured data artifact contract passed
+```
+
+Final Preview Artifact：
+
+```text
+ID       9835075964
+SHA-256  0ae5e3663e4a09f7d7cfd8d5f64b53071e6eab6e9c5693f5bd8818c04f98b249
+```
+
+Trusted Preview public smoke passed after the final artifact was published。
+
+### Fresh main GREEN
+
+Post-merge Site Build `33601715928` 精确 checkout：
+
+```text
+main@bb85751266f90ec25e56f087bd078a935d8f31cd
+```
+
+并再次通过：
+
+```text
+SEO URL contract passed
+JSON-LD builder contract passed
+Web SEO artifact contract passed
+Assembled SEO canonical contract passed
+Structured data artifact contract passed
+```
+
+Fresh main Artifact：
+
+```text
+ID       9835467039
+Size     1,073,366 bytes
+SHA-256  eea4501fb7f88032aa920f140a955e5ac5d171afddbab14179a06eca181f65f3
+```
+
+## 7. JSON-LD Contract
 
 只使用现有真实 Schema 字段：
 
@@ -142,7 +215,7 @@ Essay Author 从 Author Registry 得到 `name` 与可选 `url`。
 
 JSON-LD 中的页面 URL 必须与页面 Production canonical 一致，即使在 Preview Build 中也是如此。
 
-## 7. Build Invariants
+## 8. Build Invariants
 
 构建必须拒绝：
 
@@ -154,7 +227,7 @@ JSON-LD 中的页面 URL 必须与页面 Production canonical 一致，即使在
 - 非公开内容进入公开 JSON-LD artifact；
 - 50B 重新定义 50A canonical / Sitemap / RSS contract。
 
-## 8. 非目标
+## 9. 非目标
 
 - 动态 OG image；
 - per-content image generation；
@@ -165,37 +238,37 @@ JSON-LD 中的页面 URL 必须与页面 Production canonical 一致，即使在
 - standalone Presentation JSON-LD detail page；
 - 数据库 / CMS / 服务端 Runtime。
 
-## 9. Plan 50 验收
+## 10. Plan 50 验收
 
-50A 已满足：
+已满足：
 
 - Production canonical / Preview noindex；
 - OG / Twitter；
 - Sitemap；
 - RSS identity；
 - Slides / alias canonical；
-- Production Pages exact-SHA deploy/smoke。
-
-50B 退出条件：
-
-- 首页输出合法 `WebSite` JSON-LD；
-- Essay 输出合法 `Article` + Registry Author；
-- Brief 输出合法 `Article`，不伪造 author；
-- Knowledge 输出合法 `TechArticle`，不伪造 author；
+- 50A Production Pages exact-SHA deploy/smoke；
+- 首页合法 `WebSite` JSON-LD；
+- Essay 合法 `Article` + Registry Author；
+- Brief 合法 `Article`，不伪造 author；
+- Knowledge 合法 `TechArticle`，不伪造 author；
 - JSON-LD URL 与 Production canonical 一致；
 - Preview JSON-LD 不泄露 Preview identity；
-- `pnpm build`、Trusted Preview、fresh main Build 与 Production Pages 均通过。
+- 50B PR Preview / Artifact / fresh main Build 全绿。
 
-## 10. 当前 Gate
+尚未满足：
+
+- `main@bb85751266f90ec25e56f087bd078a935d8f31cd` 的 governed Production Pages exact-SHA Build → Deploy → public Smoke。
+
+## 11. 当前 Gate
 
 - [x] Plan 50 design approved；
-- [x] 50A implementation plan；
-- [x] 50A TDD implementation + PR #21；
-- [x] PR #21 merged；
-- [x] fresh main Site Build `33586301122`；
-- [x] Production Pages `33588705346` exact-SHA Build → Deploy → public smoke；
-- [x] mark 50A Done；
-- [ ] 50B implementation plan；
-- [ ] 50B TDD implementation + PR；
-- [ ] 50B Production Pages verification；
-- [ ] mark Milestone E / Plan 50 Done。
+- [x] 50A implementation + PR #21；
+- [x] 50A Production Pages verification；
+- [x] 50B implementation plan；
+- [x] 50B TDD implementation + PR #22；
+- [x] PR #22 merged to `main@bb85751266f90ec25e56f087bd078a935d8f31cd`；
+- [x] fresh main Site Build `33601715928` passed；
+- [ ] Production Pages `deploy=true` for exact `bb85751266f90ec25e56f087bd078a935d8f31cd` + public smoke；
+- [ ] mark Milestone E / Plan 50 Done；
+- [ ] promote Plan 60 to Current。
