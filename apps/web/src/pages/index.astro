@@ -10,7 +10,9 @@ import {
   toBriefDiscoveryItem,
   toEssayDiscoveryItem,
 } from '../lib/content-discovery'
+import { buildWebSiteJsonLd } from '../lib/json-ld'
 import { buildPublicPresentations } from '../lib/presentation-discovery'
+import { webSiteConfig } from '../lib/site-config'
 
 const [briefEntries, essayEntries, knowledgeEntries, topicEntries, presentationEntries] = await Promise.all([
   getCollection('briefs'),
@@ -42,8 +44,9 @@ const topics = topicEntries
 const latestBrief = briefs[0]
 const latestEssay = essays[0]
 const latestPresentation = presentations[0]
+const jsonLd = buildWebSiteJsonLd(webSiteConfig)
 ---
-<BaseLayout>
+<BaseLayout jsonLd={jsonLd}>
   <section class="hero">
     <div>
       <div class="eyebrow">Essays · Briefs · Slides · Knowledge</div>

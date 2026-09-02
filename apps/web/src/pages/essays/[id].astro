@@ -15,6 +15,8 @@ import {
   isPublicEssay,
   toEssayDiscoveryItem,
 } from '../../lib/content-discovery'
+import { buildEssayJsonLd } from '../../lib/json-ld'
+import { webSiteConfig } from '../../lib/site-config'
 
 export async function getStaticPaths() {
   const [briefEntries, essayEntries, knowledgeEntries, authorEntries, sourceEntries] = await Promise.all([
@@ -45,9 +47,17 @@ const { entry, authorEntries, sourceEntries, related } = Astro.props
 const authorIndex = buildAuthorIndex(authorEntries)
 const sourceIndex = buildSourceIndex(sourceEntries)
 const authors = resolveAuthors(entry.data.authors, authorIndex)
+const jsonLd = buildEssayJsonLd(webSiteConfig, {
+  title: entry.data.title,
+  description: entry.data.description,
+  publishedAt: entry.data.publishedAt,
+  updatedAt: entry.data.updatedAt,
+  canonicalPath: `/essays/${entry.id}/`,
+  authors,
+})
 const { Content } = await render(entry)
 ---
-<BaseLayout title={entry.data.title} description={entry.data.description} type="article">
+<BaseLayout title={entry.data.title} description={entry.data.description} type="article" jsonLd={jsonLd}>
   <article class="article">
     <header class="article-header">
       <div class="eyebrow">Essay · {entry.data.publishedAt}</div>

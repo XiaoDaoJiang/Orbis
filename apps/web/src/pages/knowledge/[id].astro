@@ -10,6 +10,8 @@ import {
   isPublicKnowledge,
   toKnowledgeDiscoveryItem,
 } from '../../lib/content-discovery'
+import { buildKnowledgeJsonLd } from '../../lib/json-ld'
+import { webSiteConfig } from '../../lib/site-config'
 
 export async function getStaticPaths() {
   const [briefEntries, essayEntries, knowledgeEntries, sourceEntries] = await Promise.all([
@@ -36,9 +38,16 @@ export async function getStaticPaths() {
 
 const { entry, sourceEntries, related } = Astro.props
 const sourceIndex = buildSourceIndex(sourceEntries)
+const jsonLd = buildKnowledgeJsonLd(webSiteConfig, {
+  title: entry.data.title,
+  description: entry.data.summary,
+  publishedAt: entry.data.publishedAt,
+  updatedAt: entry.data.updatedAt,
+  canonicalPath: `/knowledge/${entry.id}/`,
+})
 const { Content } = await render(entry)
 ---
-<BaseLayout title={entry.data.title} description={entry.data.summary} type="article">
+<BaseLayout title={entry.data.title} description={entry.data.summary} type="article" jsonLd={jsonLd}>
   <article class="article">
     <header class="article-header">
       <div class="eyebrow">Knowledge · review {entry.data.reviewAt ?? 'not scheduled'}</div>
