@@ -1,6 +1,7 @@
 ---
 import '@orbis/design-tokens/tokens.css'
 import '../styles/global.css'
+import { serializeJsonLd, type JsonLdValue } from '../lib/json-ld'
 import { buildSeoMetadata } from '../lib/seo'
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
   sharePath?: string
   type?: 'website' | 'article'
   imagePath?: string
+  jsonLd?: JsonLdValue
 }
 
 const {
@@ -19,6 +21,7 @@ const {
   sharePath,
   type = 'website',
   imagePath,
+  jsonLd,
 } = Astro.props
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const href = (path: string) => `${base}${path}`
@@ -52,6 +55,7 @@ const seo = await buildSeoMetadata({
     <meta name="twitter:title" content={seo.title} />
     <meta name="twitter:description" content={seo.description} />
     <meta name="twitter:image" content={seo.imageUrl} />
+    {jsonLd && <script type="application/ld+json" set:html={serializeJsonLd(jsonLd)}></script>}
     <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
     <link rel="alternate" type="application/rss+xml" title="Orbis RSS" href={href('/rss.xml')} />
     <title>{title === 'Orbis' ? title : `${title} · Orbis`}</title>
