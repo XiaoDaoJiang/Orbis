@@ -3,7 +3,7 @@
 > 状态：Active
 > 基线日期：2026-09-02
 > 基线提交：`main@bb85751266f90ec25e56f087bd078a935d8f31cd`
-> 当前目标：Milestone E — Search & Share Ready / 50B Production Gate
+> 当前目标：Milestone F — Durable Knowledge / Plan 60 Design Review
 
 ## 1. 当前阶段判断
 
@@ -23,9 +23,9 @@ Orbis 已经完成：
 - Production-only Sitemap identity；
 - Production/Preview RSS identity；
 - Slidev / alias canonical boundary；
-- WebSite / Essay Article / Brief Article / Knowledge TechArticle JSON-LD 已合入 `main`。
+- WebSite / Essay Article / Brief Article / Knowledge TechArticle JSON-LD。
 
-Plan 50 当前状态：
+Plan 50 最终状态：
 
 ```text
 main SHA                         bb85751266f90ec25e56f087bd078a935d8f31cd
@@ -35,11 +35,24 @@ main SHA                         bb85751266f90ec25e56f087bd078a935d8f31cd
 50B merge time                   2026-09-02T07:03:38Z
 50B post-merge Site Build        33601715928   success
 50B main Artifact                9835467039
-Artifact SHA-256                 eea4501fb7f88032aa920f140a955e5ac5d171afddbab14179a06eca181f65f3
-50B Production Pages             pending exact-SHA deploy=true gate
+Main Artifact SHA-256            eea4501fb7f88032aa920f140a955e5ac5d171afddbab14179a06eca181f65f3
+50B Production Pages             33603472306   success
+Production Pages Artifact        9836095734
+Production Artifact SHA-256      928b4f27d65a143dc0faa4d203e99ec40becc08dab9e92cbb8af073e9e39e481
 ```
 
-Fresh main Build 已再次通过：
+Production run `33603472306` 精确 checkout / deploy `main@bb85751266f90ec25e56f087bd078a935d8f31cd`，Pages deployment 记录 `pages_build_version=bb85751266f90ec25e56f087bd078a935d8f31cd`。Build 与 Deploy 均 success，公网 smoke：
+
+```text
+PASS /
+PASS /latest/
+PASS /archive.json
+PASS /rss.xml
+PASS /favicon.svg
+PASS /2026/08/28/
+```
+
+同一 Production build 再次通过：
 
 ```text
 SEO URL contract passed
@@ -49,7 +62,7 @@ Assembled SEO canonical contract passed
 Structured data artifact contract passed
 ```
 
-因此 Milestone E 只剩 **50B exact-SHA Production Pages Build → Deploy → public Smoke**。在该 gate 通过前，不标记 Plan 50 / Milestone E Done。
+因此 **Milestone E — Search & Share Ready / Plan 50 已 Done**。当前正式进入 Milestone F / Plan 60 的设计阶段。
 
 ## 2. 产品定义
 
@@ -67,6 +80,8 @@ Reading / Presentation / RSS / Discovery
 Canonical / Share Identity
     ↓
 Structured Data
+    ↓
+Durable Knowledge Lifecycle
 ```
 
 ## 3. 当前稳态架构
@@ -99,6 +114,8 @@ RSS / Web / Primary Sources
            dist/site
               ↓
     PR Preview / GitHub Pages
+              ↓
+    Knowledge Lifecycle · Plan 60
 ```
 
 ## 4. 能力状态
@@ -114,8 +131,8 @@ RSS / Web / Primary Sources
 | Source / Author Identity | Done | canonical IDs、Registry、Referential Integrity、Governance |
 | Registry-backed Reading UI | Done | AuthorByline、Source metadata、archived/unsourced contracts |
 | SEO URL / Sharing Foundation | Done | canonical、Preview noindex、OG/Twitter、Sitemap、RSS、Slide/alias identity |
-| Structured Data | Merged / Production Gate | WebSite、Essay Article + Author Registry、Brief Article、Knowledge TechArticle |
-| Knowledge Lifecycle | Planned / Next | review/expiry tooling |
+| Structured Data | Done | WebSite、Essay Article + Author Registry、Brief Article、Knowledge TechArticle |
+| Knowledge Lifecycle | Current / Design Review | review、expiry、supersession、durable Knowledge UI |
 | Scheduled Automation | Planned | scheduled Agent PR orchestration |
 
 ## 5. Product Capability Roadmap
@@ -132,8 +149,8 @@ Plan 30，PR #13 / #14。
 ### Milestone D — Knowledge Identity · Done
 Plan 40，PR #15 / #19。
 
-### Milestone E — Search & Share Ready · Production Gate
-Plan 50。
+### Milestone E — Search & Share Ready · Done
+Plan 50，PR #21 / #22。
 
 ```text
 50A SEO Foundation              Done · PR #21
@@ -142,24 +159,24 @@ Plan 50。
   Sitemap
   RSS identity
   Slide / alias canonical
-  Production exact-SHA deploy/smoke
 
-50B Structured Data             Merged · PR #22 · Production Gate
+50B Structured Data             Done · PR #22
   WebSite JSON-LD
   Essay Article + Author Registry
   Brief Article
   Knowledge TechArticle
   canonical consistency / Preview-safe validation
-  fresh main Build success
-  Production exact-SHA deploy/smoke pending
+
+Final Production Gate           Done
+  main  bb85751266f90ec25e56f087bd078a935d8f31cd
+  run   33603472306
+  Build / Deploy / public smoke success
 ```
 
-50B 继续消费 50A 已稳定的 Production canonical，没有创建第二套 URL identity。
-
-### Milestone F — Durable Knowledge · Planned / Next
+### Milestone F — Durable Knowledge · Current / Design Review
 Plan 60。
 
-只有 Plan 50 Production Gate 通过后，Milestone F 才正式成为 Current。
+下一步先锁定 Knowledge lifecycle 的产品语义与时间模型，再进入 Schema / tooling / UI 实现，不在设计未批准前开始代码修改。
 
 ### Milestone G — Sustainable Automation · Planned
 Plan 70。
