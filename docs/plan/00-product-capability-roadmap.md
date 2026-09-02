@@ -1,9 +1,9 @@
 # 00 · Orbis Product Capability Roadmap
 
 > 状态：Active
-> 基线日期：2026-09-01
-> 基线提交：`main@0c867438fc6cac83b6f97b76cb55e29118b64b87`
-> 当前目标：Milestone E — Search & Share Ready / Plan 50A
+> 基线日期：2026-09-02
+> 基线提交：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
+> 当前目标：Milestone E — Search & Share Ready / 50A Production Gate
 
 ## 1. 当前阶段判断
 
@@ -23,21 +23,21 @@ Orbis 已经完成并进入稳定生产：
 - read-only PR Build → Trusted Preview → Public Smoke；
 - governed GitHub Pages Production；
 - Legacy publishing compatibility retirement；
-- Plan 40 Source / Author Registry、Referential Integrity 与 Registry-backed Reading UI。
+- Plan 40 Source / Author Registry、Referential Integrity 与 Registry-backed Reading UI；
+- Plan 50A canonical / robots / OG / Twitter / Sitemap / RSS / Slide identity 已进入 `main`。
 
-Plan 40 最终生产验证：
+当前主分支：
 
 ```text
-main SHA                         0c867438fc6cac83b6f97b76cb55e29118b64b87
-post-merge Site Build           33489504298   success
-Production Pages run            33495089941   success
-Build production artifact                         success
-Deploy to GitHub Pages                            success
-Public smoke                                      success
-Latest structured Daily route                     /2026/08/28/
+main SHA                         16de75931c984f64cd1458769b6eb87bfa5fe572
+50A merge PR                     #21
+post-merge Site Build            33586301122   success
+main Artifact                    9830214428
+Artifact SHA-256                 ea1bc7092e23f31536a136a0cf6f48c78e398b5f3a2cbed4d27ff3f653ee31ed
+Production Pages                 pending exact-SHA deploy=true gate
 ```
 
-历史 `feat/*` / `refactor/*` 分支已清理，closeout Issue #20 已关闭。
+Plan 40 的最终生产 run `33495089941` 仍是当前最新 Production Pages run，因此 50A 尚未完成公网生产验证。
 
 ## 2. 产品定义
 
@@ -121,7 +121,7 @@ Search / Share / Feed identity
 | Source / Author Identity | Done | canonical IDs、Registry、Referential Integrity、Governance |
 | Registry-backed Reading UI | Done | AuthorByline、Source metadata、archived/unsourced contracts |
 | Production Pages | Done / Governed | explicit deploy gate + public smoke |
-| SEO / Sharing | In Progress | approved design；50A planning current |
+| SEO / Sharing | In Progress | 50A merged + main Build green；Production gate pending；50B next |
 | Knowledge Lifecycle | Planned | review/expiry tooling |
 | Scheduled Automation | Planned | scheduled Agent PR orchestration |
 
@@ -155,7 +155,7 @@ Approved design:
 Delivery split:
 
 ```text
-50A SEO Foundation
+50A SEO Foundation              Merged · Production Gate
   -> canonical URL contract
   -> Preview noindex / Production canonical
   -> Open Graph / Twitter
@@ -164,11 +164,23 @@ Delivery split:
   -> RSS identity alignment
   -> Slide canonical boundary
 
-50B Structured Data
+50B Structured Data             Next after 50A Production Gate
   -> WebSite JSON-LD
   -> Essay Article + Author Registry
   -> Brief Article
   -> Knowledge TechArticle
+```
+
+50A main integration evidence：
+
+```text
+PR                               #21 merged
+main                              16de75931c984f64cd1458769b6eb87bfa5fe572
+Site Build                        33586301122 success
+SEO URL contract                  passed
+Web SEO artifact contract         passed
+Assembled SEO canonical contract  passed
+Production Pages                  pending new deploy=true run for exact SHA
 ```
 
 ### Milestone F — Durable Knowledge · Planned
