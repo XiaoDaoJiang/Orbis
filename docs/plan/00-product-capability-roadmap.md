@@ -2,8 +2,8 @@
 
 > 状态：Active
 > 基线日期：2026-09-02
-> 基线提交：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
-> 当前目标：Milestone E — Search & Share Ready / Plan 50B Structured Data
+> 基线提交：`main@bb85751266f90ec25e56f087bd078a935d8f31cd`
+> 当前目标：Milestone E — Search & Share Ready / 50B Production Gate
 
 ## 1. 当前阶段判断
 
@@ -22,22 +22,34 @@ Orbis 已经完成：
 - Open Graph / Twitter Card；
 - Production-only Sitemap identity；
 - Production/Preview RSS identity；
-- Slidev / alias canonical boundary。
+- Slidev / alias canonical boundary；
+- WebSite / Essay Article / Brief Article / Knowledge TechArticle JSON-LD 已合入 `main`。
 
-Plan 50A 已完成生产验证：
+Plan 50 当前状态：
 
 ```text
-main SHA                         16de75931c984f64cd1458769b6eb87bfa5fe572
+main SHA                         bb85751266f90ec25e56f087bd078a935d8f31cd
 50A merge PR                     #21
-post-merge Site Build            33586301122   success
-Production Pages run             33588705346   success
-Production Pages artifact        9831008743
-Artifact SHA-256                  83cdb5f5495dc8658ee8e77768ecb2627a05753017a6d5d2b33910da8cf99d81
-Deploy exact SHA                  16de75931c984f64cd1458769b6eb87bfa5fe572
-Public smoke                      / /latest/ /archive.json /rss.xml /favicon.svg /2026/08/28/ PASS
+50A Production Pages             33588705346   success
+50B merge PR                     #22
+50B merge time                   2026-09-02T07:03:38Z
+50B post-merge Site Build        33601715928   success
+50B main Artifact                9835467039
+Artifact SHA-256                 eea4501fb7f88032aa920f140a955e5ac5d171afddbab14179a06eca181f65f3
+50B Production Pages             pending exact-SHA deploy=true gate
 ```
 
-因此 Milestone E 当前只剩 **50B Structured Data**。
+Fresh main Build 已再次通过：
+
+```text
+SEO URL contract passed
+JSON-LD builder contract passed
+Web SEO artifact contract passed
+Assembled SEO canonical contract passed
+Structured data artifact contract passed
+```
+
+因此 Milestone E 只剩 **50B exact-SHA Production Pages Build → Deploy → public Smoke**。在该 gate 通过前，不标记 Plan 50 / Milestone E Done。
 
 ## 2. 产品定义
 
@@ -82,7 +94,7 @@ RSS / Web / Primary Sources
               ↓
  Canonical / OG / Twitter / Sitemap / RSS
               ↓
-         JSON-LD · 50B
+ WebSite / Article / TechArticle JSON-LD
               ↓
            dist/site
               ↓
@@ -102,8 +114,8 @@ RSS / Web / Primary Sources
 | Source / Author Identity | Done | canonical IDs、Registry、Referential Integrity、Governance |
 | Registry-backed Reading UI | Done | AuthorByline、Source metadata、archived/unsourced contracts |
 | SEO URL / Sharing Foundation | Done | canonical、Preview noindex、OG/Twitter、Sitemap、RSS、Slide/alias identity |
-| Structured Data | In Progress / Next | 50B WebSite / Article / TechArticle JSON-LD |
-| Knowledge Lifecycle | Planned | review/expiry tooling |
+| Structured Data | Merged / Production Gate | WebSite、Essay Article + Author Registry、Brief Article、Knowledge TechArticle |
+| Knowledge Lifecycle | Planned / Next | review/expiry tooling |
 | Scheduled Automation | Planned | scheduled Agent PR orchestration |
 
 ## 5. Product Capability Roadmap
@@ -120,7 +132,7 @@ Plan 30，PR #13 / #14。
 ### Milestone D — Knowledge Identity · Done
 Plan 40，PR #15 / #19。
 
-### Milestone E — Search & Share Ready · In Progress
+### Milestone E — Search & Share Ready · Production Gate
 Plan 50。
 
 ```text
@@ -132,18 +144,22 @@ Plan 50。
   Slide / alias canonical
   Production exact-SHA deploy/smoke
 
-50B Structured Data             Current
+50B Structured Data             Merged · PR #22 · Production Gate
   WebSite JSON-LD
   Essay Article + Author Registry
   Brief Article
   Knowledge TechArticle
   canonical consistency / Preview-safe validation
+  fresh main Build success
+  Production exact-SHA deploy/smoke pending
 ```
 
-50B 必须消费 50A 已稳定的 Production canonical，不创建第二套 URL identity。
+50B 继续消费 50A 已稳定的 Production canonical，没有创建第二套 URL identity。
 
-### Milestone F — Durable Knowledge · Planned
+### Milestone F — Durable Knowledge · Planned / Next
 Plan 60。
+
+只有 Plan 50 Production Gate 通过后，Milestone F 才正式成为 Current。
 
 ### Milestone G — Sustainable Automation · Planned
 Plan 70。
