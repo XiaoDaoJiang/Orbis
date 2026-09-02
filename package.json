@@ -8,8 +8,9 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "validate": "pnpm --filter @orbis/content-schema test && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm content:validate && pnpm test:registry-ui-fixtures",
+    "validate": "pnpm --filter @orbis/content-schema test && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm content:validate && pnpm knowledge:review && pnpm test:registry-ui-fixtures",
     "content:validate": "tsx tools/validate-content/index.ts",
+    "knowledge:review": "tsx tools/knowledge-lifecycle/report.ts",
     "path:guard": "tsx tools/path-guard/index.ts",
     "generate:slides": "tsx tools/generate-slides/index.ts",
     "slides:dev": "pnpm generate:slides && tsx tools/build-slides/index.ts --dev",
