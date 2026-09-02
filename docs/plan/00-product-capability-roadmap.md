@@ -2,8 +2,8 @@
 
 > 状态：Active
 > 基线日期：2026-09-02
-> 基线提交：`main@bb85751266f90ec25e56f087bd078a935d8f31cd`
-> 当前目标：Milestone F — Durable Knowledge / Plan 60 Design Review
+> 基线提交：`main@f468a45049035bc7816a52225ca41f4f381b0ae6`
+> 当前目标：Milestone F — Durable Knowledge / 60A Production Gate
 
 ## 1. 当前阶段判断
 
@@ -20,41 +20,29 @@ Orbis 已经完成：
 - Source / Author Registry + Referential Integrity + Registry-backed Reading UI；
 - Production canonical / Preview noindex；
 - Open Graph / Twitter Card；
-- Production-only Sitemap identity；
-- Production/Preview RSS identity；
-- Slidev / alias canonical boundary；
-- WebSite / Essay Article / Brief Article / Knowledge TechArticle JSON-LD。
+- Sitemap / RSS / Slidev canonical identity；
+- WebSite / Essay Article / Brief Article / Knowledge TechArticle JSON-LD；
+- Knowledge lifecycle evaluator、supersession relation 与 review report 已进入 `main`。
 
-Plan 50 最终状态：
+Plan 60 当前状态：
 
 ```text
-main SHA                         bb85751266f90ec25e56f087bd078a935d8f31cd
-50A merge PR                     #21
-50A Production Pages             33588705346   success
-50B merge PR                     #22
-50B merge time                   2026-09-02T07:03:38Z
-50B post-merge Site Build        33601715928   success
-50B main Artifact                9835467039
-Main Artifact SHA-256            eea4501fb7f88032aa920f140a955e5ac5d171afddbab14179a06eca181f65f3
-50B Production Pages             33603472306   success
-Production Pages Artifact        9836095734
-Production Artifact SHA-256      928b4f27d65a143dc0faa4d203e99ec40becc08dab9e92cbb8af073e9e39e481
+main SHA                         f468a45049035bc7816a52225ca41f4f381b0ae6
+60A merge PR                     #23
+60A merge time                   2026-09-02T09:34:57Z
+60A post-merge Site Build        33614900003   success
+60A main Artifact                9840548845
+Artifact SHA-256                 ca3f942db3466e0634da8e724a18e4c333d46ef274246dd8d5acf31d74101541
+60A Production Pages             pending exact-SHA deploy=true gate
+60B Knowledge Lifecycle UI       next after gate
 ```
 
-Production run `33603472306` 精确 checkout / deploy `main@bb85751266f90ec25e56f087bd078a935d8f31cd`，Pages deployment 记录 `pages_build_version=bb85751266f90ec25e56f087bd078a935d8f31cd`。Build 与 Deploy 均 success，公网 smoke：
+Fresh main Build 再次通过：
 
 ```text
-PASS /
-PASS /latest/
-PASS /archive.json
-PASS /rss.xml
-PASS /favicon.svg
-PASS /2026/08/28/
-```
-
-同一 Production build 再次通过：
-
-```text
+Knowledge lifecycle evaluator contract passed
+Knowledge supersession relation contract passed
+Knowledge review report contract passed
 SEO URL contract passed
 JSON-LD builder contract passed
 Web SEO artifact contract passed
@@ -62,7 +50,15 @@ Assembled SEO canonical contract passed
 Structured data artifact contract passed
 ```
 
-因此 **Milestone E — Search & Share Ready / Plan 50 已 Done**。当前正式进入 Milestone F / Plan 60 的设计阶段。
+并执行真实 review report：
+
+```text
+Knowledge review report · 2026-09-02
+current=1 due-soon=0 overdue=0 needs-review=0
+OK verification-loop · status=active · review=2026-11-01 · current (60d)
+```
+
+因此 Milestone F 已进入实施阶段，但 60A 仍需 exact-SHA Production Pages Build → Deploy → public Smoke 后才能标记 Done。
 
 ## 2. 产品定义
 
@@ -96,7 +92,7 @@ RSS / Web / Primary Sources
  @orbis/content-schema
              ↓
  Referential Integrity
- Topic / Source / Author
+ Topic / Source / Author / Knowledge replacement
              ↓
      ┌───────┴─────────┐
      ↓                 ↓
@@ -111,11 +107,12 @@ RSS / Web / Primary Sources
               ↓
  WebSite / Article / TechArticle JSON-LD
               ↓
+ Knowledge Lifecycle
+  editorial state + review health + report
+              ↓
            dist/site
               ↓
     PR Preview / GitHub Pages
-              ↓
-    Knowledge Lifecycle · Plan 60
 ```
 
 ## 4. 能力状态
@@ -132,7 +129,8 @@ RSS / Web / Primary Sources
 | Registry-backed Reading UI | Done | AuthorByline、Source metadata、archived/unsourced contracts |
 | SEO URL / Sharing Foundation | Done | canonical、Preview noindex、OG/Twitter、Sitemap、RSS、Slide/alias identity |
 | Structured Data | Done | WebSite、Essay Article + Author Registry、Brief Article、Knowledge TechArticle |
-| Knowledge Lifecycle | Current / Design Review | review、expiry、supersession、durable Knowledge UI |
+| Knowledge Lifecycle Contract | Merged / Production Gate | review evaluator、supersededBy、derived supersedes、review report |
+| Knowledge Lifecycle UI | Planned / Next | status/health UI、replacement notices、stable archived routes |
 | Scheduled Automation | Planned | scheduled Agent PR orchestration |
 
 ## 5. Product Capability Roadmap
@@ -152,31 +150,27 @@ Plan 40，PR #15 / #19。
 ### Milestone E — Search & Share Ready · Done
 Plan 50，PR #21 / #22。
 
-```text
-50A SEO Foundation              Done · PR #21
-  canonical / robots
-  Open Graph / Twitter
-  Sitemap
-  RSS identity
-  Slide / alias canonical
-
-50B Structured Data             Done · PR #22
-  WebSite JSON-LD
-  Essay Article + Author Registry
-  Brief Article
-  Knowledge TechArticle
-  canonical consistency / Preview-safe validation
-
-Final Production Gate           Done
-  main  bb85751266f90ec25e56f087bd078a935d8f31cd
-  run   33603472306
-  Build / Deploy / public smoke success
-```
-
-### Milestone F — Durable Knowledge · Current / Design Review
+### Milestone F — Durable Knowledge · In Progress
 Plan 60。
 
-下一步先锁定 Knowledge lifecycle 的产品语义与时间模型，再进入 Schema / tooling / UI 实现，不在设计未批准前开始代码修改。
+```text
+60A Knowledge Lifecycle Contract     Merged · PR #23 · Production Gate
+  editorial state / review health separation
+  deterministic UTC review evaluator
+  due-soon / overdue advisory semantics
+  supersededBy canonical relation
+  derived supersedes[]
+  machine/human readable review report
+  fresh main Build success
+  Production exact-SHA deploy/smoke pending
+
+60B Knowledge Lifecycle UI           Next after 60A gate
+  Knowledge index lifecycle groups
+  editorial status / review health presentation
+  archived / superseded notices
+  replacement navigation
+  artifact contracts
+```
 
 ### Milestone G — Sustainable Automation · Planned
 Plan 70。
