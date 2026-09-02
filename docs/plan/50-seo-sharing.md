@@ -1,11 +1,11 @@
 # 50 · SEO & Sharing
 
-> 状态：In Progress · Design Approved / 50A Planning
+> 状态：In Progress · 50A Merged / Production Gate
 > Roadmap Milestone：E — Search & Share Ready
-> 当前基线：`main@0c867438fc6cac83b6f97b76cb55e29118b64b87`
+> 当前基线：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
 > 设计：[`docs/superpowers/specs/2026-09-01-seo-sharing-design.md`](../superpowers/specs/2026-09-01-seo-sharing-design.md)
-> 生产依赖：Plan 40 已完成 Production Pages deploy/smoke
-> 当前交付：50A SEO Foundation
+> 生产依赖：50A exact main SHA 必须完成 Production Pages Build → Deploy → public Smoke
+> 当前交付：50A SEO Foundation · Production Gate
 > 后续交付：50B Structured Data
 
 ## 1. 目标
@@ -34,14 +34,7 @@ robots    = noindex,nofollow
 
 Preview 可以分享和验收，但不成为长期搜索身份。
 
-现有 PR Build 已通过：
-
-```text
-SITE_ORIGIN=https://raw.githack.com
-SITE_BASE=/<repository>/preview-pr-<N>
-```
-
-注入 runtime Preview URL，因此 Plan 50 复用现有 SiteConfig / Astro runtime contract，不新增第二套 URL 配置。
+现有 PR Build 通过 `SITE_ORIGIN` / `SITE_BASE` 注入 runtime Preview URL，因此 Plan 50 复用现有 SiteConfig / Astro runtime contract，不新增第二套 URL 配置。
 
 ## 3. Canonical Taxonomy
 
@@ -64,10 +57,8 @@ Alias / non-primary：
 
 Brief-derived Slides：
 
-- Reading backlink；
 - canonical → Astro Reading；
-- 不作为独立 sitemap canonical；
-- 第一版不强制全量 `noindex`。
+- 不作为独立 sitemap canonical。
 
 Standalone Talk：
 
@@ -77,17 +68,18 @@ Standalone Talk：
 
 ## 4. Metadata Contract
 
-`BaseLayout.astro` 作为 Astro `<head>` 单一 renderer，负责：
+`BaseLayout.astro` 作为 Astro `<head>` 单一 renderer，50A 已负责：
 
 - title / description；
 - canonical；
 - robots；
 - Open Graph；
 - Twitter Card；
-- RSS discovery；
-- 50B JSON-LD。
+- RSS discovery。
 
-最低输出：
+50B 将在同一边界加入 JSON-LD，不重新定义 canonical。
+
+50A 输出：
 
 ```text
 og:title
@@ -107,7 +99,7 @@ twitter:image
 
 ## 5. Sitemap
 
-第一版输出单个 `/sitemap.xml`，由 structured content + 明确 route taxonomy 构建，不扫描 `dist/site` 猜 canonical。
+50A 已输出单个 `/sitemap.xml`，由 structured content + 明确 route taxonomy 构建，不扫描 `dist/site` 猜 canonical。
 
 排除：
 
@@ -118,7 +110,7 @@ twitter:image
 - Preview URL；
 - RSS / assets。
 
-Preview build 中 sitemap `<loc>` 仍始终是 Production URL。
+Preview build 中 sitemap `<loc>` 始终是 Production URL。
 
 ## 6. RSS
 
@@ -130,15 +122,15 @@ RSS 不再依赖硬编码 fallback origin。
 
 ## 7. Delivery Split
 
-### 50A — SEO Foundation · Current
+### 50A — SEO Foundation · Merged / Production Gate
 
-建议 PR：
+PR #21 已于 2026-09-02 合并：
 
 ```text
-feat: add canonical seo metadata and sitemap
+main = 16de75931c984f64cd1458769b6eb87bfa5fe572
 ```
 
-范围：
+已落地：
 
 - SiteConfig metadata；
 - Production/runtime URL helpers；
@@ -147,13 +139,31 @@ feat: add canonical seo metadata and sitemap
 - OG / Twitter；
 - static social image；
 - Sitemap；
-- RSS canonical alignment；
+- RSS runtime/canonical alignment；
 - Slide canonical boundary；
+- Daily/latest alias canonical；
 - Production/Preview focused + artifact tests。
 
-50A 不包含 JSON-LD。
+Fresh main Site Build：
 
-### 50B — Structured Data · Next
+```text
+run      = 33586301122
+result   = success
+artifact = 9830214428
+sha256   = ea1bc7092e23f31536a136a0cf6f48c78e398b5f3a2cbed4d27ff3f653ee31ed
+```
+
+同一 main build 明确通过：
+
+```text
+SEO URL contract passed
+Web SEO artifact contract passed
+Assembled SEO canonical contract passed
+```
+
+50A 尚未标记 Done：当前最新 `Orbis Pages Production` 仍是 run `33495089941`，对应旧 `main@0c867438fc6cac83b6f97b76cb55e29118b64b87`。必须针对 `16de75931c984f64cd1458769b6eb87bfa5fe572` 新建一次 `deploy=true` workflow dispatch 并完成 public smoke。
+
+### 50B — Structured Data · Next after 50A Production Gate
 
 建议 PR：
 
@@ -195,7 +205,7 @@ Essay Author 从 Plan 40 Author Registry 解析并保持声明顺序。
 - Production canonical 含 Preview identity；
 - Sitemap 泄露 alias、non-public content 或 Brief-derived Slide duplicate；
 - default Social Image 缺失；
-- 50B JSON-LD 非合法 JSON或 URL 与 Production canonical 不一致。
+- 50B JSON-LD 非合法 JSON 或 URL 与 Production canonical 不一致。
 
 ## 10. 非目标
 
@@ -217,7 +227,7 @@ Essay Author 从 Plan 40 Author Registry 解析并保持声明顺序。
 - OG/Twitter 使用有效绝对 URL 与 1200×630 Brand Image；
 - Sitemap 只包含 public canonical resources；
 - Production RSS links 与 Reading canonical 一致；
-- Daily/Weekly Slides canonical/backlink → Reading；
+- Daily/Weekly Slides canonical → Reading；
 - standalone Talk self-canonical；
 - WebSite/Essay/Brief/Knowledge JSON-LD 只使用真实字段；
 - Essay JSON-LD 使用 Author Registry；
@@ -228,6 +238,10 @@ Essay Author 从 Plan 40 Author Registry 解析并保持声明顺序。
 - [x] Plan 40 Production Pages deploy/smoke complete：run `33495089941`；
 - [x] Plan 50 design approved；
 - [x] formal design spec committed；
-- [ ] 50A implementation plan；
-- [ ] 50A TDD implementation + PR；
+- [x] 50A implementation plan；
+- [x] 50A TDD implementation + PR #21；
+- [x] PR #21 merged to `main@16de75931c984f64cd1458769b6eb87bfa5fe572`；
+- [x] fresh main Site Build `33586301122` passed；
+- [ ] 50A Production Pages `deploy=true` for `16de75931c984f64cd1458769b6eb87bfa5fe572` + public smoke；
+- [ ] mark 50A Done；
 - [ ] 50B implementation plan + PR。
