@@ -68,6 +68,11 @@ function deriveTopicId(root: string, entry: Extract<ParsedContentEntry, { kind: 
   return removeYamlExtension(relativePath)
 }
 
+function deriveKnowledgeId(root: string, entry: Extract<ParsedContentEntry, { kind: 'knowledge' }>) {
+  const relativePath = normalizePath(relative(resolve(root, 'content/knowledge'), entry.path))
+  return removeYamlExtension(relativePath)
+}
+
 function buildRegistryIndex(
   root: string,
   kind: RegistryKind,
@@ -103,6 +108,17 @@ function buildTopicIndex(root: string, entries: ParsedContentEntry[], errors: st
       continue
     }
     index.set(id, entry)
+  }
+
+  return index
+}
+
+function buildKnowledgeIndex(root: string, entries: ParsedContentEntry[]) {
+  const index = new Map<string, Extract<ParsedContentEntry, { kind: 'knowledge' }>>()
+
+  for (const entry of entries) {
+    if (entry.kind !== 'knowledge') continue
+    index.set(deriveKnowledgeId(root, entry), entry)
   }
 
   return index
@@ -189,17 +205,43 @@ function validateTopicRelations(
   })
 }
 
+function validateKnowledgeRelations(
+  root: string,
+  entry: Extract<ParsedContentEntry, { kind: 'knowledge' }>,
+  knowledgeIndex: ReadonlyMap<string, unknown>,
+  errors: string[],
+) {
+  if (!entry.value.supersededBy) return
+
+  const path = displayPath(root, entry.path)
+  const currentId = deriveKnowledgeId(root, entry)
+
+  if (entry.value.supersededBy === currentId) {
+    errors.push(`Invalid relation: ${path}: supersededBy -> knowledge "${currentId}" cannot reference itself`)
+    return
+  }
+
+  if (!knowledgeIndex.has(entry.value.supersededBy)) {
+    errors.push(`Invalid relation: ${path}: supersededBy -> missing knowledge "${entry.value.supersededBy}"`)
+  }
+}
+
 export function validateReferentialIntegrity(root: string, entries: ParsedContentEntry[]): string[] {
   const errors: string[] = []
   const sourceIndex = buildRegistryIndex(root, 'source', entries, errors)
   const authorIndex = buildRegistryIndex(root, 'author', entries, errors)
   const topicIndex = buildTopicIndex(root, entries, errors)
+  const knowledgeIndex = buildKnowledgeIndex(root, entries)
 
   for (const entry of entries) {
     validateContentTopics(root, entry, topicIndex, errors)
 
     if (entry.kind === 'topic') {
       validateTopicRelations(root, entry, topicIndex, errors)
+    }
+
+    if (entry.kind === 'knowledge') {
+      validateKnowledgeRelations(root, entry, knowledgeIndex, errors)
     }
 
     if (entry.kind === 'essay') {
