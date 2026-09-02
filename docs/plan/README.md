@@ -4,7 +4,7 @@
 > 基线：`main@bb85751266f90ec25e56f087bd078a935d8f31cd`
 > 基线日期：2026-09-02
 > 阶段：Product Capability Phase
-> 当前目标：Plan 50 · 50B Production Gate
+> 当前目标：Plan 60 · Knowledge Lifecycle · Design Review
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -14,16 +14,13 @@
 - Plan 20 · Presentation Platform：**Done** — PR #11 / #12
 - Plan 30 · Weekly Brief：**Done** — PR #13 / #14
 - Plan 40 · Source & Author Registry：**Done** — PR #15 / #19
-- Plan 50 · SEO & Sharing：**Production Gate**
-  - 50A SEO Foundation：**Done** — PR #21
-    - main：`16de75931c984f64cd1458769b6eb87bfa5fe572`
-    - Production Pages：`33588705346` Build + Deploy + public smoke Passed
-  - 50B Structured Data：**Merged / Production Gate** — PR #22
-    - main：`bb85751266f90ec25e56f087bd078a935d8f31cd`
-    - Site Build：`33601715928` Passed
-    - Artifact：`9835467039`
-    - Production Pages：exact-SHA `deploy=true` Pending
-- Plan 60 · Knowledge Lifecycle：**Planned / Next**
+- Plan 50 · SEO & Sharing：**Done** — PR #21 / #22
+  - main：`bb85751266f90ec25e56f087bd078a935d8f31cd`
+  - Site Build：`33601715928` Passed
+  - Main Artifact：`9835467039`
+  - Production Pages：`33603472306` Build + Deploy + public smoke Passed
+  - Production Artifact：`9836095734`
+- Plan 60 · Knowledge Lifecycle：**Current · Design Review**
 - Plan 70 · Scheduled Content Automation：**Planned**
 
 ## 当前产品基线
@@ -49,12 +46,16 @@ Structured Data
   ├── Brief Article
   └── Knowledge TechArticle
           ↓
-Production exact-SHA gate
+Knowledge Lifecycle · Plan 60
+  ├── review contract
+  ├── overdue / due-soon detection
+  ├── lifecycle relationships
+  └── durable Knowledge UI
 ```
 
-50A 已完成 `main@16de75931c984f64cd1458769b6eb87bfa5fe572` 的 Production deploy/smoke。
+Plan 50 最终生产验证针对 exact `main@bb85751266f90ec25e56f087bd078a935d8f31cd`：Production run `33603472306` 成功构建并部署 GitHub Pages；Pages deployment 明确使用 `pages_build_version=bb85751266f90ec25e56f087bd078a935d8f31cd`，并 smoke `/`、`/latest/`、`/archive.json`、`/rss.xml`、favicon 与 `/2026/08/28/`。
 
-50B 已合入 `main@bb85751266f90ec25e56f087bd078a935d8f31cd`；fresh Site Build `33601715928` 再次通过 SEO URL、JSON-LD builder、Web SEO、assembled canonical 与 structured-data artifact contracts。当前仅剩 governed Production Pages 的 exact-SHA Build → Deploy → public Smoke。
+同一 Production build 再次通过 `SEO URL contract`、`JSON-LD builder contract`、`Web SEO artifact contract`、`Assembled SEO canonical contract` 与 `Structured data artifact contract`。因此 Milestone E / Plan 50 已关闭。
 
 ## Roadmap
 
@@ -78,11 +79,9 @@ Production exact-SHA gate
         ↓
 40 Source & Author Registry    Done
         ↓
-50 SEO & Sharing               Production Gate
-  ├── 50A SEO Foundation       Done
-  └── 50B Structured Data      Merged / Production Gate
+50 SEO & Sharing               Done
         ↓
-60 Knowledge Lifecycle         Next after Plan 50 gate
+60 Knowledge Lifecycle         Current · Design Review
         ↓
 70 Scheduled Content Automation
 ```
@@ -102,7 +101,8 @@ Production exact-SHA gate
 ## Plan 状态约定
 
 - `Planned`：尚未开始；
-- `In Progress`：已有设计、计划、分支或 PR；
+- `Design Review`：当前计划已成为产品目标，正在锁定语义与边界，尚未进入实现；
+- `In Progress`：设计已批准，已有实施计划、分支或 PR；
 - `Production Gate`：实现与 main Build 已完成，但 exact-SHA Production Pages 验证尚未完成；
 - `Done`：全部计划 PR 已进入 `main`，并完成对应 Preview / main / Production 验证；
 - `Deferred`：明确推迟。
