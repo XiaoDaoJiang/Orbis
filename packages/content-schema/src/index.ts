@@ -234,6 +234,7 @@ export const knowledgeSchema = z.object({
   publishedAt: dateStringSchema,
   updatedAt: dateStringSchema.optional(),
   reviewAt: dateStringSchema.optional(),
+  supersededBy: z.string().min(2).optional(),
   topics: z.array(z.string().min(2)).min(1),
   references: z.array(referenceSchema).default([]),
 })
