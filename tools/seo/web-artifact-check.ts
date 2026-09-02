@@ -99,4 +99,17 @@ assert.equal(png.toString('ascii', 1, 4), 'PNG', 'Social image must be a PNG')
 assert.equal(png.readUInt32BE(16), 1200, 'Social image width must be 1200')
 assert.equal(png.readUInt32BE(20), 630, 'Social image height must be 630')
 
+const sitemap = await readFile(resolve(root, 'dist/web/sitemap.xml'), 'utf8')
+expectFragment(sitemap, `<loc>${productionSiteUrl(config, '/')}</loc>`, 'Sitemap must include Production home URL')
+expectFragment(sitemap, `<loc>${productionSiteUrl(config, `/essays/${essay.id}/`)}</loc>`, 'Sitemap must include published Essay')
+expectFragment(sitemap, `<loc>${productionSiteUrl(config, `/briefs/${brief.id}/`)}</loc>`, 'Sitemap must include published Brief')
+expectFragment(sitemap, `<loc>${productionSiteUrl(config, `/knowledge/${knowledge.id}/`)}</loc>`, 'Sitemap must include public Knowledge')
+assert.ok(!sitemap.includes('/latest/'), 'Sitemap must exclude /latest/ alias')
+assert.ok(!/\/\d{4}\/\d{2}\/\d{2}\//.test(sitemap), 'Sitemap must exclude Daily date aliases')
+assert.ok(!sitemap.includes('raw.githack.com'), 'Sitemap must never contain Preview origin')
+assert.ok(!sitemap.includes('preview-pr-'), 'Sitemap must never contain Preview branch identity')
+
+const rss = await readFile(resolve(root, 'dist/web/rss.xml'), 'utf8')
+expectFragment(rss, runtimeSiteUrl(config, `/briefs/${brief.id}/`), 'RSS must link to runtime Reading URL')
+
 console.log('Web SEO artifact contract passed')
