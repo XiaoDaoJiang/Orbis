@@ -3,41 +3,41 @@
 > 状态：Active
 > 基线日期：2026-09-02
 > 基线提交：`main@16de75931c984f64cd1458769b6eb87bfa5fe572`
-> 当前目标：Milestone E — Search & Share Ready / 50A Production Gate
+> 当前目标：Milestone E — Search & Share Ready / Plan 50B Structured Data
 
 ## 1. 当前阶段判断
 
-Orbis 已经完成并进入稳定生产：
+Orbis 已经完成：
 
 - Astro + Slidev pnpm Monorepo Foundation；
 - Structured Content + Zod Schema；
-- Daily Brief → Reading + `daily-v1` + RSS；
-- Archive / Slides / Daily / Weekly Discovery 与跨内容导航；
-- Homepage discovery；
-- source-neutral Presentation Descriptor + Template Registry；
-- standalone `talk-v1`；
-- Weekly Schema、Reading、`weekly-v1`；
-- Daily + Weekly + Talk mixed build；
-- Daily-only `/YYYY/MM/DD/`、`/latest/` 与 `/archive.json`；
+- Daily / Weekly / standalone Presentation 多形态发布；
+- Archive / Slides / cadence / Homepage discovery；
+- Daily-only stable date / latest / archive.json；
 - Path Guard + CODEOWNERS + scheduled-agent governance；
 - read-only PR Build → Trusted Preview → Public Smoke；
 - governed GitHub Pages Production；
-- Legacy publishing compatibility retirement；
-- Plan 40 Source / Author Registry、Referential Integrity 与 Registry-backed Reading UI；
-- Plan 50A canonical / robots / OG / Twitter / Sitemap / RSS / Slide identity 已进入 `main`。
+- Source / Author Registry + Referential Integrity + Registry-backed Reading UI；
+- Production canonical / Preview noindex；
+- Open Graph / Twitter Card；
+- Production-only Sitemap identity；
+- Production/Preview RSS identity；
+- Slidev / alias canonical boundary。
 
-当前主分支：
+Plan 50A 已完成生产验证：
 
 ```text
 main SHA                         16de75931c984f64cd1458769b6eb87bfa5fe572
 50A merge PR                     #21
 post-merge Site Build            33586301122   success
-main Artifact                    9830214428
-Artifact SHA-256                 ea1bc7092e23f31536a136a0cf6f48c78e398b5f3a2cbed4d27ff3f653ee31ed
-Production Pages                 pending exact-SHA deploy=true gate
+Production Pages run             33588705346   success
+Production Pages artifact        9831008743
+Artifact SHA-256                  83cdb5f5495dc8658ee8e77768ecb2627a05753017a6d5d2b33910da8cf99d81
+Deploy exact SHA                  16de75931c984f64cd1458769b6eb87bfa5fe572
+Public smoke                      / /latest/ /archive.json /rss.xml /favicon.svg /2026/08/28/ PASS
 ```
 
-Plan 40 的最终生产 run `33495089941` 仍是当前最新 Production Pages run，因此 50A 尚未完成公网生产验证。
+因此 Milestone E 当前只剩 **50B Structured Data**。
 
 ## 2. 产品定义
 
@@ -50,12 +50,11 @@ Orbis 是一个面向长期积累的 Git-native、Agent-native 结构化技术�
     ↓
 可验证的内容身份与关系
     ↓
-多种发布形态
-    ├── Reading
-    ├── Presentation
-    ├── Topic / Source / Author metadata
-    ├── Durable Knowledge
-    └── RSS
+Reading / Presentation / RSS / Discovery
+    ↓
+Canonical / Share Identity
+    ↓
+Structured Data
 ```
 
 ## 3. 当前稳态架构
@@ -76,33 +75,18 @@ RSS / Web / Primary Sources
      ↓                 ↓
   Astro Web      Presentation Platform
      ↓                 ↓
- Essays           Descriptor + Registry
- Briefs           daily / weekly / talk
- Topics                 ↓
- Knowledge           Slidev × N
+ Reading          daily / weekly / talk
      └────────┬──────────┘
               ↓
          assemble-site
               ↓
- /archive.json /latest/ /YYYY/MM/DD/
+ Canonical / OG / Twitter / Sitemap / RSS
+              ↓
+         JSON-LD · 50B
               ↓
            dist/site
               ↓
     PR Preview / GitHub Pages
-```
-
-Milestone E 在这条稳态构建图上增加公开网络身份，不新增服务端 Runtime：
-
-```text
-Structured Content + Registry
-          ↓
-SEO URL Contract
-          ↓
-Canonical / OG / Twitter / Sitemap
-          ↓
-JSON-LD
-          ↓
-Search / Share / Feed identity
 ```
 
 ## 4. 能力状态
@@ -113,15 +97,12 @@ Search / Share / Feed identity
 | Structured Content | Done | Brief、Essay、Knowledge、Topic、Presentation、Source、Author |
 | Daily Brief | Done / Mature | Reading、11 页 Slides、RSS、Previous/Next、Date/Latest/Archive |
 | Weekly Brief | Done / First Release | Weekly Schema、Reading、7..11 页 Slides、RSS/Archive/Topic |
-| Standalone Presentation | Done / Basic | `content/presentations/**` + `talk-v1` |
 | Presentation Platform | Done | Descriptor、Template Registry、mixed build |
 | Archive / Discovery / Navigation | Done / Mature | Homepage、Archive、Slides、cadence indexes、Related |
-| Topic | Done / Basic | Topic entity、relations、public aggregation |
-| Knowledge | Done / Basic | status、reviewAt、Topic、References、Related |
 | Source / Author Identity | Done | canonical IDs、Registry、Referential Integrity、Governance |
 | Registry-backed Reading UI | Done | AuthorByline、Source metadata、archived/unsourced contracts |
-| Production Pages | Done / Governed | explicit deploy gate + public smoke |
-| SEO / Sharing | In Progress | 50A merged + main Build green；Production gate pending；50B next |
+| SEO URL / Sharing Foundation | Done | canonical、Preview noindex、OG/Twitter、Sitemap、RSS、Slide/alias identity |
+| Structured Data | In Progress / Next | 50B WebSite / Article / TechArticle JSON-LD |
 | Knowledge Lifecycle | Planned | review/expiry tooling |
 | Scheduled Automation | Planned | scheduled Agent PR orchestration |
 
@@ -137,51 +118,29 @@ Plan 20，PR #11 / #12。
 Plan 30，PR #13 / #14。
 
 ### Milestone D — Knowledge Identity · Done
-Plan 40。
-
-- 40A Registry + Referential Integrity — PR #15；
-- 40B Registry-backed Content UI — final main integration PR #19；
-- main Build + Production Pages deploy/smoke verified；
-- historical feature/refactor branches cleaned；
-- Issue #20 completed.
+Plan 40，PR #15 / #19。
 
 ### Milestone E — Search & Share Ready · In Progress
 Plan 50。
 
-Approved design:
-
-`docs/superpowers/specs/2026-09-01-seo-sharing-design.md`
-
-Delivery split:
-
 ```text
-50A SEO Foundation              Merged · Production Gate
-  -> canonical URL contract
-  -> Preview noindex / Production canonical
-  -> Open Graph / Twitter
-  -> static social image
-  -> sitemap.xml
-  -> RSS identity alignment
-  -> Slide canonical boundary
+50A SEO Foundation              Done · PR #21
+  canonical / robots
+  Open Graph / Twitter
+  Sitemap
+  RSS identity
+  Slide / alias canonical
+  Production exact-SHA deploy/smoke
 
-50B Structured Data             Next after 50A Production Gate
-  -> WebSite JSON-LD
-  -> Essay Article + Author Registry
-  -> Brief Article
-  -> Knowledge TechArticle
+50B Structured Data             Current
+  WebSite JSON-LD
+  Essay Article + Author Registry
+  Brief Article
+  Knowledge TechArticle
+  canonical consistency / Preview-safe validation
 ```
 
-50A main integration evidence：
-
-```text
-PR                               #21 merged
-main                              16de75931c984f64cd1458769b6eb87bfa5fe572
-Site Build                        33586301122 success
-SEO URL contract                  passed
-Web SEO artifact contract         passed
-Assembled SEO canonical contract  passed
-Production Pages                  pending new deploy=true run for exact SHA
-```
+50B 必须消费 50A 已稳定的 Production canonical，不创建第二套 URL identity。
 
 ### Milestone F — Durable Knowledge · Planned
 Plan 60。
