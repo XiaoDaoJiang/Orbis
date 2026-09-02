@@ -14,6 +14,11 @@ export type ReviewEvaluation = {
   daysUntilReview: number | null
 }
 
+export type KnowledgeReplacementEdge = {
+  id: string
+  supersededBy?: string
+}
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -63,4 +68,21 @@ export function evaluateReviewHealth(input: ReviewEvaluationInput): ReviewEvalua
         : 'current',
     daysUntilReview,
   }
+}
+
+export function deriveSupersedes(entries: KnowledgeReplacementEdge[]): Map<string, string[]> {
+  const inverse = new Map<string, string[]>()
+
+  for (const entry of entries) {
+    if (!entry.supersededBy) continue
+    const ids = inverse.get(entry.supersededBy) ?? []
+    ids.push(entry.id)
+    inverse.set(entry.supersededBy, ids)
+  }
+
+  for (const [target, ids] of inverse) {
+    inverse.set(target, [...ids].sort((left, right) => left.localeCompare(right)))
+  }
+
+  return inverse
 }
