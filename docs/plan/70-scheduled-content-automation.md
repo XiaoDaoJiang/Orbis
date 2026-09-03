@@ -1,9 +1,9 @@
 # 70 · Scheduled Content Automation
 
-> 状态：Design Review · Current
+> 状态：In Progress · 70A Ready for Review
 > Roadmap Milestone：G — Sustainable Automation
 > 建议优先级：P2
-> 依赖：Plan 60 · Done；approved automation design
+> 依赖：Plan 60 · Done；automation design · Approved
 > 设计：[`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`](../superpowers/specs/2026-09-03-scheduled-content-automation-design.md)
 > 70A Implementation Plan：[`docs/superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md`](../superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md)
 
@@ -42,7 +42,7 @@ Repository Contract 固定；Scheduler / Producer 可替换。
 - `config/scheduled-task-prompt.md`；
 - `config/daily-task-prompt.md`；
 - `content/briefs/YYYY-MM-DD.yaml` Structured Daily；
-- `content-agent` Path Guard；
+- generic `content-agent` Path Guard；
 - read-only PR Build；
 - Trusted Preview publish + public smoke；
 - governed manual Production Pages deploy；
@@ -50,58 +50,47 @@ Repository Contract 固定；Scheduler / Producer 可替换。
 
 Plan 70 不重建第二套发布链。
 
-## 3. Design Review 发现的现有合同缺口
+## 3. 已批准设计边界
 
-### 3.1 Scheduled Daily 权限必须比 generic content-agent 更窄
+### 3.1 Scheduled Daily 权限比 generic content-agent 更窄
 
-当前 generic Agent allowlist 可以覆盖多个 content surface，但 Scheduled Daily 只需要一个精确目标：
+Scheduled Daily 只允许一个精确目标：
 
 ```text
 content/briefs/<targetDate>.yaml
 ```
 
-因此保留 generic `content-agent`，额外建立 Scheduled Daily exact-target contract。
+Generic `content-agent` 保留给更广的 reviewed Agent contribution；Scheduled Daily 使用独立 exact-target contract。
 
-### 3.2 published-main overwrite 必须显式禁止
-
-Scheduled automation 采用：
+### 3.2 published-main overwrite 显式禁止
 
 ```text
 main missing target          → create candidate
 open automation branch / PR → update same candidate
 main published target        → no write / already-published
+main non-public target       → revision-required
 published correction         → explicit correction workflow only
 ```
 
-不得静默覆盖 main 上已发布 Daily。
+Feature branch 上的 `status: published` 是 publication candidate，不等于 Production 已发布。
 
-### 3.3 deletion / rename 必须纳入强制防线
+### 3.3 deletion / rename 进入强制防线
 
-70A 必须让 old/new changed paths 都进入判断，并测试：
+Path Guard 必须检查所有 relevant old/new paths；Scheduled Daily 首版直接拒绝 delete / rename / copy-style transition。
 
-- target deletion fails；
-- rename into target fails；
-- rename out of target fails；
-- protected/generated delete/rename cannot bypass guard。
-
-## 4. 推荐架构
-
-### Repository-owned contract
+## 4. Repository-owned contract
 
 Orbis 固定：
 
-- target-date 语义；
+- explicit `targetDate`；
 - exact diff boundary；
-- idempotency；
+- deterministic branch / path identity；
+- idempotency decision semantics；
 - overwrite/correction boundary；
-- PR metadata / run-report contract；
+- provider-neutral PR metadata / run-report contract；
 - Schema / full Build / Preview gates。
 
-### Scheduler / Producer
-
-首个真实 pilot 推荐继续使用现有 ChatGPT Scheduled Task，因为无需把新的模型 API key 加入 GitHub，也不引入数据库或任务平台。
-
-它只是 pilot，不成为 Schema/Build 的供应商依赖。未来可以替换为 GitHub Actions + API Agent、Codex/CLI Agent 或其他 Runtime。
+Scheduler / Producer 只负责生成候选和调用这些合同，不拥有生产权限。
 
 ## 5. Scheduled Daily Identity
 
@@ -111,7 +100,7 @@ Scheduler 按 `Asia/Shanghai` 计算并显式传入：
 targetDate=YYYY-MM-DD
 ```
 
-Repository tool 不依赖 runner 本地时区隐式决定内容日期。
+Repository tooling 不允许 system-clock fallback。
 
 固定分支：
 
@@ -127,63 +116,143 @@ content/briefs/YYYY-MM-DD.yaml
 
 分支名同时是同日 candidate 的 idempotency key。
 
-## 6. 70A — Scheduled Daily Repository Contract
+## 6. 70A — Scheduled Daily Repository Contract · Ready for Review
 
-建议 PR：
+PR：**#25 — `feat: add scheduled daily automation contracts and guards`**
+
+Feature head：
 
 ```text
-feat: add scheduled daily automation contracts and guards
+f7a7c60daf766dafbca3e9b7cbee06c569bbb535
 ```
 
-Implementation Plan：[`2026-09-03-scheduled-content-automation-contracts.md`](../superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md)
+### 已实现
 
-包含：
+- deletion / rename-safe Git change collector：`git diff --name-status -z --find-renames`；
+- pure Path Guard policy 同时检查 rename/copy old/new path；
+- real Git deletion + rename integration contract；
+- strict/calendar-valid `targetDate`；
+- canonical Daily branch / content path；
+- `dailyBriefSchema` candidate identity + `publishedAt === targetDate`；
+- provider-neutral decision vocabulary：
 
-1. target-date parser / validation；
-2. provider-neutral `DailyAutomationReport`；
-3. idempotency decision helper；
-4. exact-target Scheduled Daily guard；
-5. deletion / rename-safe Path Guard hardening；
-6. `scheduled-daily` guard config / mode；
-7. published-main overwrite protection；
-8. correction-required result；
-9. automation PR metadata contract tests；
-10. prompt 与新 idempotency 语义对齐；
-11. PR Preview Build 对 `automation/daily/**` 强制执行 Scheduled Daily guard；
-12. integration tests：合法 exact Brief diff pass，所有越权 / 删除 / rename / wrong-date / second-Brief diff fail。
+```text
+create-candidate
+update-open-candidate
+revision-required
+already-published
+correction-required
+blocked
+```
 
-70A 不接 Scheduler，不调用模型 API。
+- exact-target Scheduled Daily guard；
+- normal Scheduled Daily 禁止已有 base target 修改；
+- published base 强制 correction workflow；
+- provider-neutral `DailyAutomationReport`；
+- deterministic PR metadata renderer；
+- prompt idempotency/correction semantics 对齐；
+- `scheduled-daily` static defense-in-depth mode；
+- `automation/daily/**` PR 强制执行 Scheduled Daily guard；
+- PR Build 权限仍为 `contents: read`。
 
-## 7. 70B — First Scheduler / Producer Integration
+### 70A TDD Evidence
 
-首个 pilot：
+```text
+RED   33735129142  Path Guard change-set helper must exist
+GREEN 33735264662  hardened Path Guard full build success
+RED   33735504985  Scheduled Daily target helper must exist
+GREEN 33735633293  target identity full build success
+RED   33737385058  existing Daily M path incorrectly accepted
+RED   33737859984  PR Preview did not yet activate Scheduled Daily guard
+GREEN 33738006368  final full PR Preview Build success
+```
+
+Final Preview Artifact：
+
+```text
+ID       9886587297
+SHA-256  90f62f91865bc5fcb504c594d53a301fa12ff82657d4674a4789d883bcbc134d
+```
+
+Trusted Preview Publish：
+
+```text
+run      33738176374
+status   success
+```
+
+并已完成：
+
+- trusted artifact download；
+- preview branch publish；
+- public availability smoke；
+- PR preview URL comment。
+
+Public Preview：
+
+```text
+https://raw.githack.com/XiaoDaoJiang/Orbis/preview-pr-25/index.html
+```
+
+### Scope audit
+
+70A 只修改：
+
+```text
+.github/workflows/pr-preview-build.yml
+config/daily-task-prompt.md
+config/path-guard.yaml
+config/scheduled-task-prompt.md
+package.json
+tools/content-automation/**
+tools/path-guard/**
+```
+
+未修改：
+
+```text
+content/**
+apps/**
+packages/**
+dist/**
+.github/workflows/pages-production.yml
+.github/workflows/pr-preview-publish.yml
+```
+
+因此 70A 已满足 feature implementation、full Build、Trusted Preview 与 scope/security audit；当前只剩人工 merge gate。
+
+## 7. 70B — First Scheduler / Producer Integration · Next after #25 merge
+
+首个 pilot 继续推荐使用现有 ChatGPT Scheduled Task，但 Repository Contract 保持 provider-neutral。
+
+目标：
 
 ```text
 Asia/Shanghai targetDate
-→ discovery + source verification
+→ discovery + primary-source verification
 → structured Daily
-→ automation/daily/<date>
-→ create/update one PR
+→ resolve deterministic automation branch
+→ create/update exactly one PR
+→ render provider-neutral metadata
 → repository CI guard
 → full Build
 → Trusted Preview
 ```
 
-必须满足：
+70B 必须满足：
 
 - 同日重复运行收敛到同一个 branch / PR；
 - 不直接 push main；
 - 不自动 merge；
 - 不触发 Pages deploy；
 - 不拥有 Production token；
-- PR body 使用 provider-neutral report metadata；
-- CI/Preview 状态只能在真实完成后记录，不得预先声称成功。
-
-若 ChatGPT Scheduled Task 无法稳定完成 GitHub/CI contract，则停止 pilot，转为 GitHub Actions + API/CLI Producer；不得以扩大权限兜底。
+- 不把 provider-specific fields 写入 content Schema；
+- CI/Preview 状态只在真实完成后记录；
+- 若现有 ChatGPT Scheduled Task 无法稳定满足合同，则切换 transport / Producer，不扩大权限兜底。
 
 ## 8. Automation Run Report
 
-Repository contract 至少包含：
+Repository contract：
 
 ```text
 version
@@ -200,7 +269,7 @@ unverified[]
 failureStage?
 ```
 
-失败阶段至少区分：
+失败阶段至少：
 
 ```text
 discovery
@@ -220,20 +289,20 @@ preview
 若 main 已存在 published Daily：
 
 ```text
-Scheduled Daily → stop / already-published
+Scheduled Daily → no write / already-published
 ```
 
-事实错误需要单独：
+事实错误进入：
 
 ```text
 correction/daily/YYYY-MM-DD/<reason-slug>
 ```
 
-Scheduled Job 不自动进入 correction mode。
+Correction PR 必须说明错误/遗漏、reason、新的一手证据以及核心结论是否变化。Scheduled Job 不自动进入 correction mode。
 
 ## 10. Preview / Publish Boundary
 
-Automation PR 继续复用正式 PR Pipeline：
+Automation PR：
 
 ```text
 generic PR Path Guard
@@ -252,9 +321,9 @@ Human / Policy Review 通过后才 merge main。Pages 继续由既有 governed P
 
 - 连续 3 次真实 Daily cycle；
 - 同日 rerun / idempotency drill；
-- 已 published Daily overwrite protection drill；
-- 1 次 correction workflow drill；
-- 无基础设施手工修补即可完成三周期。
+- 已 published Daily no-write drill；
+- 1 次 explicit correction workflow drill；
+- 三周期内无需基础设施手工修补。
 
 ## 12. 非目标
 
@@ -276,7 +345,7 @@ Human / Policy Review 通过后才 merge main。Pages 继续由既有 governed P
 - 同日 rerun 只有一个 deterministic branch / PR；
 - main published Daily 永不被静默覆盖；
 - correction 明确分流；
-- full Build + Trusted Preview 仍为 mandatory gate；
+- full Build + Trusted Preview 为 mandatory gate；
 - Scheduler / Producer 无 Production Pages write 权限；
 - failure stage 可观察；
 - 三个真实周期无需基础设施调整；
@@ -285,13 +354,17 @@ Human / Policy Review 通过后才 merge main。Pages 继续由既有 governed P
 ## 14. 当前 Gate
 
 - [x] Plan 60 / Milestone F Done；
-- [x] Plan 70 initial roadmap；
+- [x] Plan 70 design approved；
 - [x] existing prompt / guard / governance audit；
-- [x] Design Review draft；
-- [x] 70A Implementation Plan prepared；
-- [ ] Design approval；
-- [ ] 70A TDD implementation；
+- [x] 70A Implementation Plan；
+- [x] 70A TDD implementation；
+- [x] 70A final full Build；
+- [x] 70A Trusted Preview + public smoke；
+- [x] PR #25 scope/security audit；
+- [x] PR #25 Ready for Review；
+- [ ] PR #25 merged to main；
+- [ ] post-merge main Build / Production gate as required；
 - [ ] 70B first Scheduler / Producer pilot；
 - [ ] 70C three-cycle validation + correction drill。
 
-**当前下一步：完成 Design Review 并确认设计；确认后立即进入 70A TDD implementation。**
+**当前下一步：人工合并 PR #25；合并后验证 fresh main，再启动 70B。**
