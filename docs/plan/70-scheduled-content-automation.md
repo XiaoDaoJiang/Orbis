@@ -1,9 +1,9 @@
 # 70 · Scheduled Content Automation
 
-> 状态：Design Review · Implementation gated by Plan 60 Production closeout
+> 状态：Design Review · Current
 > Roadmap Milestone：G — Sustainable Automation
 > 建议优先级：P2
-> 依赖：Plan 60 exact-SHA Production Gate + approved automation design
+> 依赖：Plan 60 · Done；approved automation design
 > 设计：[`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`](../superpowers/specs/2026-09-03-scheduled-content-automation-design.md)
 > 70A Implementation Plan：[`docs/superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md`](../superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md)
 
@@ -45,36 +45,26 @@ Repository Contract 固定；Scheduler / Producer 可替换。
 - `content-agent` Path Guard；
 - read-only PR Build；
 - Trusted Preview publish + public smoke；
-- governed manual Production Pages deploy。
+- governed manual Production Pages deploy；
+- Plan 60 Durable Knowledge 完整生产闭环。
 
 Plan 70 不重建第二套发布链。
 
 ## 3. Design Review 发现的现有合同缺口
 
-### 3.1 `content-agent` 对 Scheduled Daily 过宽
+### 3.1 Scheduled Daily 权限必须比 generic content-agent 更窄
 
-当前 generic Agent allowlist 包含：
-
-```text
-content/briefs/**
-content/presentations/**
-content/essays/**
-content/knowledge/**
-```
-
-Scheduled Daily 只需要一个精确目标：
+当前 generic Agent allowlist 可以覆盖多个 content surface，但 Scheduled Daily 只需要一个精确目标：
 
 ```text
 content/briefs/<targetDate>.yaml
 ```
 
-因此保留 generic `content-agent`，额外建立更窄的 Scheduled Daily contract。
+因此保留 generic `content-agent`，额外建立 Scheduled Daily exact-target contract。
 
-### 3.2 published-main overwrite 语义冲突
+### 3.2 published-main overwrite 必须显式禁止
 
-当前 Daily prompt 仍写“同日期已存在则更新”。
-
-Scheduled automation 必须改为：
+Scheduled automation 采用：
 
 ```text
 main missing target          → create candidate
@@ -83,11 +73,9 @@ main published target        → no write / already-published
 published correction         → explicit correction workflow only
 ```
 
-不得静默覆盖 main 上已发布的 Daily。
+不得静默覆盖 main 上已发布 Daily。
 
-### 3.3 deletion / rename 需要纳入强制防线
-
-现有 Path Guard diff filter 未检查 deletion path。
+### 3.3 deletion / rename 必须纳入强制防线
 
 70A 必须让 old/new changed paths 都进入判断，并测试：
 
@@ -96,7 +84,7 @@ published correction         → explicit correction workflow only
 - rename out of target fails；
 - protected/generated delete/rename cannot bypass guard。
 
-## 4. 已推荐架构
+## 4. 推荐架构
 
 ### Repository-owned contract
 
@@ -109,22 +97,13 @@ Orbis 固定：
 - PR metadata / run-report contract；
 - Schema / full Build / Preview gates。
 
-### First pilot Scheduler / Producer
+### Scheduler / Producer
 
-推荐首个三周期真实演练继续使用现有 **ChatGPT Scheduled Task**。
+首个真实 pilot 推荐继续使用现有 ChatGPT Scheduled Task，因为无需把新的模型 API key 加入 GitHub，也不引入数据库或任务平台。
 
-原因：
-
-- 已有 prompt 和内容生成实践；
-- 不需要把新的模型 API key 加入 GitHub；
-- 不引入数据库/任务平台；
-- 与当前 Orbis 轻基础设施方向一致。
-
-这只是 pilot，不成为 Schema/Build 的供应商依赖。未来可以替换为 GitHub Actions + API Agent、Codex/CLI Agent 或其他 Runtime。
+它只是 pilot，不成为 Schema/Build 的供应商依赖。未来可以替换为 GitHub Actions + API Agent、Codex/CLI Agent 或其他 Runtime。
 
 ## 5. Scheduled Daily Identity
-
-### 时间
 
 Scheduler 按 `Asia/Shanghai` 计算并显式传入：
 
@@ -134,25 +113,19 @@ targetDate=YYYY-MM-DD
 
 Repository tool 不依赖 runner 本地时区隐式决定内容日期。
 
-### 分支
-
-固定：
+固定分支：
 
 ```text
 automation/daily/YYYY-MM-DD
 ```
 
-它同时是同日 candidate 的 idempotency key。
-
-### 内容路径
-
-固定：
+固定内容路径：
 
 ```text
 content/briefs/YYYY-MM-DD.yaml
 ```
 
-Scheduled Daily PR 只允许修改这个 exact target。
+分支名同时是同日 candidate 的 idempotency key。
 
 ## 6. 70A — Scheduled Daily Repository Contract
 
@@ -175,7 +148,7 @@ Implementation Plan：[`2026-09-03-scheduled-content-automation-contracts.md`](.
 7. published-main overwrite protection；
 8. correction-required result；
 9. automation PR metadata contract tests；
-10. `daily-task-prompt.md` / scheduled prompt 与新 idempotency 语义对齐；
+10. prompt 与新 idempotency 语义对齐；
 11. PR Preview Build 对 `automation/daily/**` 强制执行 Scheduled Daily guard；
 12. integration tests：合法 exact Brief diff pass，所有越权 / 删除 / rename / wrong-date / second-Brief diff fail。
 
@@ -183,13 +156,7 @@ Implementation Plan：[`2026-09-03-scheduled-content-automation-contracts.md`](.
 
 ## 7. 70B — First Scheduler / Producer Integration
 
-建议 PR：
-
-```text
-feat: automate daily content branch and pull request
-```
-
-首个 pilot 使用现有 ChatGPT Scheduled Task：
+首个 pilot：
 
 ```text
 Asia/Shanghai targetDate
@@ -212,7 +179,7 @@ Asia/Shanghai targetDate
 - PR body 使用 provider-neutral report metadata；
 - CI/Preview 状态只能在真实完成后记录，不得预先声称成功。
 
-若 ChatGPT Scheduled Task 无法稳定完成上述 GitHub/CI contract，则停止 pilot，转为 GitHub Actions + API/CLI Producer；不得以扩大权限兜底。
+若 ChatGPT Scheduled Task 无法稳定完成 GitHub/CI contract，则停止 pilot，转为 GitHub Actions + API/CLI Producer；不得以扩大权限兜底。
 
 ## 8. Automation Run Report
 
@@ -246,7 +213,7 @@ pr
 preview
 ```
 
-不记录 chain-of-thought、密钥、内部 prompt 或无必要的抓取原文。
+不记录 chain-of-thought、密钥、内部 prompt 或无必要抓取原文。
 
 ## 9. Correction Workflow
 
@@ -261,13 +228,6 @@ Scheduled Daily → stop / already-published
 ```text
 correction/daily/YYYY-MM-DD/<reason-slug>
 ```
-
-Correction PR 必须说明：
-
-- 错误或实质遗漏；
-- correction reason；
-- 新的一手证据；
-- 是否修改标题、摘要或核心结论。
 
 Scheduled Job 不自动进入 correction mode。
 
@@ -284,17 +244,9 @@ generic PR Path Guard
 → public smoke
 ```
 
-Human / Policy Review 通过后才 merge main。
-
-Pages 继续由既有 governed Production workflow 管理，Scheduled Producer 不拥有 deploy 权限。
+Human / Policy Review 通过后才 merge main。Pages 继续由既有 governed Production workflow 管理；Scheduled Producer 不拥有 deploy 权限。
 
 ## 11. 70C — Real-cycle Validation
-
-建议 evidence / test slice：
-
-```text
-test: validate scheduled daily lifecycle end to end
-```
 
 必须至少：
 
@@ -332,12 +284,14 @@ test: validate scheduled daily lifecycle end to end
 
 ## 14. 当前 Gate
 
+- [x] Plan 60 / Milestone F Done；
 - [x] Plan 70 initial roadmap；
 - [x] existing prompt / guard / governance audit；
 - [x] Design Review draft；
 - [x] 70A Implementation Plan prepared；
-- [ ] Plan 60 exact-SHA Production Gate for `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`；
 - [ ] Design approval；
 - [ ] 70A TDD implementation；
 - [ ] 70B first Scheduler / Producer pilot；
 - [ ] 70C three-cycle validation + correction drill。
+
+**当前下一步：完成 Design Review 并确认设计；确认后立即进入 70A TDD implementation。**
