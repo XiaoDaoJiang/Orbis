@@ -3,7 +3,7 @@
 > 状态：Active
 > 基线日期：2026-09-03
 > 基线提交：`main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`
-> 当前目标：Milestone F — Durable Knowledge / Final Production Gate；Milestone G — Sustainable Automation / Design Review
+> 当前目标：Milestone G — Sustainable Automation / 70A Review Gate
 
 ## 1. 当前阶段判断
 
@@ -23,53 +23,45 @@ Orbis 已经完成：
 - Sitemap / RSS / Slidev canonical identity；
 - WebSite / Essay Article / Brief Article / Knowledge TechArticle JSON-LD；
 - Knowledge lifecycle evaluator、supersession relation、review report；
-- Knowledge lifecycle Index/Detail UI、stable needs-review/archived routes 与 replacement navigation。
+- Knowledge lifecycle Index/Detail UI、stable needs-review/archived routes 与 replacement navigation；
+- Plan 60 exact-SHA Production Pages closeout。
 
-Plan 60 当前状态：
+Plan 60 / Milestone F 当前状态：
 
 ```text
 main SHA                         89c7f8fe6d5da972c0f54b1367df252aa00cf286
 60A                              Done · PR #23
-60B merge PR                     #24
-60B merge time                   2026-09-03T05:50:21Z
-60B post-merge Site Build        33720559711   success
-60B main Artifact                9880102491
-Artifact SHA-256                 89603fae5eb5be3d879fd682cfb381695f6406a6b9c6b47ba92a140d78ab895a
-Plan 60 Production Pages         pending exact-SHA deploy=true gate
+60B                              Done · PR #24
+post-merge Site Build            33720559711 success
+main Artifact                    9880102491
+Production Pages                 33734815132 success
+Production Artifact              9885335098
+Production Artifact SHA-256      7caba4bb2d7a82f02c084af036f219cb2d8484ad6ccbfd4724a7c29d5e168e55
 ```
 
-Fresh main Build 再次通过：
+Production Pages 对 exact main SHA 完成 Build → Deploy → public Smoke，因此 Milestone F 正式 Done。
+
+Plan 70 已完成设计确认并进入实施。70A Repository Contract 已在 PR #25 完成：
 
 ```text
-Knowledge lifecycle evaluator contract passed
-Knowledge supersession relation contract passed
-Knowledge review report contract passed
-Knowledge lifecycle Web adapter contract passed
-Knowledge lifecycle fixed-date UI fixture contract passed
-Knowledge lifecycle UI artifact contract passed
-SEO URL contract passed
-JSON-LD builder contract passed
-Web SEO artifact contract passed
-Assembled SEO canonical contract passed
-Structured data artifact contract passed
+feature head                     f7a7c60daf766dafbca3e9b7cbee06c569bbb535
+PR                               #25 Ready for Review
+final PR Build                   33738006368 success
+Preview Artifact                 9886587297
+Preview Artifact SHA-256         90f62f91865bc5fcb504c594d53a301fa12ff82657d4674a4789d883bcbc134d
+Trusted Preview Publish          33738176374 success
 ```
 
-并执行真实 review report：
+70A 已建立：
 
-```text
-Knowledge review report · 2026-09-03
-current=1 due-soon=0 overdue=0 needs-review=0
-OK verification-loop · status=active · review=2026-11-01 · current (59d)
-```
-
-因此 Milestone F 的代码与 main 集成已完成，只剩 exact-SHA Production Pages Build → Deploy → public Smoke。
-
-Plan 70 已提前进入 Design Review，但 implementation 仍由 Plan 60 Production gate 阻挡。第一轮 Automation audit 已明确：
-
-- generic `content-agent` 对 Scheduled Daily 权限过宽，首版需要 exact-date / exact-path 的独立 guard；
-- `daily-task-prompt.md` 的“同日存在则更新”与“published main 不可静默覆盖”冲突；
-- Path Guard 必须补齐 deletion / rename old/new path 判断；
-- 首个三周期 pilot 推荐复用现有 ChatGPT Scheduled Task，但 Repository Contract 保持 provider-neutral。
+- deletion / rename-safe Path Guard；
+- explicit targetDate；
+- exact Daily branch/path identity；
+- exact-target Scheduled Daily guard；
+- published-main overwrite / revision / correction boundary；
+- provider-neutral decision + report + PR metadata；
+- read-only PR Preview 中对 `automation/daily/**` 的 mandatory guard；
+- real Git change-set security regression。
 
 ## 2. 产品定义
 
@@ -131,7 +123,7 @@ RSS / Web / Primary Sources
     PR Preview / GitHub Pages
 ```
 
-Plan 70 在这个稳态架构之外只增加“候选内容进入仓库”的安全自动化，不改变 `content/** → dist/site` 发布图。
+Plan 70 只增加“候选内容进入仓库”的安全自动化，不改变 `content/** → dist/site` 发布图。
 
 ## 4. 能力状态
 
@@ -148,8 +140,9 @@ Plan 70 在这个稳态架构之外只增加“候选内容进入仓库”的安
 | SEO URL / Sharing Foundation | Done | canonical、Preview noindex、OG/Twitter、Sitemap、RSS、Slide/alias identity |
 | Structured Data | Done | WebSite、Essay Article + Author Registry、Brief Article、Knowledge TechArticle |
 | Knowledge Lifecycle Contract | Done | review evaluator、supersededBy、derived supersedes、review report |
-| Knowledge Lifecycle UI | Merged / Production Gate | lifecycle groups、status/health UI、stable historical routes、replacement navigation |
-| Scheduled Automation | Design Review | exact Daily identity、idempotency、least-privilege guard、replaceable Producer design |
+| Knowledge Lifecycle UI | Done | lifecycle groups、status/health UI、stable historical routes、replacement navigation |
+| Scheduled Automation 70A | Ready for Review | exact Daily identity、idempotency decisions、least-privilege guard、PR metadata、Preview enforcement |
+| Scheduled Automation 70B | Next | Scheduler / Producer transport + one-branch / one-PR orchestration |
 
 ## 5. Product Capability Roadmap
 
@@ -168,50 +161,40 @@ Plan 40，PR #15 / #19。
 ### Milestone E — Search & Share Ready · Done
 Plan 50，PR #21 / #22。
 
-### Milestone F — Durable Knowledge · Production Gate
-Plan 60。
+### Milestone F — Durable Knowledge · Done
+Plan 60，PR #23 / #24。
 
 ```text
 60A Knowledge Lifecycle Contract     Done · PR #23
-60B Knowledge Lifecycle UI           Merged · PR #24
-  Web lifecycle adapter reuses 60A logic
-  lifecycle summary + Current / Attention / Historical
-  explicit editorial status / derived review health
-  stable needs-review / archived detail routes
-  overdue / due-soon / archived notices
-  replacement + inverse supersedes navigation
-  fixed-date fixture + final artifact contracts
-  fresh main Build success
-  Production exact-SHA deploy/smoke pending
+60B Knowledge Lifecycle UI           Done · PR #24
+Production Pages                     33734815132 success
 ```
 
-### Milestone G — Sustainable Automation · Design Review
+### Milestone G — Sustainable Automation · In Progress
 Plan 70。
 
 ```text
-Repository Contract fixed
-Scheduler / Producer replaceable
-  ↓
-explicit Asia/Shanghai targetDate
-  ↓
-automation/daily/YYYY-MM-DD
-  ↓
-exact content/briefs/YYYY-MM-DD.yaml guard
-  ↓
-idempotent one-branch / one-PR candidate
-  ↓
-published-main overwrite protection
-  ↓
-normal full Build + Trusted Preview
-  ↓
-human/policy merge
-  ↓
-existing governed Pages pipeline
+70A Repository Contract
+  explicit Asia/Shanghai targetDate contract
+  deterministic automation/daily/YYYY-MM-DD identity
+  exact content/briefs/YYYY-MM-DD.yaml guard
+  deletion / rename-safe Path Guard
+  published-main overwrite protection
+  provider-neutral report / PR metadata
+  mandatory read-only Preview guard
+  full Build + Trusted Preview green
+  → PR #25 Ready for Review
+
+70B Scheduler / Producer transport
+  → next after #25 merge
+
+70C three-cycle real validation
+  → after 70B
 ```
 
 Design：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`。
 
-Implementation 不在 Plan 60 Production Gate 之前启动。
+70A Implementation Plan：`docs/superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md`。
 
 ## 6. 当前不建设
 
@@ -225,3 +208,15 @@ Implementation 不在 Plan 60 Production Gate 之前启动。
 - 复杂搜索服务；
 - Scheduled Agent 自动 merge / Pages deploy；
 - 首版多 Provider 自动化平台。
+
+## 7. 当前 Gate
+
+```text
+Plan 60 / Milestone F        Done
+Plan 70 design               Approved
+70A implementation           Complete
+70A full PR Build            Passed · 33738006368
+70A Trusted Preview          Passed · 33738176374
+70A PR                       #25 Ready for Review
+next                         human merge #25 → fresh main verification → 70B
+```
