@@ -1,6 +1,6 @@
 # 60 · Knowledge Lifecycle
 
-> 状态：Production Gate · 60A Done / 60B Merged
+> 状态：Done
 > Roadmap Milestone：F — Durable Knowledge
 > 建议优先级：P2
 > 基线：`main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`
@@ -48,15 +48,12 @@ supersededBy: replacement-knowledge-id
 
 ## 3. 60A — Knowledge Lifecycle Contract · Done
 
-PR #23 已于 `2026-09-02T09:34:57Z` 合并并完成 exact-SHA Production Gate：
+PR #23 已完成全部 PR / main / Production 验收：
 
 ```text
 PR                                #23 merged
-implementation head               b0da8fa4e706459abf1eb39a365ea2d2ecb203a9
 main                              f468a45049035bc7816a52225ca41f4f381b0ae6
 post-merge Site Build             33614900003 success
-main Artifact                     9840548845
-main Artifact SHA-256             ca3f942db3466e0634da8e724a18e4c333d46ef274246dd8d5acf31d74101541
 Production Pages                  33616314496 success
 Production Artifact               9841106463
 Production Artifact SHA-256       01f09455f6746494daf87105e3d4333cd49b922559303c0a676ee8b96a8ada94
@@ -75,13 +72,13 @@ Production Artifact SHA-256       01f09455f6746494daf87105e3d4333cd49b922559303c
 - self replacement → validation ERROR；
 - inverse `supersedes[]` deterministic derivation；
 - `knowledge:review` human-readable report；
-- machine-readable `buildKnowledgeReviewReport` / JSON CLI；
+- machine-readable report / JSON CLI；
 - overdue / due-soon advisory，零退出；
-- structure/relation invalid 继续由 `content:validate` fatal fail。
+- structure/relation invalid 继续 fatal fail。
 
-## 4. 60B — Knowledge Lifecycle UI · Merged / Production Gate
+## 4. 60B — Knowledge Lifecycle UI · Done
 
-PR #24 已于 `2026-09-03T05:50:21Z` 合并：
+PR #24 已于 `2026-09-03T05:50:21Z` 合并，并完成全部生产验收：
 
 ```text
 PR                                #24 merged
@@ -90,7 +87,26 @@ main                              89c7f8fe6d5da972c0f54b1367df252aa00cf286
 post-merge Site Build             33720559711 success
 main Artifact                     9880102491
 main Artifact SHA-256             89603fae5eb5be3d879fd682cfb381695f6406a6b9c6b47ba92a140d78ab895a
-Production Pages                  pending exact-SHA deploy=true gate
+Production Pages                  33734815132 success
+Production Artifact               9885335098
+Production Artifact SHA-256       7caba4bb2d7a82f02c084af036f219cb2d8484ad6ccbfd4724a7c29d5e168e55
+```
+
+Pages deployment 明确使用：
+
+```text
+pages_build_version = 89c7f8fe6d5da972c0f54b1367df252aa00cf286
+```
+
+并通过公网 smoke：
+
+```text
+PASS /
+PASS /latest/
+PASS /archive.json
+PASS /rss.xml
+PASS /favicon.svg
+PASS /2026/08/28/
 ```
 
 60B 已落地：
@@ -111,29 +127,16 @@ Production Pages                  pending exact-SHA deploy=true gate
 
 ### 60B TDD Evidence
 
-RED 1 — run `33705834146`：
-
 ```text
-Knowledge lifecycle Web adapter must exist
+RED 1   33705834146  Knowledge lifecycle Web adapter must exist
+GREEN 1 33706026761  full PR Build success
+RED 2   33706252791  Knowledge index must expose Current section
+GREEN 2 33706449624  fixed-date lifecycle UI fixture + full PR Build success
+RED 3   33706749234  Knowledge index must expose lifecycle summary
+GREEN   33706946709  final full PR Build success
 ```
 
-GREEN 1 — run `33706026761`：full PR Build success。
-
-RED 2 — run `33706252791`：
-
-```text
-Knowledge index must expose Current section
-```
-
-GREEN 2 — run `33706449624`：fixed-date lifecycle UI fixture + full PR Build success。
-
-RED 3 — run `33706749234`：
-
-```text
-Knowledge index must expose lifecycle summary
-```
-
-Final PR GREEN — run `33706946709`：
+Final PR GREEN 同轮通过：
 
 ```text
 Knowledge lifecycle evaluator contract passed
@@ -149,39 +152,6 @@ Final Preview Artifact：
 ```text
 ID       9875569505
 SHA-256  a590c06bf011e6390e11ce30aa672b7046d19407e47677f20676ff7ff9d85196
-```
-
-Trusted Preview 在 final artifact 之后重新发布并通过公网 smoke。
-
-### Fresh main GREEN
-
-Post-merge Site Build `33720559711` exact checkout：
-
-```text
-main@89c7f8fe6d5da972c0f54b1367df252aa00cf286
-```
-
-并再次通过：
-
-```text
-Knowledge lifecycle evaluator contract passed
-Knowledge supersession relation contract passed
-Knowledge review report contract passed
-Knowledge lifecycle Web adapter contract passed
-Knowledge lifecycle fixed-date UI fixture contract passed
-Web SEO artifact contract passed
-Registry-backed content UI artifact contract passed
-Assembled SEO canonical contract passed
-Structured data artifact contract passed
-Knowledge lifecycle UI artifact contract passed
-```
-
-真实 Knowledge review report：
-
-```text
-Knowledge review report · 2026-09-03
-current=1 due-soon=0 overdue=0 needs-review=0
-OK verification-loop · status=active · review=2026-11-01 · current (59d)
 ```
 
 ## 5. Agent / Governance Boundary
@@ -212,32 +182,17 @@ Agent 不可以仅因为日期变化而：
 
 ## 7. Plan 60 验收
 
-60A 已满足全部 Contract / Preview / main / Production 验收。
+全部完成：
 
-60B 已满足：
+- [x] editorial state 与 review health 分离；
+- [x] due-soon / overdue deterministic contract；
+- [x] `supersededBy` integrity + inverse relation；
+- [x] advisory review report；
+- [x] lifecycle-aware Index / Detail UI；
+- [x] stable needs-review / archived detail URLs；
+- [x] replacement / supersedes navigation；
+- [x] PR Preview + Trusted Preview；
+- [x] fresh main Site Build；
+- [x] exact-SHA Production Pages Build → Deploy → public Smoke。
 
-- lifecycle index/detail UI；
-- fixed-date current / due-soon / overdue / needs-review / archived fixture contract；
-- addressable needs-review / archived stable routes；
-- replacement / inverse supersedes navigation；
-- lifecycle artifact contract；
-- Trusted Preview；
-- merge 后 fresh main Build。
-
-60B 尚未满足：
-
-- `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286` governed Production Pages exact-SHA Build → Deploy → public Smoke。
-
-## 8. 当前 Gate
-
-- [x] Plan 60 design approved；
-- [x] 60A implementation + PR #23 + Production gate；
-- [x] 60A Done；
-- [x] 60B implementation plan；
-- [x] 60B feature branch + TDD implementation；
-- [x] PR #24 Trusted Preview / artifact / scope audit；
-- [x] PR #24 merged to `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`；
-- [x] fresh main Site Build `33720559711` passed；
-- [ ] Production Pages `deploy=true` for exact `89c7f8fe6d5da972c0f54b1367df252aa00cf286` + public smoke；
-- [ ] Plan 60 / Milestone F Done；
-- [ ] promote Plan 70 to Current / Design Review。
+**Plan 60 / Milestone F — Durable Knowledge：Done。**
