@@ -4,7 +4,7 @@
 > 基线：`main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`
 > 基线日期：2026-09-03
 > 阶段：Product Capability Phase
-> 当前目标：Plan 60 · Production Gate
+> 当前目标：Plan 60 · Production Gate；Plan 70 · Design Review
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -23,7 +23,10 @@
     - Main Artifact：`9880102491`
     - Main Artifact SHA-256：`89603fae5eb5be3d879fd682cfb381695f6406a6b9c6b47ba92a140d78ab895a`
     - Production Pages：exact-SHA `deploy=true` Pending
-- Plan 70 · Scheduled Content Automation：**Planned / Next after Plan 60 Production Gate**
+- Plan 70 · Scheduled Content Automation：**Design Review**
+  - repository contract / guard audit：Done
+  - design draft：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`
+  - implementation：blocked until Plan 60 Production Gate + design approval
 
 ## 当前产品基线
 
@@ -44,14 +47,18 @@ Knowledge Lifecycle UI · 60B Merged
   ├── stable needs-review / archived URLs
   └── replacement / supersedes navigation
           ↓
-Production Gate
+Production Gate · pending exact main SHA
           ↓
-Scheduled Content Automation · Plan 70
+Scheduled Content Automation · Design Review
+  ├── exact-date / exact-path Daily guard
+  ├── idempotent automation branch / PR
+  ├── published-main overwrite protection
+  └── replaceable Scheduler / Producer
 ```
 
 PR #24 已于 `2026-09-03T05:50:21Z` 合并到 `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`。fresh Site Build `33720559711` 再次通过 60A/60B lifecycle contracts、fixed-date UI fixture、SEO/JSON-LD 与最终 Knowledge lifecycle artifact contract，并上传主 Artifact `9880102491`。
 
-当前只剩 governed Production Pages 对 exact main SHA 的 Build → Deploy → public Smoke。该 gate 通过后，Plan 60 / Milestone F 才标记 Done，并正式进入 Plan 70。
+当前 Plan 60 只剩 governed Production Pages 对 exact main SHA 的 Build → Deploy → public Smoke。该 gate 通过后，Plan 60 / Milestone F 才标记 Done；Plan 70 已允许提前进行 Design Review，但不启动 implementation。
 
 ## Roadmap
 
@@ -81,7 +88,8 @@ PR #24 已于 `2026-09-03T05:50:21Z` 合并到 `main@89c7f8fe6d5da972c0f54b1367d
   ├── 60A Contract             Done · PR #23
   └── 60B Web UI               Merged · PR #24
         ↓
-70 Scheduled Content Automation Next after gate
+70 Scheduled Content Automation Design Review
+  └── implementation waits for Plan 60 Production Gate
 ```
 
 ## 每个计划的统一交付规则
