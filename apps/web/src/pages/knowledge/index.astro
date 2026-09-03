@@ -31,6 +31,17 @@ const recentlyUpdatedEntries = [...lifecycleEntries]
   <div class="eyebrow">Durable knowledge</div>
   <h1>Knowledge</h1>
   <p class="lead">Long-lived conclusions with explicit editorial state, review health, and replacement history.</p>
+  <div
+    class="pills"
+    data-knowledge-lifecycle-summary
+    data-current-count={currentEntries.length}
+    data-attention-count={attentionEntries.length}
+    data-historical-count={historicalEntries.length}
+  >
+    <span class="pill">Current · {currentEntries.length}</span>
+    <span class="pill">Attention · {attentionEntries.length}</span>
+    <span class="pill">Historical · {historicalEntries.length}</span>
+  </div>
 
   <section data-knowledge-section="current">
     <h2>Current</h2>
