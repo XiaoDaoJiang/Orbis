@@ -3,7 +3,7 @@
 > 状态：Active
 > 基线日期：2026-09-03
 > 基线提交：`main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`
-> 当前目标：Milestone F — Durable Knowledge / Final Production Gate
+> 当前目标：Milestone F — Durable Knowledge / Final Production Gate；Milestone G — Sustainable Automation / Design Review
 
 ## 1. 当前阶段判断
 
@@ -36,7 +36,6 @@ main SHA                         89c7f8fe6d5da972c0f54b1367df252aa00cf286
 60B main Artifact                9880102491
 Artifact SHA-256                 89603fae5eb5be3d879fd682cfb381695f6406a6b9c6b47ba92a140d78ab895a
 Plan 60 Production Pages         pending exact-SHA deploy=true gate
-Plan 70                          next after gate
 ```
 
 Fresh main Build 再次通过：
@@ -65,6 +64,13 @@ OK verification-loop · status=active · review=2026-11-01 · current (59d)
 
 因此 Milestone F 的代码与 main 集成已完成，只剩 exact-SHA Production Pages Build → Deploy → public Smoke。
 
+Plan 70 已提前进入 Design Review，但 implementation 仍由 Plan 60 Production gate 阻挡。第一轮 Automation audit 已明确：
+
+- generic `content-agent` 对 Scheduled Daily 权限过宽，首版需要 exact-date / exact-path 的独立 guard；
+- `daily-task-prompt.md` 的“同日存在则更新”与“published main 不可静默覆盖”冲突；
+- Path Guard 必须补齐 deletion / rename old/new path 判断；
+- 首个三周期 pilot 推荐复用现有 ChatGPT Scheduled Task，但 Repository Contract 保持 provider-neutral。
+
 ## 2. 产品定义
 
 Orbis 是一个面向长期积累的 Git-native、Agent-native 结构化技术知识发布系统：Agent 负责发现、研究和生产受 Schema 约束的内容，Astro、Slidev 与 GitHub Actions 将同一知识源转化为阅读、演示、订阅、聚合和长期归档。
@@ -83,6 +89,8 @@ Canonical / Share Identity
 Structured Data
     ↓
 Durable Knowledge Lifecycle
+    ↓
+Least-Privilege Scheduled Content Automation
 ```
 
 ## 3. 当前稳态架构
@@ -123,6 +131,8 @@ RSS / Web / Primary Sources
     PR Preview / GitHub Pages
 ```
 
+Plan 70 在这个稳态架构之外只增加“候选内容进入仓库”的安全自动化，不改变 `content/** → dist/site` 发布图。
+
 ## 4. 能力状态
 
 | 能力 | 当前状态 | 已提供 |
@@ -139,7 +149,7 @@ RSS / Web / Primary Sources
 | Structured Data | Done | WebSite、Essay Article + Author Registry、Brief Article、Knowledge TechArticle |
 | Knowledge Lifecycle Contract | Done | review evaluator、supersededBy、derived supersedes、review report |
 | Knowledge Lifecycle UI | Merged / Production Gate | lifecycle groups、status/health UI、stable historical routes、replacement navigation |
-| Scheduled Automation | Planned / Next | scheduled Agent PR orchestration |
+| Scheduled Automation | Design Review | exact Daily identity、idempotency、least-privilege guard、replaceable Producer design |
 
 ## 5. Product Capability Roadmap
 
@@ -175,8 +185,33 @@ Plan 60。
   Production exact-SHA deploy/smoke pending
 ```
 
-### Milestone G — Sustainable Automation · Planned / Next after gate
+### Milestone G — Sustainable Automation · Design Review
 Plan 70。
+
+```text
+Repository Contract fixed
+Scheduler / Producer replaceable
+  ↓
+explicit Asia/Shanghai targetDate
+  ↓
+automation/daily/YYYY-MM-DD
+  ↓
+exact content/briefs/YYYY-MM-DD.yaml guard
+  ↓
+idempotent one-branch / one-PR candidate
+  ↓
+published-main overwrite protection
+  ↓
+normal full Build + Trusted Preview
+  ↓
+human/policy merge
+  ↓
+existing governed Pages pipeline
+```
+
+Design：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`。
+
+Implementation 不在 Plan 60 Production Gate 之前启动。
 
 ## 6. 当前不建设
 
@@ -187,4 +222,6 @@ Plan 70。
 - Citation graph database；
 - Source / Author 独立目录与反向聚合；
 - 动态 OG image 服务；
-- 复杂搜索服务。
+- 复杂搜索服务；
+- Scheduled Agent 自动 merge / Pages deploy；
+- 首版多 Provider 自动化平台。
