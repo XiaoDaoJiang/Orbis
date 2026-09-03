@@ -1,7 +1,114 @@
 ---
 import { getCollection } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
-const entries = await getCollection('knowledge', ({ data }) => data.status === 'published' || data.status === 'active')
+import { buildKnowledgeLifecycleViews } from '../../lib/knowledge-lifecycle'
+
+const entries = await getCollection('knowledge')
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const views = buildKnowledgeLifecycleViews(entries.map((entry) => ({
+  id: entry.id,
+  status: entry.data.status,
+  reviewAt: entry.data.reviewAt,
+  supersededBy: entry.data.supersededBy,
+})))
+const viewById = new Map(views.map((view) => [view.id, view]))
+const lifecycleEntries = entries
+  .map((entry) => ({ entry, view: viewById.get(entry.id)! }))
+  .filter(({ view }) => view.addressable)
+
+const currentEntries = lifecycleEntries.filter(({ view }) => view.currentDiscovery && view.reviewHealth === 'current')
+const attentionEntries = lifecycleEntries.filter(({ entry, view }) =>
+  entry.data.status !== 'archived'
+  && (entry.data.status === 'needs-review' || view.reviewHealth === 'due-soon' || view.reviewHealth === 'overdue'))
+const historicalEntries = lifecycleEntries.filter(({ entry }) => entry.data.status === 'archived')
+const recentlyUpdatedEntries = [...lifecycleEntries]
+  .sort((left, right) =>
+    (right.entry.data.updatedAt ?? right.entry.data.publishedAt).localeCompare(left.entry.data.updatedAt ?? left.entry.data.publishedAt)
+    || left.entry.data.title.localeCompare(right.entry.data.title))
+  .slice(0, 5)
 ---
-<BaseLayout title="Knowledge"><div class="eyebrow">Durable knowledge</div><h1>Knowledge</h1><div class="grid">{entries.map((entry) => <a class="card" href={`${base}/knowledge/${entry.id}/`}><small>{entry.data.status}</small><h3>{entry.data.title}</h3><p>{entry.data.summary}</p></a>)}</div></BaseLayout>
+<BaseLayout title="Knowledge">
+  <div class="eyebrow">Durable knowledge</div>
+  <h1>Knowledge</h1>
+  <p class="lead">Long-lived conclusions with explicit editorial state, review health, and replacement history.</p>
+
+  <section data-knowledge-section="current">
+    <h2>Current</h2>
+    <div class="grid">
+      {currentEntries.map(({ entry, view }) => (
+        <a
+          class="card"
+          href={`${base}/knowledge/${entry.id}/`}
+          data-knowledge-id={entry.id}
+          data-editorial-status={entry.data.status}
+          data-review-health={view.reviewHealth}
+        >
+          <small>{entry.data.status} · {view.reviewHealth}</small>
+          <h3>{entry.data.title}</h3>
+          <p>{entry.data.summary}</p>
+        </a>
+      ))}
+    </div>
+    {currentEntries.length === 0 && <p>No current Knowledge entries.</p>}
+  </section>
+
+  <section data-knowledge-section="attention">
+    <h2>Needs Review / Attention</h2>
+    <div class="grid">
+      {attentionEntries.map(({ entry, view }) => (
+        <a
+          class="card"
+          href={`${base}/knowledge/${entry.id}/`}
+          data-knowledge-id={entry.id}
+          data-editorial-status={entry.data.status}
+          data-review-health={view.reviewHealth}
+        >
+          <small>{entry.data.status} · {view.reviewHealth}</small>
+          <h3>{entry.data.title}</h3>
+          <p>{entry.data.summary}</p>
+          <p>Review: {entry.data.reviewAt ?? 'not scheduled'}</p>
+        </a>
+      ))}
+    </div>
+    {attentionEntries.length === 0 && <p>No Knowledge currently needs attention.</p>}
+  </section>
+
+  <section data-knowledge-section="recently-updated">
+    <h2>Recently Updated</h2>
+    <div class="grid">
+      {recentlyUpdatedEntries.map(({ entry, view }) => (
+        <a
+          class="card"
+          href={`${base}/knowledge/${entry.id}/`}
+          data-knowledge-id={entry.id}
+          data-editorial-status={entry.data.status}
+          data-review-health={view.reviewHealth}
+        >
+          <small>Updated {entry.data.updatedAt ?? entry.data.publishedAt}</small>
+          <h3>{entry.data.title}</h3>
+          <p>{entry.data.summary}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section data-knowledge-section="historical">
+    <h2>Historical</h2>
+    <div class="grid">
+      {historicalEntries.map(({ entry, view }) => (
+        <a
+          class="card"
+          href={`${base}/knowledge/${entry.id}/`}
+          data-knowledge-id={entry.id}
+          data-editorial-status={entry.data.status}
+          data-review-health={view.reviewHealth}
+        >
+          <small>{entry.data.status} · historical</small>
+          <h3>{entry.data.title}</h3>
+          <p>{entry.data.summary}</p>
+        </a>
+      ))}
+    </div>
+    {historicalEntries.length === 0 && <p>No archived Knowledge entries.</p>}
+  </section>
+</BaseLayout>
