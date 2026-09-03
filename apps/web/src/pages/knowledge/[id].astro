@@ -7,9 +7,9 @@ import { buildSourceIndex } from '../../lib/content-registry'
 import {
   buildPublicDiscoveryItems,
   getRelatedContent,
-  isPublicKnowledge,
   toKnowledgeDiscoveryItem,
 } from '../../lib/content-discovery'
+import { buildKnowledgeLifecycleViews } from '../../lib/knowledge-lifecycle'
 import { buildKnowledgeJsonLd } from '../../lib/json-ld'
 import { webSiteConfig } from '../../lib/site-config'
 
@@ -22,21 +22,41 @@ export async function getStaticPaths() {
   ])
   const base = import.meta.env.BASE_URL.replace(/\/$/, '')
   const candidates = buildPublicDiscoveryItems(briefEntries, essayEntries, knowledgeEntries, base)
+  const lifecycleViews = buildKnowledgeLifecycleViews(knowledgeEntries.map((entry) => ({
+    id: entry.id,
+    status: entry.data.status,
+    reviewAt: entry.data.reviewAt,
+    supersededBy: entry.data.supersededBy,
+  })))
+  const lifecycleById = new Map(lifecycleViews.map((view) => [view.id, view]))
+  const knowledgeById = new Map(knowledgeEntries.map((entry) => [entry.id, entry]))
 
-  return knowledgeEntries.filter(isPublicKnowledge).map((entry) => {
-    const current = toKnowledgeDiscoveryItem(entry, base)
-    return {
-      params: { id: entry.id },
-      props: {
-        entry,
-        sourceEntries,
-        related: getRelatedContent(current, candidates),
-      },
-    }
-  })
+  return knowledgeEntries
+    .filter((entry) => lifecycleById.get(entry.id)?.addressable)
+    .map((entry) => {
+      const current = toKnowledgeDiscoveryItem(entry, base)
+      const lifecycle = lifecycleById.get(entry.id)!
+      const replacementEntry = lifecycle.replacementId ? knowledgeById.get(lifecycle.replacementId) : undefined
+      const supersedesEntries = lifecycle.supersedes
+        .map((id) => knowledgeById.get(id))
+        .filter((candidate) => candidate !== undefined)
+
+      return {
+        params: { id: entry.id },
+        props: {
+          entry,
+          sourceEntries,
+          lifecycle,
+          replacement: replacementEntry ? { id: replacementEntry.id, title: replacementEntry.data.title } : undefined,
+          supersedes: supersedesEntries.map((candidate) => ({ id: candidate.id, title: candidate.data.title })),
+          related: getRelatedContent(current, candidates),
+        },
+      }
+    })
 }
 
-const { entry, sourceEntries, related } = Astro.props
+const { entry, sourceEntries, lifecycle, replacement, supersedes, related } = Astro.props
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const sourceIndex = buildSourceIndex(sourceEntries)
 const jsonLd = buildKnowledgeJsonLd(webSiteConfig, {
   title: entry.data.title,
@@ -46,15 +66,71 @@ const jsonLd = buildKnowledgeJsonLd(webSiteConfig, {
   canonicalPath: `/knowledge/${entry.id}/`,
 })
 const { Content } = await render(entry)
+const days = lifecycle.daysUntilReview
 ---
 <BaseLayout title={entry.data.title} description={entry.data.summary} type="article" jsonLd={jsonLd}>
   <article class="article">
     <header class="article-header">
-      <div class="eyebrow">Knowledge · review {entry.data.reviewAt ?? 'not scheduled'}</div>
+      <div class="eyebrow">Durable Knowledge</div>
       <h1>{entry.data.title}</h1>
       <p class="lead">{entry.data.summary}</p>
+      <div
+        class="pills"
+        data-knowledge-lifecycle
+        data-editorial-status={entry.data.status}
+        data-review-health={lifecycle.reviewHealth}
+      >
+        <span class="pill">Status · {entry.data.status}</span>
+        <span class="pill">Review · {lifecycle.reviewHealth}</span>
+        <span class="pill">Published · {entry.data.publishedAt}</span>
+        {entry.data.updatedAt && <span class="pill">Updated · {entry.data.updatedAt}</span>}
+        <span class="pill">Next review · {entry.data.reviewAt ?? 'not scheduled'}</span>
+      </div>
       <div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
     </header>
+
+    {entry.data.status === 'needs-review' && (
+      <aside class="card" data-lifecycle-notice="needs-review">
+        <strong>Needs editorial review.</strong>
+        <p>This status is an explicit editorial judgment and is independent from the calendar-derived review health.</p>
+      </aside>
+    )}
+
+    {entry.data.status !== 'archived' && lifecycle.reviewHealth === 'overdue' && (
+      <aside class="card" data-lifecycle-notice="overdue">
+        <strong>Review overdue.</strong>
+        <p>{days === null ? 'This Knowledge should be reviewed.' : `Review is ${Math.abs(days)} day(s) overdue.`}</p>
+      </aside>
+    )}
+
+    {entry.data.status !== 'archived' && lifecycle.reviewHealth === 'due-soon' && (
+      <aside class="card" data-lifecycle-notice="due-soon">
+        <strong>Review due soon.</strong>
+        <p>{days === null ? 'A review is approaching.' : `Review is due in ${days} day(s).`}</p>
+      </aside>
+    )}
+
+    {entry.data.status === 'archived' && (
+      <aside class="card" data-lifecycle-notice="archived">
+        <strong>Historical Knowledge.</strong>
+        <p>This page is retained as durable history and is no longer presented as a current conclusion.</p>
+        {replacement && (
+          <p><a href={`${base}/knowledge/${replacement.id}/`} data-relation="replaced-by">Replaced by {replacement.title}</a></p>
+        )}
+      </aside>
+    )}
+
+    {supersedes.length > 0 && (
+      <section class="card">
+        <h2>Supersedes</h2>
+        <ul>
+          {supersedes.map((candidate) => (
+            <li><a href={`${base}/knowledge/${candidate.id}/`} data-relation="supersedes">{candidate.title}</a></li>
+          ))}
+        </ul>
+      </section>
+    )}
+
     <div class="article-body">
       <Content />
       {entry.data.references.length > 0 && (
