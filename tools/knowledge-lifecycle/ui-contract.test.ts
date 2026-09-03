@@ -53,7 +53,7 @@ assert.equal(lifecycle.isKnowledgeAddressable('needs-review'), true)
 assert.equal(lifecycle.isKnowledgeAddressable('archived'), true)
 assert.equal(lifecycle.isKnowledgeAddressable('draft'), false)
 
-assert.equal(lifecycle.resolveKnowledgeEvaluationDate('2026-02-29'), '2026-02-29', 'valid leap date must be accepted')
-assert.throws(() => lifecycle.resolveKnowledgeEvaluationDate('2026-02-30'), /Invalid calendar date/)
+assert.equal(lifecycle.resolveKnowledgeEvaluationDate('2028-02-29'), '2028-02-29', 'valid leap date must be accepted')
+assert.throws(() => lifecycle.resolveKnowledgeEvaluationDate('2028-02-30'), /Invalid calendar date/)
 
 console.log('Knowledge lifecycle Web adapter contract passed')
