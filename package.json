@@ -12,6 +12,7 @@
     "content:validate": "tsx tools/validate-content/index.ts",
     "knowledge:review": "tsx tools/knowledge-lifecycle/report.ts",
     "path:guard": "tsx tools/path-guard/index.ts",
+    "automation:daily:guard": "tsx tools/content-automation/daily-guard.ts",
     "generate:slides": "tsx tools/generate-slides/index.ts",
     "slides:dev": "pnpm generate:slides && tsx tools/build-slides/index.ts --dev",
     "build:web": "pnpm --filter @orbis/web build",

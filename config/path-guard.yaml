@@ -11,3 +11,6 @@ modes:
       - content/presentations/
       - content/essays/
       - content/knowledge/
+  scheduled-daily:
+    allowPrefixes:
+      - content/briefs/
