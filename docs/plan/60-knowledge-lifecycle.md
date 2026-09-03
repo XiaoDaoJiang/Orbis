@@ -1,11 +1,12 @@
 # 60 · Knowledge Lifecycle
 
-> 状态：In Progress · 60A Merged / Production Gate
+> 状态：In Progress · 60A Done / 60B Current
 > Roadmap Milestone：F — Durable Knowledge
 > 建议优先级：P2
 > 基线：`main@f468a45049035bc7816a52225ca41f4f381b0ae6`
 > 依赖：Plan 40 Source & Author Registry · Done；Plan 50 SEO & Sharing · Done
 > 设计：[`docs/superpowers/specs/2026-09-02-knowledge-lifecycle-design.md`](../superpowers/specs/2026-09-02-knowledge-lifecycle-design.md)
+> 60B Plan：[`docs/superpowers/plans/2026-09-02-knowledge-lifecycle-ui.md`](../superpowers/plans/2026-09-02-knowledge-lifecycle-ui.md)
 
 ## 1. 目标
 
@@ -45,9 +46,9 @@ supersededBy: replacement-knowledge-id
 
 反向 `supersedes[]` 只从全体 Knowledge 自动推导，不在 source 中双写。
 
-## 3. 60A — Knowledge Lifecycle Contract · Merged / Production Gate
+## 3. 60A — Knowledge Lifecycle Contract · Done
 
-PR #23 已于 `2026-09-02T09:34:57Z` 合并：
+PR #23 已于 `2026-09-02T09:34:57Z` 合并并完成 exact-SHA Production Gate：
 
 ```text
 PR                                #23 merged
@@ -56,7 +57,26 @@ main                              f468a45049035bc7816a52225ca41f4f381b0ae6
 post-merge Site Build             33614900003 success
 main Artifact                     9840548845
 main Artifact SHA-256             ca3f942db3466e0634da8e724a18e4c333d46ef274246dd8d5acf31d74101541
-Production Pages                  pending exact-SHA deploy=true gate
+Production Pages                  33616314496 success
+Production Artifact               9841106463
+Production Artifact SHA-256       01f09455f6746494daf87105e3d4333cd49b922559303c0a676ee8b96a8ada94
+```
+
+Production deployment 明确记录：
+
+```text
+pages_build_version=f468a45049035bc7816a52225ca41f4f381b0ae6
+```
+
+公网 smoke：
+
+```text
+PASS /
+PASS /latest/
+PASS /archive.json
+PASS /rss.xml
+PASS /favicon.svg
+PASS /2026/08/28/
 ```
 
 60A 已落地：
@@ -78,89 +98,59 @@ Production Pages                  pending exact-SHA deploy=true gate
 
 ### TDD Evidence
 
-RED 1 — run `33612906709`：
-
-```text
-Knowledge lifecycle helper must exist
-```
+RED 1 — run `33612906709`：`Knowledge lifecycle helper must exist`。
 
 GREEN 1 — run `33613130194`：full PR Build success。
 
-RED 2 — run `33613368654`：
-
-```text
-Knowledge lifecycle evaluator contract passed
-AssertionError: Knowledge schema must preserve supersededBy
-```
+RED 2 — run `33613368654`：`Knowledge schema must preserve supersededBy`。
 
 GREEN 2 — run `33613680081`：full PR Build success。
 
-RED 3 — run `33613960582`：
+RED 3 — run `33613960582`：`Knowledge review report helper must exist`。
 
-```text
-Knowledge lifecycle evaluator contract passed
-Knowledge supersession relation contract passed
-AssertionError: Knowledge review report helper must exist
-```
+Final PR GREEN — run `33614266765`：evaluator / relation / report contracts 全绿。
 
-Final PR GREEN — run `33614266765`：
+Fresh main GREEN — run `33614900003`：60A 与 Plan 10–50 全部合同再次通过。
 
-```text
-Knowledge lifecycle evaluator contract passed
-Knowledge supersession relation contract passed
-Knowledge review report contract passed
-```
+Final Production GREEN — run `33616314496`：Build + Deploy + public smoke success。
 
-Preview Artifact：
-
-```text
-ID       9840310311
-SHA-256  ae00a521342d662c0646067966e51c76592ef025b6a2809f8d7791ee2fb79eb4
-```
-
-Trusted Preview smoke passed after the final artifact was published。
-
-### Fresh main GREEN
-
-Post-merge Site Build `33614900003` exact checkout：
-
-```text
-main@f468a45049035bc7816a52225ca41f4f381b0ae6
-```
-
-并再次通过：
-
-```text
-Knowledge lifecycle evaluator contract passed
-Knowledge supersession relation contract passed
-Knowledge review report contract passed
-SEO URL contract passed
-JSON-LD builder contract passed
-Web SEO artifact contract passed
-Assembled SEO canonical contract passed
-Structured data artifact contract passed
-```
-
-真实 source review report：
-
-```text
-Knowledge review report · 2026-09-02
-current=1 due-soon=0 overdue=0 needs-review=0
-OK verification-loop · status=active · review=2026-11-01 · current (60d)
-```
-
-## 4. 60B — Knowledge Lifecycle UI · Next after 60A Production Gate
+## 4. 60B — Knowledge Lifecycle UI · Current
 
 60B 只消费 60A 已稳定的 lifecycle contract，不在 Astro 页面重新实现日期判断。
 
-目标公开体验：
+Implementation Plan 已固化：
+
+`docs/superpowers/plans/2026-09-02-knowledge-lifecycle-ui.md`
+
+### Architecture Boundary
+
+Web adapter 直接复用：
+
+```text
+apps/web/src/lib/knowledge-lifecycle.ts
+        ↓
+tools/knowledge-lifecycle/lifecycle.ts
+  ├── evaluateReviewHealth
+  └── deriveSupersedes
+```
+
+静态构建边界提供显式 evaluation date：
+
+```text
+KNOWLEDGE_EVALUATION_DATE=<YYYY-MM-DD>  # fixture/test override
+otherwise                               # normal build
+UTC current calendar date
+```
 
 ### Knowledge Index
 
-- Current / Active Knowledge；
-- Needs Review；
-- Review Due Soon / Overdue 可视化；
+目标：
+
+- Current；
+- Needs Review / Attention；
 - Recently Updated；
+- Historical / Archived；
+- current / due-soon / overdue 可视化；
 - archived 不与 current conclusions 混排。
 
 ### Knowledge Detail
@@ -177,12 +167,18 @@ OK verification-loop · status=active · review=2026-11-01 · current (60d)
 - derived `supersedes[]` links；
 - Topics / References / Related Content 保持现有能力。
 
-### Stable URL Policy
+### Stable URL / Discovery Policy
 
-- `active / published / needs-review / archived` Knowledge 的已有 detail URL 保持稳定；
-- archived / superseded 页面不删除、不自动 redirect；
-- 页面通过明确 notice 指向推荐 replacement；
-- discovery/index 可降低 archived prominence，但不能破坏永久 URL。
+```text
+published / active   current public discovery
+needs-review         stable public detail + attention UI
+archived             stable public detail + historical UI
+draft                not publicly addressable
+```
+
+不能简单把 archived 加入现有 `isPublicKnowledge()`，否则会污染 Related Content / Sitemap / RSS 等 current discovery surface。
+
+60B 将单独定义 addressability 与 discovery 语义。
 
 ## 5. Agent / Governance Boundary
 
@@ -208,40 +204,35 @@ Agent 不可以仅因为日期变化而：
 - 自动修改 Knowledge source；
 - 双向 persisted supersession graph；
 - 因 overdue 直接阻断发布；
-- 60B 重写 Plan 60A lifecycle evaluator。
+- 60B 重写 Plan 60A lifecycle evaluator；
+- Scheduled review automation（Plan 70）。
 
 ## 7. Plan 60 验收
 
-60A 已满足：
+60A 已满足全部 Contract / Preview / main / Production 验收。
 
-- 到期可确定性识别；
-- date health 与 editorial state 分离；
-- due-soon / overdue 时间边界测试；
-- missing/self replacement fatal validation；
-- canonical one-way replacement edge；
-- inverse supersedes derivation；
-- review report 可由本地/CI读取；
-- overdue advisory / zero exit；
-- PR Preview 与 fresh main Build 全绿。
-
-60A 尚未满足：
-
-- `main@f468a45049035bc7816a52225ca41f4f381b0ae6` governed Production Pages exact-SHA Build → Deploy → public Smoke。
-
-60B 尚未开始实现：
+60B 待实现：
 
 - Knowledge lifecycle index/detail UI；
-- needs-review / due-soon / overdue / archived notices；
-- replacement navigation；
-- stable archived URL artifact contracts。
+- fixed-date current / due-soon / overdue / needs-review / archived fixture contract；
+- addressable needs-review / archived stable routes；
+- replacement / inverse supersedes navigation；
+- lifecycle artifact contract；
+- Trusted Preview；
+- merge 后 fresh main Build；
+- final Production Pages exact-SHA deployment / public smoke。
 
 ## 8. 当前 Gate
 
 - [x] Plan 60 design approved；
 - [x] 60A implementation plan；
 - [x] 60A TDD implementation + PR #23；
-- [x] PR #23 merged to `main@f468a45049035bc7816a52225ca41f4f381b0ae6`；
+- [x] PR #23 merged；
 - [x] fresh main Site Build `33614900003` passed；
-- [ ] Production Pages `deploy=true` for exact `f468a45049035bc7816a52225ca41f4f381b0ae6` + public smoke；
-- [ ] mark 60A Done；
-- [ ] enter 60B implementation。
+- [x] Production Pages `33616314496` exact-SHA Build + Deploy + public smoke；
+- [x] 60A Done；
+- [x] 60B implementation plan；
+- [ ] create 60B feature branch；
+- [ ] 60B RED / GREEN implementation；
+- [ ] 60B merge + Production gate；
+- [ ] Plan 60 / Milestone F Done。
