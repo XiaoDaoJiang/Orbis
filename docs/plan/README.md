@@ -4,7 +4,7 @@
 > 基线：`main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`
 > 基线日期：2026-09-03
 > 阶段：Product Capability Phase
-> 当前目标：Plan 60 · Production Gate；Plan 70 · Design Review
+> 当前目标：Plan 70 · Scheduled Content Automation · Design Review
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -15,18 +15,19 @@
 - Plan 30 · Weekly Brief：**Done** — PR #13 / #14
 - Plan 40 · Source & Author Registry：**Done** — PR #15 / #19
 - Plan 50 · SEO & Sharing：**Done** — PR #21 / #22
-- Plan 60 · Knowledge Lifecycle：**Production Gate**
+- Plan 60 · Knowledge Lifecycle：**Done** — PR #23 / #24
   - 60A Knowledge Lifecycle Contract：**Done** — PR #23
-  - 60B Knowledge Lifecycle UI：**Merged / Production Gate** — PR #24
-    - main：`89c7f8fe6d5da972c0f54b1367df252aa00cf286`
-    - Site Build：`33720559711` Passed
-    - Main Artifact：`9880102491`
-    - Main Artifact SHA-256：`89603fae5eb5be3d879fd682cfb381695f6406a6b9c6b47ba92a140d78ab895a`
-    - Production Pages：exact-SHA `deploy=true` Pending
-- Plan 70 · Scheduled Content Automation：**Design Review**
+  - 60B Knowledge Lifecycle UI：**Done** — PR #24
+  - main：`89c7f8fe6d5da972c0f54b1367df252aa00cf286`
+  - Site Build：`33720559711` Passed
+  - Production Pages：`33734815132` Passed
+  - Production Artifact：`9885335098`
+  - Artifact SHA-256：`7caba4bb2d7a82f02c084af036f219cb2d8484ad6ccbfd4724a7c29d5e168e55`
+- Plan 70 · Scheduled Content Automation：**Design Review · Current**
   - repository contract / guard audit：Done
   - design draft：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`
-  - implementation：blocked until Plan 60 Production Gate + design approval
+  - 70A implementation plan：`docs/superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md`
+  - implementation：waiting for design approval
 
 ## 当前产品基线
 
@@ -39,15 +40,13 @@ Reading / Presentation / RSS / Discovery
           ↓
 SEO / Structured Data
           ↓
-Knowledge Lifecycle Contract · 60A Done
+Knowledge Lifecycle Contract
           ↓
-Knowledge Lifecycle UI · 60B Merged
+Knowledge Lifecycle UI
   ├── Current / Attention / Historical
   ├── review health + editorial status
   ├── stable needs-review / archived URLs
   └── replacement / supersedes navigation
-          ↓
-Production Gate · pending exact main SHA
           ↓
 Scheduled Content Automation · Design Review
   ├── exact-date / exact-path Daily guard
@@ -56,9 +55,9 @@ Scheduled Content Automation · Design Review
   └── replaceable Scheduler / Producer
 ```
 
-PR #24 已于 `2026-09-03T05:50:21Z` 合并到 `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`。fresh Site Build `33720559711` 再次通过 60A/60B lifecycle contracts、fixed-date UI fixture、SEO/JSON-LD 与最终 Knowledge lifecycle artifact contract，并上传主 Artifact `9880102491`。
+PR #24 已合并到 `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`。fresh Site Build `33720559711` 成功；随后 governed Production Pages run `33734815132` 对 exact main SHA 完成 Build → Deploy → public Smoke。Pages deployment 明确使用 `pages_build_version=89c7f8fe6d5da972c0f54b1367df252aa00cf286`，Production Artifact `9885335098`，并通过 `/`、`/latest/`、`/archive.json`、`/rss.xml`、`/favicon.svg`、`/2026/08/28/` 公网检查。
 
-当前 Plan 60 只剩 governed Production Pages 对 exact main SHA 的 Build → Deploy → public Smoke。该 gate 通过后，Plan 60 / Milestone F 才标记 Done；Plan 70 已允许提前进行 Design Review，但不启动 implementation。
+因此 Plan 60 / Milestone F — Durable Knowledge 正式 Done。当前产品目标切换到 Plan 70；Plan 70 已完成 Design Review 草案与 70A 实施计划，但在设计确认之前不启动实现分支。
 
 ## Roadmap
 
@@ -84,12 +83,11 @@ PR #24 已于 `2026-09-03T05:50:21Z` 合并到 `main@89c7f8fe6d5da972c0f54b1367d
         ↓
 50 SEO & Sharing               Done
         ↓
-60 Knowledge Lifecycle         Production Gate
+60 Knowledge Lifecycle         Done
   ├── 60A Contract             Done · PR #23
-  └── 60B Web UI               Merged · PR #24
+  └── 60B Web UI               Done · PR #24
         ↓
-70 Scheduled Content Automation Design Review
-  └── implementation waits for Plan 60 Production Gate
+70 Scheduled Content Automation Current · Design Review
 ```
 
 ## 每个计划的统一交付规则
