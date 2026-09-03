@@ -25,6 +25,8 @@ try {
 
   await execFileAsync('git', ['mv', 'content/briefs/source.yaml', 'content/briefs/moved.yaml'], { cwd: root })
   await rm(join(root, 'dist/old.txt'))
+  await execFileAsync('git', ['add', '-A'], { cwd: root })
+  await execFileAsync('git', ['commit', '-m', 'change'], { cwd: root })
 
   const changes = await collectChangedEntries(root, base)
   const deleted = changes.find((entry) => entry.status === 'D' && entry.path === 'dist/old.txt')
