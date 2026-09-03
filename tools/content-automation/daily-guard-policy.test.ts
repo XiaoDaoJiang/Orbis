@@ -22,18 +22,21 @@ const fail = (changes: unknown[], pattern: RegExp, baseStatus: string | null = n
 }
 
 pass([{ status: 'A', path: target }])
-pass([{ status: 'M', path: target }], 'draft')
-pass([{ status: 'M', path: target }], 'needs-review')
 
-fail([{ status: 'D', path: target }], /delet|status|A\/M/i)
+fail([{ status: 'D', path: target }], /delet|status|A/i)
 fail([{ status: 'R100', oldPath: target, path: 'content/briefs/2026-09-04.yaml' }], /rename|copy|status|exact/i)
 fail([{ status: 'R100', oldPath: 'content/briefs/2026-09-04.yaml', path: target }], /rename|copy|status|exact/i)
 fail([{ status: 'C100', oldPath: 'content/briefs/source.yaml', path: target }], /rename|copy|status|exact/i)
 fail([{ status: 'A', path: 'content/briefs/2026-09-04.yaml' }], /exact|target|2026-09-03/i)
 fail([{ status: 'A', path: target }, { status: 'M', path: 'config/site.yaml' }], /exactly one|one changed/i)
 fail([{ status: 'A', path: target }, { status: 'A', path: 'content/briefs/2026-09-04.yaml' }], /exactly one|one changed/i)
+
+fail([{ status: 'M', path: target }], /revision-required|existing|scheduled/i, 'draft')
+fail([{ status: 'M', path: target }], /revision-required|existing|scheduled/i, 'needs-review')
 fail([{ status: 'M', path: target }], /published|correction-required/i, 'published')
-fail([{ status: 'A', path: target }], /base|existing|status/i, 'draft')
-fail([{ status: 'M', path: target }], /base|missing|status/i, null)
+fail([{ status: 'A', path: target }], /revision-required|existing|base/i, 'draft')
+fail([{ status: 'A', path: target }], /revision-required|existing|base/i, 'needs-review')
+fail([{ status: 'A', path: target }], /published|correction-required/i, 'published')
+fail([{ status: 'M', path: target }], /missing|A|base/i, null)
 
 console.log('Scheduled Daily exact diff contract passed')
