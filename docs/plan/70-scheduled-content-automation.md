@@ -5,6 +5,7 @@
 > 建议优先级：P2
 > 依赖：Plan 60 exact-SHA Production Gate + approved automation design
 > 设计：[`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`](../superpowers/specs/2026-09-03-scheduled-content-automation-design.md)
+> 70A Implementation Plan：[`docs/superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md`](../superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md)
 
 ## 1. 目标
 
@@ -161,6 +162,8 @@ Scheduled Daily PR 只允许修改这个 exact target。
 feat: add scheduled daily automation contracts and guards
 ```
 
+Implementation Plan：[`2026-09-03-scheduled-content-automation-contracts.md`](../superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md)
+
 包含：
 
 1. target-date parser / validation；
@@ -173,7 +176,8 @@ feat: add scheduled daily automation contracts and guards
 8. correction-required result；
 9. automation PR metadata contract tests；
 10. `daily-task-prompt.md` / scheduled prompt 与新 idempotency 语义对齐；
-11. integration tests：合法 exact Brief diff pass，所有越权 / 删除 / rename / wrong-date / second-Brief diff fail。
+11. PR Preview Build 对 `automation/daily/**` 强制执行 Scheduled Daily guard；
+12. integration tests：合法 exact Brief diff pass，所有越权 / 删除 / rename / wrong-date / second-Brief diff fail。
 
 70A 不接 Scheduler，不调用模型 API。
 
@@ -331,9 +335,9 @@ test: validate scheduled daily lifecycle end to end
 - [x] Plan 70 initial roadmap；
 - [x] existing prompt / guard / governance audit；
 - [x] Design Review draft；
+- [x] 70A Implementation Plan prepared；
 - [ ] Plan 60 exact-SHA Production Gate for `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`；
 - [ ] Design approval；
-- [ ] 70A Implementation Plan；
 - [ ] 70A TDD implementation；
 - [ ] 70B first Scheduler / Producer pilot；
 - [ ] 70C three-cycle validation + correction drill。
