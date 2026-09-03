@@ -4,7 +4,7 @@
 > 基线：`main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`
 > 基线日期：2026-09-03
 > 阶段：Product Capability Phase
-> 当前目标：Plan 70 · Scheduled Content Automation · Design Review
+> 当前目标：Plan 70 · Scheduled Content Automation · 70A Review Gate
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -16,18 +16,22 @@
 - Plan 40 · Source & Author Registry：**Done** — PR #15 / #19
 - Plan 50 · SEO & Sharing：**Done** — PR #21 / #22
 - Plan 60 · Knowledge Lifecycle：**Done** — PR #23 / #24
-  - 60A Knowledge Lifecycle Contract：**Done** — PR #23
-  - 60B Knowledge Lifecycle UI：**Done** — PR #24
   - main：`89c7f8fe6d5da972c0f54b1367df252aa00cf286`
   - Site Build：`33720559711` Passed
   - Production Pages：`33734815132` Passed
   - Production Artifact：`9885335098`
   - Artifact SHA-256：`7caba4bb2d7a82f02c084af036f219cb2d8484ad6ccbfd4724a7c29d5e168e55`
-- Plan 70 · Scheduled Content Automation：**Design Review · Current**
-  - repository contract / guard audit：Done
-  - design draft：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`
-  - 70A implementation plan：`docs/superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md`
-  - implementation：waiting for design approval
+- Plan 70 · Scheduled Content Automation：**In Progress**
+  - design：Approved
+  - 70A implementation plan：Prepared
+  - 70A implementation：Complete on feature branch
+  - PR：**#25 Ready for Review**
+  - head：`f7a7c60daf766dafbca3e9b7cbee06c569bbb535`
+  - final PR Build：`33738006368` Passed
+  - Preview Artifact：`9886587297`
+  - Preview Artifact SHA-256：`90f62f91865bc5fcb504c594d53a301fa12ff82657d4674a4789d883bcbc134d`
+  - Trusted Preview Publish：`33738176374` Passed
+  - next：human merge #25 → 70B Scheduler / Producer transport
 
 ## 当前产品基线
 
@@ -40,24 +44,24 @@ Reading / Presentation / RSS / Discovery
           ↓
 SEO / Structured Data
           ↓
-Knowledge Lifecycle Contract
+Knowledge Lifecycle · Done
           ↓
-Knowledge Lifecycle UI
-  ├── Current / Attention / Historical
-  ├── review health + editorial status
-  ├── stable needs-review / archived URLs
-  └── replacement / supersedes navigation
-          ↓
-Scheduled Content Automation · Design Review
-  ├── exact-date / exact-path Daily guard
-  ├── idempotent automation branch / PR
-  ├── published-main overwrite protection
-  └── replaceable Scheduler / Producer
+Scheduled Content Automation · In Progress
+  ├── 70A Repository Contracts · Ready for Review
+  │   ├── deletion / rename-safe Path Guard
+  │   ├── explicit targetDate + exact Daily identity
+  │   ├── exact-target scheduled guard
+  │   ├── published-main overwrite protection
+  │   ├── provider-neutral run/PR metadata
+  │   └── mandatory read-only PR Preview guard
+  └── 70B Scheduler / Producer transport · Next after merge
 ```
 
-PR #24 已合并到 `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`。fresh Site Build `33720559711` 成功；随后 governed Production Pages run `33734815132` 对 exact main SHA 完成 Build → Deploy → public Smoke。Pages deployment 明确使用 `pages_build_version=89c7f8fe6d5da972c0f54b1367df252aa00cf286`，Production Artifact `9885335098`，并通过 `/`、`/latest/`、`/archive.json`、`/rss.xml`、`/favicon.svg`、`/2026/08/28/` 公网检查。
+Plan 60 / Milestone F 已通过 exact-SHA Production Pages Build → Deploy → public Smoke，正式 Done。
 
-因此 Plan 60 / Milestone F — Durable Knowledge 正式 Done。当前产品目标切换到 Plan 70；Plan 70 已完成 Design Review 草案与 70A 实施计划，但在设计确认之前不启动实现分支。
+Plan 70 设计已确认。70A 已在 `feat/scheduled-daily-contracts` 完成 TDD 实现，PR #25 final head `f7a7c60daf766dafbca3e9b7cbee06c569bbb535` 通过完整 PR Build 与 Trusted Preview。Scope audit 未包含 `content/**`、`apps/**`、`packages/**`、`dist/**` 或 Production Pages workflow 变更。
+
+当前唯一 gate 是 PR #25 的人工集成。70B 不在 70A merge 之前启动实现。
 
 ## Roadmap
 
@@ -84,10 +88,11 @@ PR #24 已合并到 `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`。fresh Site
 50 SEO & Sharing               Done
         ↓
 60 Knowledge Lifecycle         Done
-  ├── 60A Contract             Done · PR #23
-  └── 60B Web UI               Done · PR #24
         ↓
-70 Scheduled Content Automation Current · Design Review
+70 Scheduled Content Automation In Progress
+  ├── 70A Repository Contract  Ready for Review · PR #25
+  ├── 70B Scheduler / Producer Next after #25 merge
+  └── 70C Real-cycle Validation
 ```
 
 ## 每个计划的统一交付规则
@@ -107,6 +112,7 @@ PR #24 已合并到 `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`。fresh Site
 - `Planned`：尚未开始；
 - `Design Review`：当前计划已成为产品目标，正在锁定语义与边界；
 - `In Progress`：设计已批准，已有实施计划、分支或 PR；
+- `Review Gate`：实现、CI、Preview 已完成，等待人工集成；
 - `Production Gate`：实现与 main Build 已完成，但 exact-SHA Production Pages 验证尚未完成；
 - `Done`：全部计划 PR 已进入 `main`，并完成对应 Preview / main / Production 验证；
 - `Deferred`：明确推迟。
