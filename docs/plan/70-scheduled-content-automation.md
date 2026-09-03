@@ -1,9 +1,10 @@
 # 70 · Scheduled Content Automation
 
-> 状态：Planned
+> 状态：Design Review · Implementation gated by Plan 60 Production closeout
 > Roadmap Milestone：G — Sustainable Automation
 > 建议优先级：P2
-> 依赖：前述内容合同基本稳定后实施
+> 依赖：Plan 60 exact-SHA Production Gate + approved automation design
+> 设计：[`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`](../superpowers/specs/2026-09-03-scheduled-content-automation-design.md)
 
 ## 1. 目标
 
@@ -14,165 +15,325 @@
 ```text
 发现 / 研究
     ↓
-生成 structured content
+生成 structured Daily candidate
     ↓
-content-only branch / PR
+automation/daily/YYYY-MM-DD
     ↓
-Schema + Path Guard + Preview
+content-only PR
     ↓
-Human/Policy Review
+Scheduled Daily Guard + Schema + full Build
+    ↓
+Trusted Preview
+    ↓
+Human / Policy Review
     ↓
 merge main
     ↓
-existing Pages pipeline
+existing governed Pages pipeline
 ```
 
-## 2. 安全边界
+Repository Contract 固定；Scheduler / Producer 可替换。
 
-自动内容任务必须保持：
+## 2. 当前基础
 
-- 只写 `content/briefs/**`、允许时写 Essay/Knowledge；
-- 不写 `apps/**`、`packages/**`、`tools/**`、`.github/**`；
-- 不生成 HTML / Slidev generated source / `dist/**`；
-- 不直接调用 Pages deploy；
-- 不拥有生产 Pages token；
-- 不绕过 protected main 与 required Preview Gate。
+仓库已经具备：
 
-自动化失败时，宁可不发布，也不能扩大权限兜底。
+- `config/scheduled-task-prompt.md`；
+- `config/daily-task-prompt.md`；
+- `content/briefs/YYYY-MM-DD.yaml` Structured Daily；
+- `content-agent` Path Guard；
+- read-only PR Build；
+- Trusted Preview publish + public smoke；
+- governed manual Production Pages deploy。
 
-## 3. 执行模型
+Plan 70 不重建第二套发布链。
 
-第一阶段使用“Producer 可替换、Repository Contract 固定”的模式。
+## 3. Design Review 发现的现有合同缺口
+
+### 3.1 `content-agent` 对 Scheduled Daily 过宽
+
+当前 generic Agent allowlist 包含：
 
 ```text
-Scheduler
-   ↓
-Agent Producer
-   ↓
-content/briefs/YYYY-MM-DD.yaml
-   ↓
-Repository Validation
-   ↓
-branch + PR
+content/briefs/**
+content/presentations/**
+content/essays/**
+content/knowledge/**
 ```
 
-Producer 可以是：
+Scheduled Daily 只需要一个精确目标：
 
-- ChatGPT scheduled task；
-- Codex / CLI Agent；
-- OpenAI API Agent；
-- 未来其他 Runtime。
+```text
+content/briefs/<targetDate>.yaml
+```
 
-Orbis 不应绑定某一个 Agent 产品的内部格式。
+因此保留 generic `content-agent`，额外建立更窄的 Scheduled Daily contract。
 
-## 4. Repository 侧能力
+### 3.2 published-main overwrite 语义冲突
 
-### 4.1 Content-only PR Contract
+当前 Daily prompt 仍写“同日期已存在则更新”。
 
-自动 PR 必须带：
+Scheduled automation 必须改为：
 
-- 生成日期；
-- 内容路径；
-- 校验结果；
-- 事实来源数量；
-- 是否完成 full build；
-- 未验证项。
+```text
+main missing target          → create candidate
+open automation branch / PR → update same candidate
+main published target        → no write / already-published
+published correction         → explicit correction workflow only
+```
 
-不在 PR Body 中暴露内部 chain-of-thought 或敏感抓取细节。
+不得静默覆盖 main 上已发布的 Daily。
 
-### 4.2 Automation Path Guard
+### 3.3 deletion / rename 需要纳入强制防线
 
-现有 `content-agent` mode 继续作为强制边界。
+现有 Path Guard diff filter 未检查 deletion path。
 
-需要增加集成测试证明：
+70A 必须让 old/new changed paths 都进入判断，并测试：
 
-- 合法 content-only diff 通过；
-- 修改 config/apps/tools 会失败；
-- generated artifact 会失败。
+- target deletion fails；
+- rename into target fails；
+- rename out of target fails；
+- protected/generated delete/rename cannot bypass guard。
 
-### 4.3 Idempotency
+## 4. 已推荐架构
 
-同一天重复执行时必须定义行为：
+### Repository-owned contract
 
-- 若不存在当日 Brief：创建；
-- 若存在 draft/needs-review：更新同一内容分支或创建明确修订 PR；
-- 若已 published 且 main 已存在：默认不覆盖，除非显式进入 correction workflow。
+Orbis 固定：
 
-避免每天多次运行产生多个互相竞争的 Daily。
+- target-date 语义；
+- exact diff boundary；
+- idempotency；
+- overwrite/correction boundary；
+- PR metadata / run-report contract；
+- Schema / full Build / Preview gates。
 
-### 4.4 Failure Visibility
+### First pilot Scheduler / Producer
 
-至少记录：
+推荐首个三周期真实演练继续使用现有 **ChatGPT Scheduled Task**。
 
-- Feed 读取失败；
-- Primary source verification 不足；
-- Schema 失败；
-- Path Guard 失败；
-- PR 创建失败；
-- Preview Build 失败。
+原因：
 
-公开内容不暴露内部错误，但 Automation Run 必须可追踪。
+- 已有 prompt 和内容生成实践；
+- 不需要把新的模型 API key 加入 GitHub；
+- 不引入数据库/任务平台；
+- 与当前 Orbis 轻基础设施方向一致。
 
-## 5. Scheduling
+这只是 pilot，不成为 Schema/Build 的供应商依赖。未来可以替换为 GitHub Actions + API Agent、Codex/CLI Agent 或其他 Runtime。
 
-Daily 使用 `Asia/Shanghai` 语义确定内容日期。
+## 5. Scheduled Daily Identity
 
-不要依赖 runner 本地时区隐式计算日期；任务入口应显式传入目标日期或显式转换。
+### 时间
 
-Weekly 自动化在 Plan 30 完成后单独定义，不在本 Plan 中混入 Daily 规则。
+Scheduler 按 `Asia/Shanghai` 计算并显式传入：
 
-## 6. Correction Workflow
+```text
+targetDate=YYYY-MM-DD
+```
 
-已发布内容发现事实错误时，不允许 Scheduled Agent 静默重写历史。
+Repository tool 不依赖 runner 本地时区隐式决定内容日期。
 
-建议：
+### 分支
 
-1. 创建 correction branch；
-2. 修改结构化源；
-3. PR 明确写出 correction reason；
-4. 重新 Preview；
-5. 人工/策略评审后合并；
-6. 保留 Git history 作为审计记录。
+固定：
 
-## 7. 实现任务
+```text
+automation/daily/YYYY-MM-DD
+```
 
-1. 定义 Automation Producer Interface（输入/输出，不绑定供应商）；
-2. 固化 Daily target-date 语义；
-3. 增加 content-only PR metadata template；
-4. 为 Path Guard 增加 automation integration tests；
-5. 实现 idempotency 检查脚本；
-6. 实现“已有 published Daily 不覆盖”保护；
-7. 选择首个 Scheduler/Producer 实现并接入；
-8. 自动创建 branch + PR，而不是 push main；
-9. 复用现有 Preview Gate；
-10. 增加失败状态可观察性；
-11. 进行至少连续 3 次真实 Daily 演练；
-12. 验证 correction workflow。
+它同时是同日 candidate 的 idempotency key。
 
-## 8. 非目标
+### 内容路径
 
-- Agent 自动合并所有 PR；
+固定：
+
+```text
+content/briefs/YYYY-MM-DD.yaml
+```
+
+Scheduled Daily PR 只允许修改这个 exact target。
+
+## 6. 70A — Scheduled Daily Repository Contract
+
+建议 PR：
+
+```text
+feat: add scheduled daily automation contracts and guards
+```
+
+包含：
+
+1. target-date parser / validation；
+2. provider-neutral `DailyAutomationReport`；
+3. idempotency decision helper；
+4. exact-target Scheduled Daily guard；
+5. deletion / rename-safe Path Guard hardening；
+6. `scheduled-daily` guard config / mode；
+7. published-main overwrite protection；
+8. correction-required result；
+9. automation PR metadata contract tests；
+10. `daily-task-prompt.md` / scheduled prompt 与新 idempotency 语义对齐；
+11. integration tests：合法 exact Brief diff pass，所有越权 / 删除 / rename / wrong-date / second-Brief diff fail。
+
+70A 不接 Scheduler，不调用模型 API。
+
+## 7. 70B — First Scheduler / Producer Integration
+
+建议 PR：
+
+```text
+feat: automate daily content branch and pull request
+```
+
+首个 pilot 使用现有 ChatGPT Scheduled Task：
+
+```text
+Asia/Shanghai targetDate
+→ discovery + source verification
+→ structured Daily
+→ automation/daily/<date>
+→ create/update one PR
+→ repository CI guard
+→ full Build
+→ Trusted Preview
+```
+
+必须满足：
+
+- 同日重复运行收敛到同一个 branch / PR；
+- 不直接 push main；
+- 不自动 merge；
+- 不触发 Pages deploy；
+- 不拥有 Production token；
+- PR body 使用 provider-neutral report metadata；
+- CI/Preview 状态只能在真实完成后记录，不得预先声称成功。
+
+若 ChatGPT Scheduled Task 无法稳定完成上述 GitHub/CI contract，则停止 pilot，转为 GitHub Actions + API/CLI Producer；不得以扩大权限兜底。
+
+## 8. Automation Run Report
+
+Repository contract 至少包含：
+
+```text
+version
+kind=daily
+targetDate
+branch
+contentPath
+outcome
+sourceCount
+primarySourceCount
+validation
+fullBuild
+unverified[]
+failureStage?
+```
+
+失败阶段至少区分：
+
+```text
+discovery
+verification
+generation
+schema
+guard
+git
+pr
+preview
+```
+
+不记录 chain-of-thought、密钥、内部 prompt 或无必要的抓取原文。
+
+## 9. Correction Workflow
+
+若 main 已存在 published Daily：
+
+```text
+Scheduled Daily → stop / already-published
+```
+
+事实错误需要单独：
+
+```text
+correction/daily/YYYY-MM-DD/<reason-slug>
+```
+
+Correction PR 必须说明：
+
+- 错误或实质遗漏；
+- correction reason；
+- 新的一手证据；
+- 是否修改标题、摘要或核心结论。
+
+Scheduled Job 不自动进入 correction mode。
+
+## 10. Preview / Publish Boundary
+
+Automation PR 继续复用正式 PR Pipeline：
+
+```text
+generic PR Path Guard
+→ Scheduled Daily exact guard
+→ full pnpm build
+→ artifact
+→ Trusted Preview
+→ public smoke
+```
+
+Human / Policy Review 通过后才 merge main。
+
+Pages 继续由既有 governed Production workflow 管理，Scheduled Producer 不拥有 deploy 权限。
+
+## 11. 70C — Real-cycle Validation
+
+建议 evidence / test slice：
+
+```text
+test: validate scheduled daily lifecycle end to end
+```
+
+必须至少：
+
+- 连续 3 次真实 Daily cycle；
+- 同日 rerun / idempotency drill；
+- 已 published Daily overwrite protection drill；
+- 1 次 correction workflow drill；
+- 无基础设施手工修补即可完成三周期。
+
+## 12. 非目标
+
+- Agent 自动 merge；
 - Agent 直接部署 Pages；
-- 无限制网页爬虫；
-- 把模型/API 密钥写入仓库；
-- 将 Agent Runtime 嵌入 Astro；
-- 为自动化引入数据库或任务平台，除非真实运行证明需要。
+- 首版同时接多个 Provider；
+- 数据库任务队列；
+- 新 CMS；
+- 自动 Source / Author / Topic Registry mutation；
+- 首个 Daily pilot 自动生成 Essay / Knowledge；
+- 自动改写已发布历史；
+- 将 Runtime 嵌入 Astro。
 
-## 9. 验收标准
+## 13. 验收标准
 
-- Scheduled Run 只能产生 allowlisted content diff；
-- 同一天重复运行不会创建冲突 Daily；
-- 已发布 Daily 不会被静默覆盖；
-- 自动 PR 必须经过现有 full build + public Preview；
-- 自动化没有 production Pages write 权限；
-- 失败可以从 Run/PR 中定位到具体阶段；
-- 连续至少 3 个真实周期无手工修改基础设施即可运行；
-- Agent Producer 可替换而不修改内容 Schema/Build Pipeline。
+- Scheduled Daily 只能修改 exact `content/briefs/<targetDate>.yaml`；
+- deletion / rename 不可绕过 guard；
+- target date 显式使用 Asia/Shanghai；
+- 同日 rerun 只有一个 deterministic branch / PR；
+- main published Daily 永不被静默覆盖；
+- correction 明确分流；
+- full Build + Trusted Preview 仍为 mandatory gate；
+- Scheduler / Producer 无 Production Pages write 权限；
+- failure stage 可观察；
+- 三个真实周期无需基础设施调整；
+- 替换 Producer 不修改 content Schema / Build Pipeline。
 
-## 10. 建议 PR 拆分
+## 14. 当前 Gate
 
-1. `feat: add scheduled content workflow contracts and guards`
-2. `feat: add daily content branch and pr automation`
-3. `test: validate scheduled daily lifecycle end to end`
-
-不要在第一个 PR 就同时接入多个 Agent Provider。
+- [x] Plan 70 initial roadmap；
+- [x] existing prompt / guard / governance audit；
+- [x] Design Review draft；
+- [ ] Plan 60 exact-SHA Production Gate for `main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`；
+- [ ] Design approval；
+- [ ] 70A Implementation Plan；
+- [ ] 70A TDD implementation；
+- [ ] 70B first Scheduler / Producer pilot；
+- [ ] 70C three-cycle validation + correction drill。
