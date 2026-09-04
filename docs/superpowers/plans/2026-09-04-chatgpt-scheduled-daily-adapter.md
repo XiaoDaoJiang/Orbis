@@ -1,17 +1,14 @@
 # Plan 70B · ChatGPT Scheduled Daily Adapter Implementation Plan
 
-> Status: Prepared
-> Baseline: `main@1fcdc4caecc234af7ef2426e4c9d320513eb2efb`
-> Depends on: Plan 70A merged + fresh main Build
+> Status: Live Gate — repository merged + existing task migrated/enabled; first real transport proof pending
+> Repository baseline: `main@6419b3dfeeb3caa7f3f577351728a0e8dd780d91`
 > Design: `docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`
-> Proposed branch: `feat/chatgpt-scheduled-daily-adapter`
-> Proposed PR: `feat: add ChatGPT scheduled daily adapter`
+> Branch: `feat/chatgpt-scheduled-daily-adapter`
+> PR: `#26 feat: add ChatGPT scheduled daily adapter` · merged
 
 ## Goal
 
 Connect the existing ChatGPT Scheduled Task to Orbis as the first replaceable Scheduler / Producer adapter without moving provider-specific behavior into the repository core.
-
-The adapter must reduce to:
 
 ```text
 ChatGPT Scheduled Task
@@ -28,172 +25,117 @@ ChatGPT Scheduled Task
 
 The adapter never merges, never deploys Pages and never owns production credentials.
 
-## Existing task migration
+## Repository implementation · Done
 
-Reuse the existing ChatGPT task:
+### TDD evidence
 
-```text
-Title: Agent 前沿资讯
-Cadence: daily, Asia/Shanghai
-Current state: disabled
-Current prompt: obsolete XiaoDaoJiang/ai-frontier HTML publishing flow
-```
-
-Do not create a second competing Daily task.
-
-70B migrates this task after the repository adapter PR is merged and verified.
-
-## Task 1 — RED: provider adapter contract
-
-Add an executable contract first, preferably:
-
-- `tools/content-automation/chatgpt-adapter.test.ts`
-
-Require a provider-specific adapter file, preferably:
-
-- `config/adapters/chatgpt-scheduled-daily.md`
-
-The contract must prove the adapter:
-
-- names `XiaoDaoJiang/Orbis` as the only repository;
-- loads `config/scheduled-task-prompt.md` from the current `main` before execution;
-- treats repository config as the source of truth rather than duplicating the editorial prompt;
-- uses `Asia/Shanghai` and explicit `targetDate`;
-- uses canonical `automation/daily/<targetDate>` identity;
-- uses connected GitHub transport for branch / file / PR operations;
-- performs integration-base state inspection before writing;
-- creates or updates exactly one owned PR for the deterministic branch;
-- does not write `main` directly;
-- does not merge PRs;
-- does not dispatch Production Pages;
-- does not reference `XiaoDaoJiang/ai-frontier` except in an explicit prohibition;
-- does not duplicate full Daily editorial/source-selection rules already owned by repository config.
-
-Expected RED: the provider adapter entry does not exist.
-
-## Task 2 — GREEN: thin ChatGPT adapter entry
-
-Create `config/adapters/chatgpt-scheduled-daily.md` as a thin provider adapter.
-
-It should instruct the Scheduled Task to:
-
-1. resolve `targetDate` using Asia/Shanghai;
-2. fetch current `main` repository contract first;
-3. inspect `main` target and deterministic branch / open PR state;
-4. follow repository decision semantics;
-5. perform research/generation only when the run is eligible;
-6. create/update the deterministic branch using connected GitHub;
-7. modify only the exact Daily target file;
-8. create/update one PR using repository-rendered metadata semantics;
-9. report CI / Preview only after they really exist;
-10. stop at the PR/human-review boundary.
-
-The adapter should not copy the long editorial prompt. It delegates those rules to `config/scheduled-task-prompt.md` and `config/daily-task-prompt.md`.
-
-## Task 3 — RED/GREEN: adapter drift protection
-
-Extend `test:content-automation` to include the adapter contract.
-
-Tests should reject drift back to:
-
-- old `ai-frontier` repository publishing;
-- HTML generation;
-- direct `main` writes;
-- auto merge;
-- Pages deployment;
-- implicit local-date inference;
-- non-deterministic branch names.
-
-## Task 4 — repository runbook
-
-Add a concise operations runbook, preferably:
-
-- `docs/operations/chatgpt-scheduled-daily.md`
-
-Document only operationally useful information:
-
-- existing task identity and expected cadence;
-- adapter entry path;
-- repository contract path;
-- deterministic branch / PR identity;
-- safe outcomes: candidate-created, candidate-updated, already-published, revision-required, blocked, failed;
-- how to disable the task;
-- how to inspect a failed run;
-- why the task must not be granted production deployment authority.
-
-Do not place secrets, credentials or internal reasoning in the runbook.
-
-## Task 5 — PR verification
-
-On the 70B feature head require:
+RED:
 
 ```text
-pnpm test:content-automation
-pnpm build
-pnpm path:guard --mode pr --base <main-sha>
+run 33827531033
+AssertionError: ChatGPT Scheduled Daily adapter must exist
 ```
 
-Trusted Preview must also remain green even though the adapter has no public UI output.
+The run reached this RED only after the existing 70A Scheduled Daily contracts passed.
 
-Scope should be limited to:
+GREEN:
 
 ```text
-config/adapters/**
-tools/content-automation/**
-docs/operations/**
-package.json   # only when test wiring is required
+final feature head       515295cef40636a2300d5043d592fa8c6e2388a2
+PR Preview Build         33827615741 success
+Preview Artifact         9920550137
+Preview SHA-256          6ae074aab9863647bccdadbee63d2048cacd4b464f2c1edbdb80d88e212273d0
+Trusted Preview Publish  33827736463 success
 ```
 
-Do not change:
+Merged integration:
+
+```text
+PR                       #26 merged
+main                     6419b3dfeeb3caa7f3f577351728a0e8dd780d91
+post-merge Site Build    33845663516 success
+main Artifact            9926441727
+main Artifact SHA-256    a72cb53f61b29fdfdf6a6737f4599b698bc9e5be6b7f1ecc47b2528dece184e0
+```
+
+### Delivered repository scope
+
+- `config/adapters/chatgpt-scheduled-daily.md`;
+- `tools/content-automation/chatgpt-adapter.test.ts` wired into root automation validation;
+- `docs/operations/chatgpt-scheduled-daily.md`;
+- minimal `package.json` test wiring.
+
+No changes to:
 
 ```text
 content/**
 apps/**
 packages/**
 dist/**
-.github/workflows/pages-production.yml
+.github/workflows/**
 ```
 
-## Task 6 — external Scheduled Task migration after merge
+No Production authority was added.
 
-Only after the 70B PR is merged and fresh main Build is green:
+## Existing task migration · Done
 
-- update the existing `Agent 前沿资讯` task rather than creating a new one;
-- replace the obsolete ai-frontier prompt with a thin bootstrap that reads `config/adapters/chatgpt-scheduled-daily.md` from Orbis `main` and executes it;
-- preserve `Asia/Shanghai` daily cadence;
-- enable the task;
-- keep notifications configuration unchanged unless explicitly requested;
-- record the resulting task ID/state as 70B evidence.
+The existing ChatGPT task was reused rather than duplicated:
 
-The external task bootstrap must not duplicate repository contracts. Repository `main` remains the source of truth.
+```text
+Title: Agent 前沿资讯
+Timezone: Asia/Shanghai
+Cadence: daily
+State: enabled
+Bootstrap: current XiaoDaoJiang/Orbis main / config/adapters/chatgpt-scheduled-daily.md
+Notification settings: preserved
+```
 
-## Task 7 — first real transport proof
+The obsolete active prompt that published HTML to `XiaoDaoJiang/ai-frontier` was replaced by a thin Orbis bootstrap. The task now loads current repository contracts on each run.
 
-The first eligible run must prove:
+The external platform's opaque task ID is intentionally not committed to this public repository because it is not needed to operate or reproduce the Orbis contract.
+
+## Live Gate — first real transport proof
+
+70B is not Done until the first eligible Scheduled Daily run proves:
 
 ```text
 explicit targetDate
--> deterministic branch
--> exact Daily file
--> one PR
+-> deterministic automation/daily/<targetDate>
+-> exact content/briefs/<targetDate>.yaml
+-> exactly one owned PR
 -> Scheduled Daily CI guard
 -> full Build
 -> Trusted Preview
 ```
 
-If the target date already exists as published on main, `already-published` is a valid no-write result but does not by itself prove branch/PR transport. Use the next eligible date for the first candidate transport proof.
+For the real proof, capture:
+
+- resolved `targetDate`;
+- integration-base main SHA;
+- branch name;
+- exact content path;
+- PR number;
+- candidate outcome/report;
+- CI run ID and conclusion;
+- Preview artifact ID + digest;
+- Trusted Preview publish/smoke run ID and conclusion.
+
+If `main` already contains the target date as `published`, `already-published` is the correct safe no-write outcome but does **not** prove branch/PR transport. Wait for the next eligible date rather than weakening the contract.
 
 ## Acceptance criteria
 
-- existing ChatGPT Scheduled Task is reused, not duplicated;
-- external task bootstrap is thin and points only to Orbis main adapter;
-- provider-specific behavior remains outside core content schema/build logic;
-- deterministic one-branch / one-PR behavior is explicit;
-- repository 70A guard remains authoritative;
-- task cannot merge or deploy Pages;
-- no obsolete ai-frontier publishing behavior remains active;
-- full PR Build + Trusted Preview pass;
-- first eligible real run proves GitHub transport before 70B is marked Done.
+- [x] existing ChatGPT Scheduled Task reused, not duplicated;
+- [x] external task bootstrap points to Orbis main adapter;
+- [x] provider-specific behavior remains outside core content schema/build logic;
+- [x] deterministic one-branch / one-PR behavior is explicit;
+- [x] repository 70A guard remains authoritative;
+- [x] task cannot merge or deploy Pages;
+- [x] no obsolete ai-frontier publishing behavior remains active;
+- [x] full PR Build + Trusted Preview pass;
+- [x] PR #26 merged + fresh main Build pass;
+- [x] existing external task migrated + enabled;
+- [ ] first eligible real run proves GitHub transport;
+- [ ] 70B Done.
 
 ## Deferred to 70C
 
