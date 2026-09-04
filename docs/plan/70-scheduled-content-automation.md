@@ -1,6 +1,6 @@
 # 70 · Scheduled Content Automation
 
-> 状态：In Progress · 70A Done / 70B In Progress
+> 状态：In Progress · 70A Done / 70B Review Gate
 > Roadmap Milestone：G — Sustainable Automation
 > 建议优先级：P2
 > 依赖：Plan 60 · Done；automation design · Approved
@@ -156,17 +156,20 @@ main Artifact SHA-256  eec5edee0c1891921611aad73fd99b54097c816b7ba02e8fc028d43a9
 
 70A 没有改变公开站点输出，因此 fresh main full Build 通过后无需单独触发 Production Pages deploy。
 
-## 7. 70B — ChatGPT Scheduled Daily Adapter · In Progress
+## 7. 70B — ChatGPT Scheduled Daily Adapter · Ready for Review
 
 Implementation Plan：[`2026-09-04-chatgpt-scheduled-daily-adapter.md`](../superpowers/plans/2026-09-04-chatgpt-scheduled-daily-adapter.md)
 
-Feature branch：
-
 ```text
-feat/chatgpt-scheduled-daily-adapter
+branch                       feat/chatgpt-scheduled-daily-adapter
+PR                           #26 Ready for Review
+final head                   515295cef40636a2300d5043d592fa8c6e2388a2
+RED                          33827531033 adapter entry missing
+final PR Build               33827615741 success
+Preview Artifact             9920550137
+Preview Artifact SHA-256     6ae074aab9863647bccdadbee63d2048cacd4b464f2c1edbdb80d88e212273d0
+Trusted Preview              33827736463 success
 ```
-
-PR：**#26 — `feat: add ChatGPT scheduled daily adapter`** · Draft / TDD
 
 首个 Provider Adapter 复用现有 ChatGPT Scheduled Task，而不是创建第二个任务。
 
@@ -180,49 +183,72 @@ State       disabled
 Legacy      still points to XiaoDaoJiang/ai-frontier HTML publishing
 ```
 
-70B 的边界：
+70B Repository 侧已实现：
 
-```text
-ChatGPT Scheduled Task
-  ↓
-thin provider adapter
-  ↓
-current Orbis main repository contract
-  ↓
-connected GitHub transport
-  ↓
-deterministic branch + exactly one PR
-  ↓
-70A repository guard / Build / Trusted Preview
-```
+- `config/adapters/chatgpt-scheduled-daily.md` 薄 provider adapter；
+- 每次运行先读取 Orbis `main` 当前 repository contract；
+- explicit Asia/Shanghai `targetDate`；
+- integration-base / deterministic branch / open PR preflight；
+- connected GitHub branch + exact file + exactly-one-PR transport contract；
+- provider-neutral report/PR metadata 继续由 70A 定义；
+- 明确禁止 direct main write / auto merge / Production Pages deploy；
+- 明确禁止恢复已退役 `XiaoDaoJiang/ai-frontier`；
+- focused adapter drift test；
+- `docs/operations/chatgpt-scheduled-daily.md` 运维 runbook。
 
-Provider-specific GitHub transport 只存在于薄 adapter；不写入 content Schema、Astro、Build core。
+### 70B TDD Evidence
 
-### 70B RED 1
-
-PR Build `33827531033` 在全部 70A contracts 通过后精确失败：
+RED — run `33827531033`：已有 70A contracts 全部通过，最后精确失败：
 
 ```text
 AssertionError: ChatGPT Scheduled Daily adapter must exist
 ```
 
-随后开始 GREEN：
+GREEN — run `33827615741`：full PR Preview Build success。
 
-- `config/adapters/chatgpt-scheduled-daily.md`；
-- `docs/operations/chatgpt-scheduled-daily.md`；
-- focused adapter drift contract。
+Trusted Preview — run `33827736463`：
+
+```text
+trusted artifact download  success
+preview branch publish      success
+public availability smoke   success
+preview URL comment         success
+```
+
+### Scope / Authority Audit
+
+PR #26 changed files exactly：
+
+```text
+config/adapters/chatgpt-scheduled-daily.md
+docs/operations/chatgpt-scheduled-daily.md
+package.json
+tools/content-automation/chatgpt-adapter.test.ts
+```
+
+未修改：
+
+```text
+content/**
+apps/**
+packages/**
+dist/**
+.github/workflows/**
+```
+
+没有新增 Production authority。
 
 ### 外部任务迁移 Gate
 
-在 PR #26 合并 + fresh main Build 之前，不修改/启用外部 ChatGPT task。
+在 PR #26 合并 + fresh main Build 之前，现有 `Agent 前沿资讯` task 保持 disabled，不修改为读取未合并 adapter。
 
 合并后：
 
-1. 更新现有 `Agent 前沿资讯` task；
+1. 更新现有 `Agent 前沿资讯` task，而不是新建第二个任务；
 2. prompt 缩减成读取 Orbis main `config/adapters/chatgpt-scheduled-daily.md` 的 bootstrap；
 3. 保持 Asia/Shanghai daily cadence；
 4. 启用 task；
-5. 不改变通知设置，除非显式要求；
+5. 保持当前通知配置不变；
 6. 第一个 eligible real run 必须证明 deterministic branch + exact Daily + one PR transport。
 
 ## 8. Automation Run Report
@@ -335,12 +361,15 @@ Human / Policy Review 通过后才 merge main。Pages 继续由既有 governed P
 - [x] post-merge main Build `33827357380`；
 - [x] 70A Done；
 - [x] 70B Implementation Plan；
-- [x] 70B feature branch + Draft PR #26；
+- [x] 70B feature branch + PR #26；
 - [x] 70B adapter RED evidence `33827531033`；
-- [ ] 70B adapter final full Build + Trusted Preview；
-- [ ] PR #26 Ready / merged；
+- [x] 70B final full Build `33827615741`；
+- [x] 70B Trusted Preview `33827736463`；
+- [x] PR #26 Ready for Review；
+- [ ] PR #26 merged to main；
+- [ ] post-merge fresh main Build；
 - [ ] external ChatGPT task migrated + enabled；
 - [ ] first eligible real transport proof；
 - [ ] 70C three-cycle validation + correction drill。
 
-**当前下一步：完成 PR #26 GREEN / Trusted Preview；合并后迁移并启用现有 ChatGPT Scheduled Task。**
+**当前下一步：人工合并 PR #26；合并并通过 fresh main 后，迁移并启用现有 ChatGPT Scheduled Task。**
