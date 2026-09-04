@@ -36,12 +36,10 @@ sections:
     references:
       - title: Safety overview GPT-6 Astra
         url: https://openai.com/index/safety-overview-gpt-6-astra/
-        source: OpenAI
         supports: 支持 Astra 的 Critical cybersecurity capability、安全隔离、监控与部署边界判断。
         accessedAt: 2026-09-04
       - title: GPT-6 Astra
         url: https://openai.com/index/gpt-6-astra/
-        source: OpenAI
         supports: 支持 Astra 的发布范围、能力定位与默认网络安全限制。
         accessedAt: 2026-09-04
   - id: capability-monitorability
@@ -58,12 +56,10 @@ sections:
     references:
       - title: GPT-6 Astra System Card
         url: https://deploymentsafety.openai.com/gpt-6-astra
-        source: OpenAI
         supports: 支持 Astra 的 Preparedness 结论、能力评测与监控限制。
         accessedAt: 2026-09-04
       - title: GPT-6 Astra
         url: https://openai.com/index/gpt-6-astra/
-        source: OpenAI
         supports: 支持 Astra 在网络安全、计算机使用和 monitorability 上的官方说明。
         accessedAt: 2026-09-04
   - id: mcp-stateless
@@ -80,7 +76,6 @@ sections:
     references:
       - title: MCP went stateless Is your AWS MCP server deployment well-architected
         url: https://aws.amazon.com/blogs/architecture/mcp-went-stateless-is-your-aws-mcp-server-deployment-well-architected/
-        source: AWS
         supports: 支持新版 MCP 无状态化、部署拓扑与会话迁移影响。
         accessedAt: 2026-09-04
   - id: agent-registry
@@ -97,12 +92,10 @@ sections:
     references:
       - title: Get started with AWS Agent Registry
         url: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/registry-get-started.html
-        source: AWS
         supports: 支持 Agent Registry 的资源类型、记录同步与创建模型。
         accessedAt: 2026-09-04
       - title: AWS Agent Registry concepts and terminology
         url: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/registry-concepts.html
-        source: AWS
         supports: 支持 Registry 审批、授权、环境与组织方式的治理模型。
         accessedAt: 2026-09-04
   - id: harness-productization
@@ -119,7 +112,6 @@ sections:
     references:
       - title: OpenClaw v2026.9.1
         url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.1
-        source: OpenClaw
         supports: 支持 Skill Library、Session、MCP Approval 和委派审批回传等发布事实。
         accessedAt: 2026-09-04
 projects:
@@ -171,43 +163,35 @@ actions:
 references:
   - title: GPT-6 Astra
     url: https://openai.com/index/gpt-6-astra/
-    source: OpenAI
     supports: Astra 的发布、能力、安全限制与 monitorability 判断。
     accessedAt: 2026-09-04
   - title: Safety overview GPT-6 Astra
     url: https://openai.com/index/safety-overview-gpt-6-astra/
-    source: OpenAI
     supports: Astra 的 Critical cybersecurity capability 与安全控制。
     accessedAt: 2026-09-04
   - title: GPT-6 Astra System Card
     url: https://deploymentsafety.openai.com/gpt-6-astra
-    source: OpenAI
     supports: Astra 的 Preparedness 评估、能力指标与安全限制。
     accessedAt: 2026-09-04
   - title: MCP went stateless Is your AWS MCP server deployment well-architected
     url: https://aws.amazon.com/blogs/architecture/mcp-went-stateless-is-your-aws-mcp-server-deployment-well-architected/
-    source: AWS
     supports: MCP 无状态化和远程部署影响。
     accessedAt: 2026-09-04
   - title: Get started with AWS Agent Registry
     url: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/registry-get-started.html
-    source: AWS
     supports: Agent Registry 的资源模型、同步方式与治理入口。
     accessedAt: 2026-09-04
   - title: AWS Agent Registry concepts and terminology
     url: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/registry-concepts.html
-    source: AWS
     supports: Registry 的审批、授权和组织模型。
     accessedAt: 2026-09-04
   - title: OpenClaw v2026.9.1
     url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.1
-    source: OpenClaw
     supports: 最新 Harness 在 Session、Skill 和 Approval 方面的工程变化。
     accessedAt: 2026-09-04
 archivePicks:
   - title: Harness 正在成为模型之外的能力层
     url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-08-28.yaml
-    source: Orbis
     supports: 回看 Harness、Verification 与 MCP 边界在前一阶段的判断，便于比较本期治理层演进。
     publishedAt: 2026-08-28
 presentation:
