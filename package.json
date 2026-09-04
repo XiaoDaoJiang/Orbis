@@ -8,10 +8,11 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "validate": "pnpm --filter @orbis/content-schema test && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm test:knowledge-lifecycle-ui && pnpm test:knowledge-lifecycle-ui-fixtures && pnpm content:validate && pnpm knowledge:review && pnpm test:registry-ui-fixtures",
+    "validate": "pnpm test:path-guard && pnpm test:content-automation && pnpm --filter @orbis/content-schema test && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm test:knowledge-lifecycle-ui && pnpm test:knowledge-lifecycle-ui-fixtures && pnpm content:validate && pnpm knowledge:review && pnpm test:registry-ui-fixtures",
     "content:validate": "tsx tools/validate-content/index.ts",
     "knowledge:review": "tsx tools/knowledge-lifecycle/report.ts",
     "path:guard": "tsx tools/path-guard/index.ts",
+    "automation:daily:guard": "tsx tools/content-automation/daily-guard.ts",
     "generate:slides": "tsx tools/generate-slides/index.ts",
     "slides:dev": "pnpm generate:slides && tsx tools/build-slides/index.ts --dev",
     "build:web": "pnpm --filter @orbis/web build",
@@ -20,6 +21,8 @@
     "test:site": "tsx tools/site-check/index.ts",
     "test:presentation-scope": "tsx tools/presentation-scope-check/index.ts",
     "test:multi-presentation": "tsx tools/multi-presentation-check/index.ts",
+    "test:path-guard": "tsx tools/path-guard/change-set.test.ts && tsx tools/path-guard/policy.test.ts && tsx tools/path-guard/change-set.integration.test.ts",
+    "test:content-automation": "tsx tools/content-automation/daily-target.test.ts && tsx tools/content-automation/daily-decision.test.ts && tsx tools/content-automation/daily-guard-policy.test.ts && tsx tools/content-automation/pr-metadata.test.ts && tsx tools/content-automation/preview-workflow.test.ts && tsx tools/content-automation/prompt-contract.test.ts",
     "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts && tsx tools/generate-slides/weekly-v1.test.ts",
     "test:weekly-brief": "tsx tools/weekly-brief/weekly-schema.test.ts && tsx tools/weekly-brief/weekly-source-validation.test.ts",
     "test:content-registry": "tsx tools/validate-content/registry-contract.test.ts && tsx tools/validate-content/referential-integrity-unit.test.ts && tsx tools/validate-content/referential-integrity.test.ts",

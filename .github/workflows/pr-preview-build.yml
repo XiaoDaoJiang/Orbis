@@ -33,6 +33,14 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Guard generated paths
         run: pnpm path:guard --mode pr --base '${{ github.event.pull_request.base.sha }}'
+      - name: Guard scheduled Daily
+        if: ${{ startsWith(github.head_ref, 'automation/daily/') }}
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          target_date="${HEAD_REF#automation/daily/}"
+          pnpm automation:daily:guard --base '${{ github.event.pull_request.base.sha }}' --target-date "$target_date"
       - name: Build preview
         run: pnpm build
       - name: Upload public-preview artifact
