@@ -1,11 +1,12 @@
 # 70 · Scheduled Content Automation
 
-> 状态：In Progress · 70A Ready for Review
+> 状态：In Progress · 70A Done / 70B In Progress
 > Roadmap Milestone：G — Sustainable Automation
 > 建议优先级：P2
 > 依赖：Plan 60 · Done；automation design · Approved
 > 设计：[`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`](../superpowers/specs/2026-09-03-scheduled-content-automation-design.md)
 > 70A Implementation Plan：[`docs/superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md`](../superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md)
+> 70B Implementation Plan：[`docs/superpowers/plans/2026-09-04-chatgpt-scheduled-daily-adapter.md`](../superpowers/plans/2026-09-04-chatgpt-scheduled-daily-adapter.md)
 
 ## 1. 目标
 
@@ -42,7 +43,10 @@ Repository Contract 固定；Scheduler / Producer 可替换。
 - `config/scheduled-task-prompt.md`；
 - `config/daily-task-prompt.md`；
 - `content/briefs/YYYY-MM-DD.yaml` Structured Daily；
-- generic `content-agent` Path Guard；
+- deletion / rename-safe Path Guard；
+- Scheduled Daily exact-target guard；
+- provider-neutral automation decision/report contract；
+- `automation/daily/**` mandatory PR guard；
 - read-only PR Build；
 - Trusted Preview publish + public smoke；
 - governed manual Production Pages deploy；
@@ -76,7 +80,7 @@ Feature branch 上的 `status: published` 是 publication candidate，不等于 
 
 ### 3.3 deletion / rename 进入强制防线
 
-Path Guard 必须检查所有 relevant old/new paths；Scheduled Daily 首版直接拒绝 delete / rename / copy-style transition。
+Path Guard 检查 relevant old/new paths；Scheduled Daily 首版直接拒绝 delete / rename / copy-style transition。
 
 ## 4. Repository-owned contract
 
@@ -116,17 +120,22 @@ content/briefs/YYYY-MM-DD.yaml
 
 分支名同时是同日 candidate 的 idempotency key。
 
-## 6. 70A — Scheduled Daily Repository Contract · Ready for Review
+## 6. 70A — Scheduled Daily Repository Contract · Done
 
-PR：**#25 — `feat: add scheduled daily automation contracts and guards`**
-
-Feature head：
+PR #25 已于 `2026-09-04T01:51:45Z` 合并：
 
 ```text
-f7a7c60daf766dafbca3e9b7cbee06c569bbb535
+PR                    #25 merged
+feature head          f7a7c60daf766dafbca3e9b7cbee06c569bbb535
+main                   1fcdc4caecc234af7ef2426e4c9d320513eb2efb
+final PR Build         33738006368 success
+Trusted Preview        33738176374 success
+post-merge Site Build  33827357380 success
+main Artifact          9920458469
+main Artifact SHA-256  eec5edee0c1891921611aad73fd99b54097c816b7ba02e8fc028d43a92734b01
 ```
 
-### 已实现
+70A 已实现：
 
 - deletion / rename-safe Git change collector：`git diff --name-status -z --find-renames`；
 - pure Path Guard policy 同时检查 rename/copy old/new path；
@@ -134,17 +143,7 @@ f7a7c60daf766dafbca3e9b7cbee06c569bbb535
 - strict/calendar-valid `targetDate`；
 - canonical Daily branch / content path；
 - `dailyBriefSchema` candidate identity + `publishedAt === targetDate`；
-- provider-neutral decision vocabulary：
-
-```text
-create-candidate
-update-open-candidate
-revision-required
-already-published
-correction-required
-blocked
-```
-
+- provider-neutral decision vocabulary；
 - exact-target Scheduled Daily guard；
 - normal Scheduled Daily 禁止已有 base target 修改；
 - published base 强制 correction workflow；
@@ -155,100 +154,76 @@ blocked
 - `automation/daily/**` PR 强制执行 Scheduled Daily guard；
 - PR Build 权限仍为 `contents: read`。
 
-### 70A TDD Evidence
+70A 没有改变公开站点输出，因此 fresh main full Build 通过后无需单独触发 Production Pages deploy。
+
+## 7. 70B — ChatGPT Scheduled Daily Adapter · In Progress
+
+Implementation Plan：[`2026-09-04-chatgpt-scheduled-daily-adapter.md`](../superpowers/plans/2026-09-04-chatgpt-scheduled-daily-adapter.md)
+
+Feature branch：
 
 ```text
-RED   33735129142  Path Guard change-set helper must exist
-GREEN 33735264662  hardened Path Guard full build success
-RED   33735504985  Scheduled Daily target helper must exist
-GREEN 33735633293  target identity full build success
-RED   33737385058  existing Daily M path incorrectly accepted
-RED   33737859984  PR Preview did not yet activate Scheduled Daily guard
-GREEN 33738006368  final full PR Preview Build success
+feat/chatgpt-scheduled-daily-adapter
 ```
 
-Final Preview Artifact：
+PR：**#26 — `feat: add ChatGPT scheduled daily adapter`** · Draft / TDD
+
+首个 Provider Adapter 复用现有 ChatGPT Scheduled Task，而不是创建第二个任务。
+
+已确认现有任务：
 
 ```text
-ID       9886587297
-SHA-256  90f62f91865bc5fcb504c594d53a301fa12ff82657d4674a4789d883bcbc134d
+Title       Agent 前沿资讯
+Timezone    Asia/Shanghai
+Cadence     daily
+State       disabled
+Legacy      still points to XiaoDaoJiang/ai-frontier HTML publishing
 ```
 
-Trusted Preview Publish：
+70B 的边界：
 
 ```text
-run      33738176374
-status   success
+ChatGPT Scheduled Task
+  ↓
+thin provider adapter
+  ↓
+current Orbis main repository contract
+  ↓
+connected GitHub transport
+  ↓
+deterministic branch + exactly one PR
+  ↓
+70A repository guard / Build / Trusted Preview
 ```
 
-并已完成：
+Provider-specific GitHub transport 只存在于薄 adapter；不写入 content Schema、Astro、Build core。
 
-- trusted artifact download；
-- preview branch publish；
-- public availability smoke；
-- PR preview URL comment。
+### 70B RED 1
 
-Public Preview：
+PR Build `33827531033` 在全部 70A contracts 通过后精确失败：
 
 ```text
-https://raw.githack.com/XiaoDaoJiang/Orbis/preview-pr-25/index.html
+AssertionError: ChatGPT Scheduled Daily adapter must exist
 ```
 
-### Scope audit
+随后开始 GREEN：
 
-70A 只修改：
+- `config/adapters/chatgpt-scheduled-daily.md`；
+- `docs/operations/chatgpt-scheduled-daily.md`；
+- focused adapter drift contract。
 
-```text
-.github/workflows/pr-preview-build.yml
-config/daily-task-prompt.md
-config/path-guard.yaml
-config/scheduled-task-prompt.md
-package.json
-tools/content-automation/**
-tools/path-guard/**
-```
+### 外部任务迁移 Gate
 
-未修改：
+在 PR #26 合并 + fresh main Build 之前，不修改/启用外部 ChatGPT task。
 
-```text
-content/**
-apps/**
-packages/**
-dist/**
-.github/workflows/pages-production.yml
-.github/workflows/pr-preview-publish.yml
-```
+合并后：
 
-因此 70A 已满足 feature implementation、full Build、Trusted Preview 与 scope/security audit；当前只剩人工 merge gate。
-
-## 7. 70B — First Scheduler / Producer Integration · Next after #25 merge
-
-首个 pilot 继续推荐使用现有 ChatGPT Scheduled Task，但 Repository Contract 保持 provider-neutral。
-
-目标：
-
-```text
-Asia/Shanghai targetDate
-→ discovery + primary-source verification
-→ structured Daily
-→ resolve deterministic automation branch
-→ create/update exactly one PR
-→ render provider-neutral metadata
-→ repository CI guard
-→ full Build
-→ Trusted Preview
-```
-
-70B 必须满足：
-
-- 同日重复运行收敛到同一个 branch / PR；
-- 不直接 push main；
-- 不自动 merge；
-- 不触发 Pages deploy；
-- 不拥有 Production token；
-- 不把 provider-specific fields 写入 content Schema；
-- CI/Preview 状态只在真实完成后记录；
-- 若现有 ChatGPT Scheduled Task 无法稳定满足合同，则切换 transport / Producer，不扩大权限兜底。
+1. 更新现有 `Agent 前沿资讯` task；
+2. prompt 缩减成读取 Orbis main `config/adapters/chatgpt-scheduled-daily.md` 的 bootstrap；
+3. 保持 Asia/Shanghai daily cadence；
+4. 启用 task；
+5. 不改变通知设置，除非显式要求；
+6. 第一个 eligible real run 必须证明 deterministic branch + exact Daily + one PR transport。
 
 ## 8. Automation Run Report
 
@@ -355,16 +330,17 @@ Human / Policy Review 通过后才 merge main。Pages 继续由既有 governed P
 
 - [x] Plan 60 / Milestone F Done；
 - [x] Plan 70 design approved；
-- [x] existing prompt / guard / governance audit；
-- [x] 70A Implementation Plan；
 - [x] 70A TDD implementation；
-- [x] 70A final full Build；
-- [x] 70A Trusted Preview + public smoke；
-- [x] PR #25 scope/security audit；
-- [x] PR #25 Ready for Review；
-- [ ] PR #25 merged to main；
-- [ ] post-merge main Build / Production gate as required；
-- [ ] 70B first Scheduler / Producer pilot；
+- [x] PR #25 merged to main；
+- [x] post-merge main Build `33827357380`；
+- [x] 70A Done；
+- [x] 70B Implementation Plan；
+- [x] 70B feature branch + Draft PR #26；
+- [x] 70B adapter RED evidence `33827531033`；
+- [ ] 70B adapter final full Build + Trusted Preview；
+- [ ] PR #26 Ready / merged；
+- [ ] external ChatGPT task migrated + enabled；
+- [ ] first eligible real transport proof；
 - [ ] 70C three-cycle validation + correction drill。
 
-**当前下一步：人工合并 PR #25；合并后验证 fresh main，再启动 70B。**
+**当前下一步：完成 PR #26 GREEN / Trusted Preview；合并后迁移并启用现有 ChatGPT Scheduled Task。**
