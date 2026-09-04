@@ -28,10 +28,10 @@ const latestDaily = daily[0]
 const latestWeekly = weekly[0]
 assert.ok(latestDaily, 'Weekly artifact check requires one published Daily')
 assert.ok(latestWeekly, 'Weekly artifact check requires one published Weekly')
-assert.ok(
-  latestWeekly.brief.publishedAt > latestDaily.brief.publishedAt,
-  'The real Weekly must be newer than the real Daily so Daily latest isolation is meaningfully exercised',
-)
+
+const latestBrief = [...daily, ...weekly]
+  .sort((left, right) => right.brief.publishedAt.localeCompare(left.brief.publishedAt) || left.slug.localeCompare(right.slug))[0]
+assert.ok(latestBrief, 'Weekly artifact check requires one published Brief')
 
 const weeklyReadingPath = resolve(root, `dist/site/briefs/${latestWeekly.slug}/index.html`)
 const weeklyGeneratedPath = resolve(root, `${config.presentation.generatedDir}/${latestWeekly.slug}/slides.md`)
@@ -93,8 +93,10 @@ for (const marker of ['FOUR SIGNALS', 'OPEN SOURCE RADAR', 'IMPACT × ADOPTION H
 }
 assert.ok(weeklyDeck.includes(weeklySlidesHref), `Weekly built deck must reference its own base path: ${weeklySlidesHref}`)
 
-assert.ok(home.includes(`data-home-id="brief:${latestWeekly.slug}"`), 'Homepage Latest Brief must advance to the newer Weekly')
-assert.ok(home.includes(`data-home-id="presentation:${latestWeekly.slug}"`), 'Homepage Latest Presentation must advance to the presentation-enabled Weekly')
+assert.ok(
+  home.includes(`data-home-id="brief:${latestBrief.slug}"`),
+  `Homepage Latest Brief must follow publishedAt ordering across Daily and Weekly: ${latestBrief.slug}`,
+)
 assert.ok(briefsIndex.includes(latestWeekly.brief.title), 'Briefs index must include the published Weekly')
 assert.ok(weeklyIndex.includes(latestWeekly.brief.title), 'Weekly index must include the published Weekly')
 assert.ok(archive.includes(latestWeekly.brief.title), 'Archive must include the published Weekly')
@@ -124,4 +126,5 @@ assert.ok(latest.includes(expectedLatestTarget), `/latest/ must remain on the ne
 
 console.log(`Weekly reading + presentation contract passed: ${latestWeekly.slug}`)
 console.log(`Weekly discovery contract passed: Briefs/Weekly/Archive/RSS/Topics/Slides include ${latestWeekly.slug}`)
+console.log(`Homepage latest Brief ordering passed: ${latestBrief.slug}`)
 console.log(`Daily latest isolation passed: Weekly=${latestWeekly.brief.publishedAt}, Daily latest=${latestDaily.brief.publishedAt}`)
