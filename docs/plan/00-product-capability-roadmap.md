@@ -2,8 +2,8 @@
 
 > 状态：Active
 > 基线日期：2026-09-04
-> 基线提交：`main@1fcdc4caecc234af7ef2426e4c9d320513eb2efb`
-> 当前目标：Milestone G — Sustainable Automation / 70B Review Gate
+> 基线提交：`main@6419b3dfeeb3caa7f3f577351728a0e8dd780d91`
+> 当前目标：Milestone G — Sustainable Automation / 70B Live Gate
 
 ## 1. 当前阶段判断
 
@@ -20,7 +20,8 @@ Orbis 已完成：
 - Source / Author Registry + Referential Integrity + Registry-backed Reading UI；
 - canonical / OG / Twitter / Sitemap / RSS / JSON-LD；
 - Knowledge lifecycle contract + UI + exact-SHA Production closeout；
-- Scheduled Daily repository-side least-privilege contract（Plan 70A）。
+- Scheduled Daily repository-side least-privilege contract（70A）；
+- first replaceable ChatGPT Scheduler / Producer adapter（70B repository + task migration）。
 
 ### Plan 60 / Milestone F · Done
 
@@ -35,11 +36,9 @@ Production Artifact SHA-256  7caba4bb2d7a82f02c084af036f219cb2d8484ad6ccbfd4724a
 
 ### Plan 70A · Done
 
-PR #25 已合并到：
-
 ```text
+PR                           #25 merged
 main                         1fcdc4caecc234af7ef2426e4c9d320513eb2efb
-feature head                 f7a7c60daf766dafbca3e9b7cbee06c569bbb535
 final PR Build               33738006368 success
 Trusted Preview              33738176374 success
 post-merge Site Build        33827357380 success
@@ -47,40 +46,39 @@ main Artifact                9920458469
 main Artifact SHA-256        eec5edee0c1891921611aad73fd99b54097c816b7ba02e8fc028d43a92734b01
 ```
 
-70A 已建立：
+70A 建立 deletion/rename-safe Path Guard、explicit target identity、exact Daily guard、published-main protection、provider-neutral decision/report metadata 与 mandatory read-only Preview enforcement。
 
-- deletion / rename-safe Path Guard；
-- explicit Asia/Shanghai `targetDate` contract；
-- deterministic `automation/daily/YYYY-MM-DD` identity；
-- exact `content/briefs/YYYY-MM-DD.yaml` guard；
-- published-main overwrite / revision / correction boundary；
-- provider-neutral decision + run report + PR metadata；
-- read-only PR Preview 对 `automation/daily/**` 的 mandatory guard。
+### Plan 70B · Live Gate
 
-70A 不改变公开站点输出，所以 fresh main full Build 通过后无需额外 Production Pages deploy。
-
-### Plan 70B · Review Gate
-
-70B 不把 Provider 细节放回 repository core，而是增加薄 ChatGPT adapter。
+70B 把 provider-specific 行为限制在薄 ChatGPT adapter，不回写 repository core。
 
 ```text
-branch                       feat/chatgpt-scheduled-daily-adapter
-PR                           #26 Ready for Review
-final head                   515295cef40636a2300d5043d592fa8c6e2388a2
+PR                           #26 merged
+feature head                 515295cef40636a2300d5043d592fa8c6e2388a2
+main                         6419b3dfeeb3caa7f3f577351728a0e8dd780d91
 RED                          33827531033 adapter entry missing
 final PR Build               33827615741 success
-Preview Artifact             9920550137
-Preview Artifact SHA-256     6ae074aab9863647bccdadbee63d2048cacd4b464f2c1edbdb80d88e212273d0
 Trusted Preview              33827736463 success
+post-merge Site Build        33845663516 success
+main Artifact                9926441727
+main Artifact SHA-256        a72cb53f61b29fdfdf6a6737f4599b698bc9e5be6b7f1ecc47b2528dece184e0
 ```
 
-70B Repository 侧只新增：
+Repository adapter 已进入 `main`，并完成外部 Scheduled Task 迁移：
 
-- thin `config/adapters/chatgpt-scheduled-daily.md`；
-- focused adapter drift contract；
-- provider operations runbook。
+```text
+Task                         Agent 前沿资讯
+Timezone                     Asia/Shanghai
+Cadence                      daily
+State                        enabled
+Bootstrap                    current Orbis main adapter
+Notification settings        preserved
+Competing second task        none
+```
 
-已确认现有 ChatGPT task `Agent 前沿资讯` 仍存在，Asia/Shanghai daily cadence，当前 disabled，但仍携带退役 `XiaoDaoJiang/ai-frontier` HTML 发布 prompt。该 task 不会被复制；#26 合并并通过 fresh main 后，才迁移并启用它。
+旧 `XiaoDaoJiang/ai-frontier` HTML 发布行为已从 active task prompt 中移除。
+
+70B 尚未 Done：必须等待第一个 eligible real run 证明 deterministic branch + exact Daily + exactly-one-PR + CI + Trusted Preview transport。若命中 `already-published`，这是正确 no-write，但不能替代首次 transport proof。
 
 ## 2. 产品定义
 
@@ -142,7 +140,7 @@ Plan 70 只增加“候选内容进入仓库”的安全自动化，不改变 `c
 | SEO / Structured Data | Done | canonical、OG/Twitter、Sitemap、RSS、JSON-LD |
 | Knowledge Lifecycle | Done | evaluator、supersession、review report、UI、stable historical routes |
 | Scheduled Automation 70A | Done | exact Daily identity、idempotency decisions、least-privilege guard、PR metadata、Preview enforcement |
-| Scheduled Automation 70B | Review Gate | thin ChatGPT adapter + connected GitHub transport contract |
+| Scheduled Automation 70B | Live Gate | ChatGPT adapter merged；existing task migrated/enabled；first real transport proof pending |
 | Scheduled Automation 70C | Next | real three-cycle soak + rerun/no-write/correction drills |
 
 ## 5. Product Capability Roadmap
@@ -171,9 +169,11 @@ Plan 70。
 ```text
 70A Repository Contract          Done · PR #25
         ↓
-70B ChatGPT Provider Adapter     Ready for Review · PR #26
+70B ChatGPT Provider Adapter     merged · task migrated/enabled
         ↓
-external task migration + first real transport proof
+first eligible real transport proof   ← Current Gate
+        ↓
+70B Done
         ↓
 70C three-cycle real validation
 ```
@@ -203,9 +203,9 @@ Design：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.
 Plan 60 / Milestone F        Done
 Plan 70 design               Approved
 70A                           Done · PR #25
-70B implementation           Complete
-70B full PR Build            Passed · 33827615741
-70B Trusted Preview          Passed · 33827736463
-70B PR                       #26 Ready for Review
-next                         human merge #26 → fresh main → migrate/enable existing ChatGPT task
+70B repository adapter       Merged · PR #26
+70B fresh main Build         Passed · 33845663516
+external Scheduled Task      Migrated + enabled
+first real transport proof   Pending
+next                         verify first eligible run → 70B Done → begin 70C soak
 ```
