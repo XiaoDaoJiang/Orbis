@@ -1,10 +1,10 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 基线：`main@6419b3dfeeb3caa7f3f577351728a0e8dd780d91`
+> 基线：`main@3c5cc91974cea388b87b779f3e367b4c114d7a6c`
 > 基线日期：2026-09-04
 > 阶段：Product Capability Phase
-> 当前目标：Plan 70 · Scheduled Content Automation · 70B Live Gate
+> 当前目标：Plan 70 · Scheduled Content Automation · 70C Soak Active
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -19,17 +19,75 @@
 - Plan 70 · Scheduled Content Automation：**In Progress**
   - design：Approved
   - 70A Repository Contract：**Done** — PR #25
-  - 70B ChatGPT Scheduled Daily Adapter：**Live Gate** — PR #26 merged
-    - main：`6419b3dfeeb3caa7f3f577351728a0e8dd780d91`
-    - post-merge Site Build：`33845663516` Passed
-    - main Artifact：`9926441727`
-    - Artifact SHA-256：`a72cb53f61b29fdfdf6a6737f4599b698bc9e5be6b7f1ecc47b2528dece184e0`
-    - existing ChatGPT task：`Agent 前沿资讯`
-    - scheduler state：enabled
-    - timezone/cadence：Asia/Shanghai · daily
-    - bootstrap：current Orbis `main` → `config/adapters/chatgpt-scheduled-daily.md`
-    - notification settings：preserved
-    - first real transport proof：pending
+  - 70B ChatGPT Scheduled Daily Adapter：**Done** — PR #26 + first real proof PR #27
+  - 70C Real-cycle Validation：**Soak Active** — stable cycles `0/3`
+
+## 70B closeout evidence
+
+Repository adapter：
+
+```text
+PR #26                      merged
+main after #26              6419b3dfeeb3caa7f3f577351728a0e8dd780d91
+post-merge Site Build       33845663516 success
+main Artifact               9926441727
+Artifact SHA-256            a72cb53f61b29fdfdf6a6737f4599b698bc9e5be6b7f1ecc47b2528dece184e0
+```
+
+Existing external Scheduler：
+
+```text
+Title                       Agent 前沿资讯
+State                       enabled
+Timezone / cadence          Asia/Shanghai · daily
+Bootstrap                   current Orbis main adapter
+Competing second task       none
+Legacy ai-frontier behavior removed
+```
+
+First real transport proof：
+
+```text
+targetDate                  2026-09-04
+branch                      automation/daily/2026-09-04
+content                     content/briefs/2026-09-04.yaml
+PR                          #27
+changed files               exactly 1
+final head                  f9bb8ef5f54cb1623ab582057d54e5507b0b299a
+final merge ref             d91e8ac2aeca17bdac6a36eb78ce3ec989f605fa
+PR Preview Build            33857483693 success
+Preview Artifact            9930821104
+Artifact SHA-256            909a16ba162bc345a67f1808836a1c2b734cb187224f2aaaad395c8e2391256d
+Trusted Preview             33857669310 success
+outcome                     candidate-created
+```
+
+Final logs proved exact one-file Guard scope and the real content order:
+
+```text
+Weekly=2026-09-01
+Daily latest=2026-09-04
+```
+
+with Weekly artifact, Homepage latest ordering, Daily-only archive/latest semantics and the complete build all passing.
+
+## First-cycle hardening
+
+Cycle 0 exposed two repository infrastructure regressions; both were fixed independently from the automation content branch and did not widen Scheduled Daily authority.
+
+```text
+PR #28  weekly real-date-order test fix
+         → main 2b93744c491466ff6ce06b28cd2bdefba0e9c79c
+         → Site Build 33854389852 success
+
+PR #29  PR Preview integration-base fix
+         → main 3c5cc91974cea388b87b779f3e367b4c114d7a6c
+         → Site Build 33857265076 success
+         → Artifact 9930724616
+         → SHA-256 1028492c557ae5309562430f2216ac9306b731e340f3e1adda0b203e7b450c0b
+```
+
+PR #29 让 Guard 从 checked-out merge ref 的第一父节点解析 integration base，而不是使用可能陈旧的 `pull_request.base.sha`。PR Build 继续保持 `contents: read`，无 Production authority。
 
 ## 当前产品基线
 
@@ -46,27 +104,17 @@ Knowledge Lifecycle · Done
           ↓
 Scheduled Content Automation · In Progress
   ├── 70A Repository Contract · Done
-  │   ├── deletion / rename-safe Path Guard
-  │   ├── explicit targetDate + exact Daily identity
-  │   ├── exact-target Scheduled Daily guard
-  │   ├── published-main overwrite protection
-  │   ├── provider-neutral run/PR metadata
-  │   └── mandatory read-only PR Preview guard
-  ├── 70B ChatGPT Adapter · Live Gate
-  │   ├── provider adapter merged to main
+  ├── 70B ChatGPT Adapter · Done
+  │   ├── provider adapter merged
   │   ├── existing Scheduled Task migrated + enabled
-  │   ├── connected GitHub one-branch / one-PR contract
-  │   └── first eligible real transport proof pending
-  └── 70C Real-cycle Validation
+  │   └── first real branch/file/PR/CI/Preview proof passed
+  └── 70C Real-cycle Validation · Soak Active
+      └── consecutive stable cycles: 0 / 3
 ```
 
-70A 已随 PR #25 合并，并在 fresh main 上通过完整 Site Build。
+PR #27 是 **Cycle 0 / transport proof**。由于它触发了 #28 / #29 两次基础设施修复，因此不计入 70C 所要求的三个连续稳定周期。
 
-70B Repository 侧已随 PR #26 合并。PR Build `33827615741`、Trusted Preview `33827736463` 与 post-merge main Build `33845663516` 均通过；PR #26 只包含 ChatGPT adapter、focused contract、operations runbook 与 test wiring，没有修改 `content/**`、`apps/**`、`packages/**`、`dist/**` 或 workflows，也没有增加 Production authority。
-
-现有 ChatGPT task `Agent 前沿资讯` 已原地迁移，不创建第二个 Scheduler。旧 `XiaoDaoJiang/ai-frontier` HTML 发布 prompt 已被替换为 Orbis thin bootstrap；task 已启用，继续使用 Asia/Shanghai daily cadence，并保持原通知配置。
-
-70B 尚未 Done：必须由第一个 eligible real run 证明 `targetDate → automation/daily/<date> → exact Brief → exactly one PR → Scheduled Daily Guard → full Build → Trusted Preview`。若目标日期已在 main published，`already-published` 是合法 no-write 结果，但不能替代首次 branch/PR transport proof。
+70C 从下一个 eligible Daily 开始计数：只有在无需 repository infrastructure repair 且完整通过 exact Guard → full Build → Trusted Preview 时，才记为 Stable Cycle 1。
 
 ## Roadmap
 
@@ -96,9 +144,18 @@ Scheduled Content Automation · In Progress
         ↓
 70 Scheduled Content Automation In Progress
   ├── 70A Repository Contract  Done · PR #25
-  ├── 70B ChatGPT Adapter      Live Gate · PR #26 merged / task enabled
-  └── 70C Real-cycle Validation Next after first transport proof
+  ├── 70B ChatGPT Adapter      Done · PR #26 / proof #27
+  └── 70C Real-cycle Validation Soak Active · stable 0/3
 ```
+
+## 70C remaining gate
+
+- [ ] Stable Cycle 1 / 3
+- [ ] Stable Cycle 2 / 3
+- [ ] Stable Cycle 3 / 3
+- [ ] same-day rerun / idempotency drill
+- [ ] published Daily `already-published` no-write drill
+- [ ] explicit correction workflow drill
 
 ## 每个计划的统一交付规则
 
@@ -115,10 +172,11 @@ Scheduled Content Automation · In Progress
 ## Plan 状态约定
 
 - `Planned`：尚未开始；
-- `Design Review`：当前计划已成为产品目标，正在锁定语义与边界；
-- `In Progress`：设计已批准，已有实施计划、分支或 PR；
+- `Design Review`：正在锁定语义与边界；
+- `In Progress`：设计已批准，已有实施或验证进行中；
 - `Review Gate`：实现、CI、Preview 已完成，等待人工集成；
 - `Live Gate`：实现已进入 main、外部 adapter 已启用，等待真实运行证据；
+- `Soak Active`：首个真实闭环已完成，正在累计连续稳定运行与演练证据；
 - `Production Gate`：实现与 main Build 已完成，但 exact-SHA Production Pages 验证尚未完成；
-- `Done`：全部计划 PR 已进入 `main`，并完成对应 Preview / main / Production / real-run 验证；
+- `Done`：对应计划所要求的 Preview / main / Production / real-run 验证全部完成；
 - `Deferred`：明确推迟。
