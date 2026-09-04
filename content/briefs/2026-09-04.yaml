@@ -1,0 +1,215 @@
+kind: brief
+cadence: daily
+publishedAt: 2026-09-04
+status: published
+title: Agent 能力上升后，运行时边界正在从调用工具转向治理与可中断执行
+summary: GPT-6 Astra 把高能力模型带入更严格的安全门控，MCP 无状态化推动远程部署简化，而 Registry、Session 与 Approval 正在成为 Agent Harness 的核心工程边界。
+topics:
+  - agent-harness
+  - coding-agent
+  - mcp
+signals:
+  - title: 高能力模型开始强迫 Runtime 显式治理
+    summary: Astra 达到 Critical cybersecurity capability 后，隔离、监控、授权和自动中断不再只是安全附加项，而是高能力 Agent 的运行前提。
+    impact: high
+  - title: MCP 正从会话协议转向无状态远程调用边界
+    summary: 新版 MCP 去除核心会话依赖后，水平扩展、负载均衡与故障恢复更接近普通无状态服务，但身份与授权需要重新设计。
+    impact: high
+  - title: Registry 正在补上 Agent 生态的发现与审批层
+    summary: AWS Agent Registry 把 Agent、MCP Server、Skill 等资源统一进入可发现、可审批、可授权的目录，治理面开始独立于执行面。
+    impact: high
+  - title: Harness 竞争开始落到 Session、Skill 与 Approval 体验
+    summary: OpenClaw 2026.9.1 把持久审批、个人 Skill Library、Session 恢复和多端工作区作为核心能力，说明 Harness 正在产品化运行时状态。
+    impact: medium
+sections:
+  - id: astra-runtime-boundary
+    layout: architecture
+    title: Astra 把安全边界推入 Agent Runtime
+    conclusion: 当模型本身具备更强的自主网络与代码能力，最小权限、隔离环境、轨迹监控和可中断执行必须成为 Runtime 的默认结构。
+    facts:
+      - OpenAI 在 2026-09-03 发布 GPT-6 Astra，并将其评估为首个达到 Critical cybersecurity capability 阈值的广泛部署模型。
+      - OpenAI 描述了更严格的隔离、模型权重保护、全轨迹监控以及对潜在未授权行为的自动停止机制。
+      - Astra 面向高风险网络安全任务仍采用更严格的访问分层，默认产品配置并不等同于评测中的最高权限环境。
+    limitations:
+      - 相关能力与安全结论主要来自 OpenAI 自身评测和系统卡，仍需要第三方长期复现与生产事故数据。
+      - 更强监控可能中断合法任务，因此 Runtime 还需要清晰的人工接管和恢复语义。
+    references:
+      - title: Safety overview GPT-6 Astra
+        url: https://openai.com/index/safety-overview-gpt-6-astra/
+        source: OpenAI
+        supports: 支持 Astra 的 Critical cybersecurity capability、安全隔离、监控与部署边界判断。
+        accessedAt: 2026-09-04
+      - title: GPT-6 Astra
+        url: https://openai.com/index/gpt-6-astra/
+        source: OpenAI
+        supports: 支持 Astra 的发布范围、能力定位与默认网络安全限制。
+        accessedAt: 2026-09-04
+  - id: capability-monitorability
+    layout: metrics
+    title: 能力提升与可监控性不再同步增长
+    conclusion: 评测分数继续提升并不代表 Agent 更容易监督，工程系统必须把可观测、权限和停止条件作为独立指标。
+    facts:
+      - OpenAI 报告 Astra 在 ExploitBench 上达到 100%，并在内部近期漏洞集上展示了更高的任意代码执行能力。
+      - OpenAI 同时表示 Astra 的书面推理在部分测试中比 GPT-5.6 Sol 更难监控，因此增强了生产侧的 misalignment monitoring。
+      - 这意味着单纯依赖模型自述或最终答案不足以判断执行是否仍处于授权范围。
+    limitations:
+      - benchmark 结果不能直接外推到所有真实网络和软件环境。
+      - 监控器本身也可能产生漏报、误报和策略绕过，需要独立评估。
+    references:
+      - title: GPT-6 Astra System Card
+        url: https://deploymentsafety.openai.com/gpt-6-astra
+        source: OpenAI
+        supports: 支持 Astra 的 Preparedness 结论、能力评测与监控限制。
+        accessedAt: 2026-09-04
+      - title: GPT-6 Astra
+        url: https://openai.com/index/gpt-6-astra/
+        source: OpenAI
+        supports: 支持 Astra 在网络安全、计算机使用和 monitorability 上的官方说明。
+        accessedAt: 2026-09-04
+  - id: mcp-stateless
+    layout: comparison
+    title: MCP 无状态化让远程 Server 更像标准服务
+    conclusion: 去掉核心会话依赖后，MCP Server 更容易水平扩展，但客户端身份、授权上下文和长任务状态必须被显式外置。
+    facts:
+      - AWS 在 2026-09-02 的架构文章中指出新版 MCP 核心已转向无状态，并移除了 initialize 握手和 Mcp-Session-Id 依赖。
+      - 每个请求携带自身协议版本和客户端上下文，使负载均衡器不再必须维持会话黏性。
+      - 长任务、用户授权和业务状态仍然存在，只是不能再默认寄托在协议级 Session 上。
+    limitations:
+      - 旧客户端和旧 Server 的迁移窗口仍可能要求兼容层。
+      - 无状态协议并不会自动解决凭证传递、租户隔离和长任务恢复问题。
+    references:
+      - title: MCP went stateless Is your AWS MCP server deployment well-architected
+        url: https://aws.amazon.com/blogs/architecture/mcp-went-stateless-is-your-aws-mcp-server-deployment-well-architected/
+        source: AWS
+        supports: 支持新版 MCP 无状态化、部署拓扑与会话迁移影响。
+        accessedAt: 2026-09-04
+  - id: agent-registry
+    layout: system-map
+    title: Agent Registry 开始成为治理控制面
+    conclusion: 当 Agent、MCP Server 和 Skill 数量增长，发现、审批、版本和授权需要独立目录，而不能继续散落在 Prompt 与手工配置中。
+    facts:
+      - AWS Agent Registry 的 Registry Record 可以表示 Agent、Tool、Skill 或自定义资源。
+      - Registry 支持从 MCP Server 或 A2A Endpoint 同步元数据，也支持人工创建记录。
+      - Registry 可以设置记录审批策略，并通过 MCP-compatible endpoint 暴露受控的发现能力。
+    limitations:
+      - Registry 解决的是发现与治理，不替代 Runtime 的执行隔离、凭证最小权限和任务审计。
+      - 当前实现仍具有云厂商特定的 IAM、命名空间与迁移约束。
+    references:
+      - title: Get started with AWS Agent Registry
+        url: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/registry-get-started.html
+        source: AWS
+        supports: 支持 Agent Registry 的资源类型、记录同步与创建模型。
+        accessedAt: 2026-09-04
+      - title: AWS Agent Registry concepts and terminology
+        url: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/registry-concepts.html
+        source: AWS
+        supports: 支持 Registry 审批、授权、环境与组织方式的治理模型。
+        accessedAt: 2026-09-04
+  - id: harness-productization
+    layout: timeline
+    title: Harness 正把运行时状态做成可见产品能力
+    conclusion: OpenClaw 的最新发布显示，Session、Skill、Approval、恢复和多端交互正在从内部实现细节变成用户直接依赖的工作流契约。
+    facts:
+      - OpenClaw v2026.9.1 于 2026-09-03 发布，并加入个人 Skill Library、跨共享 Gateway 的身份化 Skill 管理与更完整的 Session 工作区。
+      - 对 OpenClaw 配置的 MCP Server，Codex 的 Allow Always 审批可持久化，并跟随 Session posture 复用。
+      - 委派系统 Agent 发起配置变更或 Gateway 重启时，Approval Card 会回到发起会话，而不是静默阻塞后台任务。
+    limitations:
+      - OpenClaw 的实现代表一个高活跃开源 Harness 的产品选择，不应直接视为行业标准。
+      - 持久审批会提高便利性，也要求更清晰的作用域、撤销和审计机制。
+    references:
+      - title: OpenClaw v2026.9.1
+        url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.1
+        source: OpenClaw
+        supports: 支持 Skill Library、Session、MCP Approval 和委派审批回传等发布事实。
+        accessedAt: 2026-09-04
+projects:
+  - action: TEST
+    name: openclaw/openclaw
+    summary: 验证持久 Tool Approval、Session 恢复和个人 Skill Library 在真实多 Agent 工作流中的边界。
+    maturity: growing
+    url: https://github.com/openclaw/openclaw
+  - action: READ
+    name: modelcontextprotocol/specification
+    summary: 对照无状态协议变化检查现有 MCP Client 与 Server 对 Session、身份和授权上下文的依赖。
+    maturity: growing
+    url: https://github.com/modelcontextprotocol/specification
+  - action: READ
+    name: openai/codex
+    summary: 研究 Coding Agent 在高能力模型下如何表达审批、沙箱、网络访问和可恢复执行边界。
+    maturity: growing
+    url: https://github.com/openai/codex
+radar:
+  - label: Runtime authorization boundary
+    impact: 96
+    horizon: 10
+    note: 高能力 Agent 已经要求把权限、隔离和中断机制放入默认执行路径。
+  - label: Stateless remote MCP
+    impact: 88
+    horizon: 18
+    note: 远程 MCP 部署模型正在变化，现有 Session 假设应尽快审计。
+  - label: Agent Registry
+    impact: 84
+    horizon: 32
+    note: 资源数量上升后，目录、审批和版本治理会迅速从可选能力变成基础设施。
+  - label: Persistent approvals
+    impact: 81
+    horizon: 22
+    note: 可减少重复确认，但必须与身份、会话作用域和审计绑定。
+  - label: Harness session UX
+    impact: 76
+    horizon: 28
+    note: 长任务体验的差异越来越由 Session、恢复和后台状态可见性决定。
+actions:
+  - title: 审计 MCP Session 假设
+    description: 列出当前 Client、Server、Gateway 对 initialize、Session ID、黏性路由和长任务状态的依赖，并制定无状态迁移测试。
+  - title: 给高权限 Agent 增加可中断边界
+    description: 将网络、文件、Shell 和凭证访问纳入最小权限策略，并为高风险动作增加轨迹监控、自动停止和人工恢复入口。
+  - title: 建立 Agent 资源目录原型
+    description: 用最小 Registry 记录 Agent、MCP Server、Skill、版本、Owner、审批状态和可用环境，验证发现与授权是否能从 Prompt 中移出。
+  - title: 测试持久审批的作用域
+    description: 对 Allow Always 类能力验证身份、Session、Server、Tool 参数范围、撤销和审计日志，避免便利性扩大权限面。
+references:
+  - title: GPT-6 Astra
+    url: https://openai.com/index/gpt-6-astra/
+    source: OpenAI
+    supports: Astra 的发布、能力、安全限制与 monitorability 判断。
+    accessedAt: 2026-09-04
+  - title: Safety overview GPT-6 Astra
+    url: https://openai.com/index/safety-overview-gpt-6-astra/
+    source: OpenAI
+    supports: Astra 的 Critical cybersecurity capability 与安全控制。
+    accessedAt: 2026-09-04
+  - title: GPT-6 Astra System Card
+    url: https://deploymentsafety.openai.com/gpt-6-astra
+    source: OpenAI
+    supports: Astra 的 Preparedness 评估、能力指标与安全限制。
+    accessedAt: 2026-09-04
+  - title: MCP went stateless Is your AWS MCP server deployment well-architected
+    url: https://aws.amazon.com/blogs/architecture/mcp-went-stateless-is-your-aws-mcp-server-deployment-well-architected/
+    source: AWS
+    supports: MCP 无状态化和远程部署影响。
+    accessedAt: 2026-09-04
+  - title: Get started with AWS Agent Registry
+    url: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/registry-get-started.html
+    source: AWS
+    supports: Agent Registry 的资源模型、同步方式与治理入口。
+    accessedAt: 2026-09-04
+  - title: AWS Agent Registry concepts and terminology
+    url: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/registry-concepts.html
+    source: AWS
+    supports: Registry 的审批、授权和组织模型。
+    accessedAt: 2026-09-04
+  - title: OpenClaw v2026.9.1
+    url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.1
+    source: OpenClaw
+    supports: 最新 Harness 在 Session、Skill 和 Approval 方面的工程变化。
+    accessedAt: 2026-09-04
+archivePicks:
+  - title: Harness 正在成为模型之外的能力层
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-08-28.yaml
+    source: Orbis
+    supports: 回看 Harness、Verification 与 MCP 边界在前一阶段的判断，便于比较本期治理层演进。
+    publishedAt: 2026-08-28
+presentation:
+  enabled: true
+  template: daily-v1
