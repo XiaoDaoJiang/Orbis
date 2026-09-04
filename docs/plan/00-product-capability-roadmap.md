@@ -2,8 +2,8 @@
 
 > 状态：Active
 > 基线日期：2026-09-04
-> 基线提交：`main@6419b3dfeeb3caa7f3f577351728a0e8dd780d91`
-> 当前目标：Milestone G — Sustainable Automation / 70B Live Gate
+> 基线提交：`main@3c5cc91974cea388b87b779f3e367b4c114d7a6c`
+> 当前目标：Milestone G — Sustainable Automation / 70C Soak Active
 
 ## 1. 当前阶段判断
 
@@ -21,7 +21,7 @@ Orbis 已完成：
 - canonical / OG / Twitter / Sitemap / RSS / JSON-LD；
 - Knowledge lifecycle contract + UI + exact-SHA Production closeout；
 - Scheduled Daily repository-side least-privilege contract（70A）；
-- first replaceable ChatGPT Scheduler / Producer adapter（70B repository + task migration）。
+- ChatGPT Scheduler / Producer adapter + first real transport proof（70B）。
 
 ### Plan 60 / Milestone F · Done
 
@@ -48,23 +48,21 @@ main Artifact SHA-256        eec5edee0c1891921611aad73fd99b54097c816b7ba02e8fc02
 
 70A 建立 deletion/rename-safe Path Guard、explicit target identity、exact Daily guard、published-main protection、provider-neutral decision/report metadata 与 mandatory read-only Preview enforcement。
 
-### Plan 70B · Live Gate
+### Plan 70B · Done
 
 70B 把 provider-specific 行为限制在薄 ChatGPT adapter，不回写 repository core。
 
 ```text
 PR                           #26 merged
 feature head                 515295cef40636a2300d5043d592fa8c6e2388a2
-main                         6419b3dfeeb3caa7f3f577351728a0e8dd780d91
+main after #26               6419b3dfeeb3caa7f3f577351728a0e8dd780d91
 RED                          33827531033 adapter entry missing
 final PR Build               33827615741 success
 Trusted Preview              33827736463 success
 post-merge Site Build        33845663516 success
-main Artifact                9926441727
-main Artifact SHA-256        a72cb53f61b29fdfdf6a6737f4599b698bc9e5be6b7f1ecc47b2528dece184e0
 ```
 
-Repository adapter 已进入 `main`，并完成外部 Scheduled Task 迁移：
+Existing Scheduled Task 已迁移并启用：
 
 ```text
 Task                         Agent 前沿资讯
@@ -78,7 +76,52 @@ Competing second task        none
 
 旧 `XiaoDaoJiang/ai-frontier` HTML 发布行为已从 active task prompt 中移除。
 
-70B 尚未 Done：必须等待第一个 eligible real run 证明 deterministic branch + exact Daily + exactly-one-PR + CI + Trusted Preview transport。若命中 `already-published`，这是正确 no-write，但不能替代首次 transport proof。
+#### First real transport proof — PR #27
+
+```text
+targetDate                   2026-09-04
+branch                       automation/daily/2026-09-04
+content                      content/briefs/2026-09-04.yaml
+changed files                exactly 1
+outcome                      candidate-created
+final head                   f9bb8ef5f54cb1623ab582057d54e5507b0b299a
+merge ref                    d91e8ac2aeca17bdac6a36eb78ce3ec989f605fa
+integration base             3c5cc91974cea388b87b779f3e367b4c114d7a6c
+PR Preview Build             33857483693 success
+Preview Artifact             9930821104
+Artifact SHA-256             909a16ba162bc345a67f1808836a1c2b734cb187224f2aaaad395c8e2391256d
+Trusted Preview              33857669310 success
+```
+
+Final logs proved：
+
+- exact one-file Daily diff；
+- Scheduled Daily Guard passed；
+- current merge-ref integration base correctly resolved；
+- Schema / content validation / Astro / Slidev / assembly / site artifact checks passed；
+- `Weekly=2026-09-01, Daily latest=2026-09-04` ordering passed；
+- Daily-only archive/latest semantics remained correct；
+- Trusted Preview public smoke passed。
+
+因此 **70B Done**。
+
+#### First-cycle hardening
+
+首个真实周期暴露并修复两处 repository regression：
+
+```text
+PR #28  weekly artifact real-date-order fix
+         main → 2b93744c491466ff6ce06b28cd2bdefba0e9c79c
+         fresh Site Build → 33854389852 success
+
+PR #29  PR Preview integration-base fix
+         main → 3c5cc91974cea388b87b779f3e367b4c114d7a6c
+         fresh Site Build → 33857265076 success
+         Artifact → 9930724616
+         SHA-256 → 1028492c557ae5309562430f2216ac9306b731e340f3e1adda0b203e7b450c0b
+```
+
+两次修复均独立于 automation content branch，没有扩大 Scheduled Daily 或 Production authority。
 
 ## 2. 产品定义
 
@@ -140,8 +183,8 @@ Plan 70 只增加“候选内容进入仓库”的安全自动化，不改变 `c
 | SEO / Structured Data | Done | canonical、OG/Twitter、Sitemap、RSS、JSON-LD |
 | Knowledge Lifecycle | Done | evaluator、supersession、review report、UI、stable historical routes |
 | Scheduled Automation 70A | Done | exact Daily identity、idempotency decisions、least-privilege guard、PR metadata、Preview enforcement |
-| Scheduled Automation 70B | Live Gate | ChatGPT adapter merged；existing task migrated/enabled；first real transport proof pending |
-| Scheduled Automation 70C | Next | real three-cycle soak + rerun/no-write/correction drills |
+| Scheduled Automation 70B | Done | ChatGPT adapter；task migrated/enabled；first real branch/file/PR/CI/Trusted Preview proof |
+| Scheduled Automation 70C | Soak Active | 3-cycle stability + rerun/no-write/correction drills；stable count 0/3 |
 
 ## 5. Product Capability Roadmap
 
@@ -167,16 +210,21 @@ Plan 60，PR #23 / #24。
 Plan 70。
 
 ```text
-70A Repository Contract          Done · PR #25
+70A Repository Contract        Done · PR #25
         ↓
-70B ChatGPT Provider Adapter     merged · task migrated/enabled
+70B ChatGPT Provider Adapter   Done · PR #26 + proof #27
         ↓
-first eligible real transport proof   ← Current Gate
+70C Real-cycle Soak            Active · stable 0 / 3
         ↓
-70B Done
+3 consecutive stable cycles
++ idempotency drill
++ already-published no-write drill
++ correction drill
         ↓
-70C three-cycle real validation
+Milestone G Done
 ```
+
+PR #27 是 **Cycle 0 / transport proof**。由于首周期需要 #28 / #29 基础设施 hardening，它不计入 70C 的三个连续稳定周期。
 
 Design：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`。
 
@@ -203,9 +251,18 @@ Design：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.
 Plan 60 / Milestone F        Done
 Plan 70 design               Approved
 70A                           Done · PR #25
-70B repository adapter       Merged · PR #26
-70B fresh main Build         Passed · 33845663516
-external Scheduled Task      Migrated + enabled
-first real transport proof   Pending
-next                         verify first eligible run → 70B Done → begin 70C soak
+70B                           Done · PR #26 + real proof #27
+first-cycle hardening         Done · PR #28 / #29
+current main                  3c5cc91974cea388b87b779f3e367b4c114d7a6c
+70C                           Soak Active · stable 0 / 3
+next                          next eligible Daily → Stable Cycle 1 / 3 if no infrastructure repair
 ```
+
+70C 仍需完成：
+
+- [ ] Stable Cycle 1 / 3；
+- [ ] Stable Cycle 2 / 3；
+- [ ] Stable Cycle 3 / 3；
+- [ ] same-day rerun / idempotency drill；
+- [ ] published Daily `already-published` no-write drill；
+- [ ] explicit correction workflow drill。
