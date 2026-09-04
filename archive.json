@@ -1,0 +1,25 @@
+{
+  "latest": "2026-09-04",
+  "issues": [
+    {
+      "date": "2026-09-04",
+      "title": "Agent 能力上升后，运行时边界正在从调用工具转向治理与可中断执行",
+      "path": "2026/09/04/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "title": "Harness 正在成为模型之外的能力层",
+      "path": "2026/08/28/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    }
+  ]
+}
