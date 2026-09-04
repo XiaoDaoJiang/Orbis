@@ -24,7 +24,7 @@
     "test:path-guard": "tsx tools/path-guard/change-set.test.ts && tsx tools/path-guard/policy.test.ts && tsx tools/path-guard/change-set.integration.test.ts",
     "test:content-automation": "tsx tools/content-automation/daily-target.test.ts && tsx tools/content-automation/daily-decision.test.ts && tsx tools/content-automation/daily-guard-policy.test.ts && tsx tools/content-automation/pr-metadata.test.ts && tsx tools/content-automation/preview-workflow.test.ts && tsx tools/content-automation/prompt-contract.test.ts && tsx tools/content-automation/chatgpt-adapter.test.ts",
     "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts && tsx tools/generate-slides/weekly-v1.test.ts",
-    "test:weekly-brief": "tsx tools/weekly-brief/weekly-schema.test.ts && tsx tools/weekly-brief/weekly-source-validation.test.ts",
+    "test:weekly-brief": "tsx tools/weekly-brief/weekly-schema.test.ts && tsx tools/weekly-brief/weekly-source-validation.test.ts && tsx tools/weekly-brief/weekly-artifact-date-order.test.ts",
     "test:content-registry": "tsx tools/validate-content/registry-contract.test.ts && tsx tools/validate-content/referential-integrity-unit.test.ts && tsx tools/validate-content/referential-integrity.test.ts",
     "test:registry-ui-contract": "tsx tools/registry-ui-check/content-registry.test.ts",
     "test:registry-ui-fixtures": "tsx tools/registry-ui-check/fixture-build.test.ts",
