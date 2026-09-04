@@ -1,13 +1,13 @@
 # 00 · Orbis Product Capability Roadmap
 
 > 状态：Active
-> 基线日期：2026-09-03
-> 基线提交：`main@89c7f8fe6d5da972c0f54b1367df252aa00cf286`
-> 当前目标：Milestone G — Sustainable Automation / 70A Review Gate
+> 基线日期：2026-09-04
+> 基线提交：`main@1fcdc4caecc234af7ef2426e4c9d320513eb2efb`
+> 当前目标：Milestone G — Sustainable Automation / 70B Review Gate
 
 ## 1. 当前阶段判断
 
-Orbis 已经完成：
+Orbis 已完成：
 
 - Astro + Slidev pnpm Monorepo Foundation；
 - Structured Content + Zod Schema；
@@ -18,50 +18,69 @@ Orbis 已经完成：
 - read-only PR Build → Trusted Preview → Public Smoke；
 - governed GitHub Pages Production；
 - Source / Author Registry + Referential Integrity + Registry-backed Reading UI；
-- Production canonical / Preview noindex；
-- Open Graph / Twitter Card；
-- Sitemap / RSS / Slidev canonical identity；
-- WebSite / Essay Article / Brief Article / Knowledge TechArticle JSON-LD；
-- Knowledge lifecycle evaluator、supersession relation、review report；
-- Knowledge lifecycle Index/Detail UI、stable needs-review/archived routes 与 replacement navigation；
-- Plan 60 exact-SHA Production Pages closeout。
+- canonical / OG / Twitter / Sitemap / RSS / JSON-LD；
+- Knowledge lifecycle contract + UI + exact-SHA Production closeout；
+- Scheduled Daily repository-side least-privilege contract（Plan 70A）。
 
-Plan 60 / Milestone F 当前状态：
+### Plan 60 / Milestone F · Done
 
 ```text
-main SHA                         89c7f8fe6d5da972c0f54b1367df252aa00cf286
-60A                              Done · PR #23
-60B                              Done · PR #24
-post-merge Site Build            33720559711 success
-main Artifact                    9880102491
-Production Pages                 33734815132 success
-Production Artifact              9885335098
-Production Artifact SHA-256      7caba4bb2d7a82f02c084af036f219cb2d8484ad6ccbfd4724a7c29d5e168e55
+main SHA                    89c7f8fe6d5da972c0f54b1367df252aa00cf286
+60A                          Done · PR #23
+60B                          Done · PR #24
+Production Pages             33734815132 success
+Production Artifact          9885335098
+Production Artifact SHA-256  7caba4bb2d7a82f02c084af036f219cb2d8484ad6ccbfd4724a7c29d5e168e55
 ```
 
-Production Pages 对 exact main SHA 完成 Build → Deploy → public Smoke，因此 Milestone F 正式 Done。
+### Plan 70A · Done
 
-Plan 70 已完成设计确认并进入实施。70A Repository Contract 已在 PR #25 完成：
+PR #25 已合并到：
 
 ```text
-feature head                     f7a7c60daf766dafbca3e9b7cbee06c569bbb535
-PR                               #25 Ready for Review
-final PR Build                   33738006368 success
-Preview Artifact                 9886587297
-Preview Artifact SHA-256         90f62f91865bc5fcb504c594d53a301fa12ff82657d4674a4789d883bcbc134d
-Trusted Preview Publish          33738176374 success
+main                         1fcdc4caecc234af7ef2426e4c9d320513eb2efb
+feature head                 f7a7c60daf766dafbca3e9b7cbee06c569bbb535
+final PR Build               33738006368 success
+Trusted Preview              33738176374 success
+post-merge Site Build        33827357380 success
+main Artifact                9920458469
+main Artifact SHA-256        eec5edee0c1891921611aad73fd99b54097c816b7ba02e8fc028d43a92734b01
 ```
 
 70A 已建立：
 
 - deletion / rename-safe Path Guard；
-- explicit targetDate；
-- exact Daily branch/path identity；
-- exact-target Scheduled Daily guard；
+- explicit Asia/Shanghai `targetDate` contract；
+- deterministic `automation/daily/YYYY-MM-DD` identity；
+- exact `content/briefs/YYYY-MM-DD.yaml` guard；
 - published-main overwrite / revision / correction boundary；
-- provider-neutral decision + report + PR metadata；
-- read-only PR Preview 中对 `automation/daily/**` 的 mandatory guard；
-- real Git change-set security regression。
+- provider-neutral decision + run report + PR metadata；
+- read-only PR Preview 对 `automation/daily/**` 的 mandatory guard。
+
+70A 不改变公开站点输出，所以 fresh main full Build 通过后无需额外 Production Pages deploy。
+
+### Plan 70B · Review Gate
+
+70B 不把 Provider 细节放回 repository core，而是增加薄 ChatGPT adapter。
+
+```text
+branch                       feat/chatgpt-scheduled-daily-adapter
+PR                           #26 Ready for Review
+final head                   515295cef40636a2300d5043d592fa8c6e2388a2
+RED                          33827531033 adapter entry missing
+final PR Build               33827615741 success
+Preview Artifact             9920550137
+Preview Artifact SHA-256     6ae074aab9863647bccdadbee63d2048cacd4b464f2c1edbdb80d88e212273d0
+Trusted Preview              33827736463 success
+```
+
+70B Repository 侧只新增：
+
+- thin `config/adapters/chatgpt-scheduled-daily.md`；
+- focused adapter drift contract；
+- provider operations runbook。
+
+已确认现有 ChatGPT task `Agent 前沿资讯` 仍存在，Asia/Shanghai daily cadence，当前 disabled，但仍携带退役 `XiaoDaoJiang/ai-frontier` HTML 发布 prompt。该 task 不会被复制；#26 合并并通过 fresh main 后，才迁移并启用它。
 
 ## 2. 产品定义
 
@@ -76,9 +95,7 @@ Orbis 是一个面向长期积累的 Git-native、Agent-native 结构化技术�
     ↓
 Reading / Presentation / RSS / Discovery
     ↓
-Canonical / Share Identity
-    ↓
-Structured Data
+Canonical / Share Identity / Structured Data
     ↓
 Durable Knowledge Lifecycle
     ↓
@@ -97,29 +114,15 @@ RSS / Web / Primary Sources
  @orbis/content-schema
              ↓
  Referential Integrity
- Topic / Source / Author / Knowledge replacement
              ↓
-     ┌───────┴─────────┐
-     ↓                 ↓
-  Astro Web      Presentation Platform
-     ↓                 ↓
- Reading          daily / weekly / talk
-     └────────┬──────────┘
-              ↓
-         assemble-site
-              ↓
- Canonical / OG / Twitter / Sitemap / RSS
-              ↓
- WebSite / Article / TechArticle JSON-LD
-              ↓
+ Astro Web + Presentation Platform
+             ↓
+ Canonical / SEO / RSS / JSON-LD
+             ↓
  Knowledge Lifecycle
-  editorial state + review health + report
-              ↓
- Knowledge Lifecycle UI
- current / attention / historical + replacement navigation
-              ↓
+             ↓
            dist/site
-              ↓
+             ↓
     PR Preview / GitHub Pages
 ```
 
@@ -134,15 +137,13 @@ Plan 70 只增加“候选内容进入仓库”的安全自动化，不改变 `c
 | Daily Brief | Done / Mature | Reading、11 页 Slides、RSS、Previous/Next、Date/Latest/Archive |
 | Weekly Brief | Done / First Release | Weekly Schema、Reading、7..11 页 Slides、RSS/Archive/Topic |
 | Presentation Platform | Done | Descriptor、Template Registry、mixed build |
-| Archive / Discovery / Navigation | Done / Mature | Homepage、Archive、Slides、cadence indexes、Related |
-| Source / Author Identity | Done | canonical IDs、Registry、Referential Integrity、Governance |
-| Registry-backed Reading UI | Done | AuthorByline、Source metadata、archived/unsourced contracts |
-| SEO URL / Sharing Foundation | Done | canonical、Preview noindex、OG/Twitter、Sitemap、RSS、Slide/alias identity |
-| Structured Data | Done | WebSite、Essay Article + Author Registry、Brief Article、Knowledge TechArticle |
-| Knowledge Lifecycle Contract | Done | review evaluator、supersededBy、derived supersedes、review report |
-| Knowledge Lifecycle UI | Done | lifecycle groups、status/health UI、stable historical routes、replacement navigation |
-| Scheduled Automation 70A | Ready for Review | exact Daily identity、idempotency decisions、least-privilege guard、PR metadata、Preview enforcement |
-| Scheduled Automation 70B | Next | Scheduler / Producer transport + one-branch / one-PR orchestration |
+| Archive / Discovery | Done | Homepage、Archive、Slides、cadence indexes、Related |
+| Source / Author Identity | Done | canonical IDs、Registry、Referential Integrity |
+| SEO / Structured Data | Done | canonical、OG/Twitter、Sitemap、RSS、JSON-LD |
+| Knowledge Lifecycle | Done | evaluator、supersession、review report、UI、stable historical routes |
+| Scheduled Automation 70A | Done | exact Daily identity、idempotency decisions、least-privilege guard、PR metadata、Preview enforcement |
+| Scheduled Automation 70B | Review Gate | thin ChatGPT adapter + connected GitHub transport contract |
+| Scheduled Automation 70C | Next | real three-cycle soak + rerun/no-write/correction drills |
 
 ## 5. Product Capability Roadmap
 
@@ -164,37 +165,24 @@ Plan 50，PR #21 / #22。
 ### Milestone F — Durable Knowledge · Done
 Plan 60，PR #23 / #24。
 
-```text
-60A Knowledge Lifecycle Contract     Done · PR #23
-60B Knowledge Lifecycle UI           Done · PR #24
-Production Pages                     33734815132 success
-```
-
 ### Milestone G — Sustainable Automation · In Progress
 Plan 70。
 
 ```text
-70A Repository Contract
-  explicit Asia/Shanghai targetDate contract
-  deterministic automation/daily/YYYY-MM-DD identity
-  exact content/briefs/YYYY-MM-DD.yaml guard
-  deletion / rename-safe Path Guard
-  published-main overwrite protection
-  provider-neutral report / PR metadata
-  mandatory read-only Preview guard
-  full Build + Trusted Preview green
-  → PR #25 Ready for Review
-
-70B Scheduler / Producer transport
-  → next after #25 merge
-
+70A Repository Contract          Done · PR #25
+        ↓
+70B ChatGPT Provider Adapter     Ready for Review · PR #26
+        ↓
+external task migration + first real transport proof
+        ↓
 70C three-cycle real validation
-  → after 70B
 ```
 
 Design：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.md`。
 
-70A Implementation Plan：`docs/superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md`。
+70A Plan：`docs/superpowers/plans/2026-09-03-scheduled-content-automation-contracts.md`。
+
+70B Plan：`docs/superpowers/plans/2026-09-04-chatgpt-scheduled-daily-adapter.md`。
 
 ## 6. 当前不建设
 
@@ -214,9 +202,10 @@ Design：`docs/superpowers/specs/2026-09-03-scheduled-content-automation-design.
 ```text
 Plan 60 / Milestone F        Done
 Plan 70 design               Approved
-70A implementation           Complete
-70A full PR Build            Passed · 33738006368
-70A Trusted Preview          Passed · 33738176374
-70A PR                       #25 Ready for Review
-next                         human merge #25 → fresh main verification → 70B
+70A                           Done · PR #25
+70B implementation           Complete
+70B full PR Build            Passed · 33827615741
+70B Trusted Preview          Passed · 33827736463
+70B PR                       #26 Ready for Review
+next                         human merge #26 → fresh main → migrate/enable existing ChatGPT task
 ```
