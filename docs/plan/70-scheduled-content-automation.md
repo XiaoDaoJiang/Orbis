@@ -1,6 +1,6 @@
 # 70 · Scheduled Content Automation
 
-> 状态：In Progress · 70A Done / 70B Review Gate
+> 状态：In Progress · 70A Done / 70B Live Gate
 > Roadmap Milestone：G — Sustainable Automation
 > 建议优先级：P2
 > 依赖：Plan 60 · Done；automation design · Approved
@@ -11,8 +11,6 @@
 ## 1. 目标
 
 把当前 `config/scheduled-task-prompt.md` 与 `config/daily-task-prompt.md` 的执行合同，升级为稳定、可观察、最小权限的 Scheduled Content Workflow。
-
-目标不是让 Agent 直接发布站点，而是自动完成：
 
 ```text
 发现 / 研究
@@ -50,7 +48,8 @@ Repository Contract 固定；Scheduler / Producer 可替换。
 - read-only PR Build；
 - Trusted Preview publish + public smoke；
 - governed manual Production Pages deploy；
-- Plan 60 Durable Knowledge 完整生产闭环。
+- ChatGPT thin provider adapter；
+- enabled existing Scheduled Task pilot。
 
 Plan 70 不重建第二套发布链。
 
@@ -58,7 +57,7 @@ Plan 70 不重建第二套发布链。
 
 ### 3.1 Scheduled Daily 权限比 generic content-agent 更窄
 
-Scheduled Daily 只允许一个精确目标：
+Scheduled Daily 只允许：
 
 ```text
 content/briefs/<targetDate>.yaml
@@ -102,30 +101,17 @@ Scheduler 按 `Asia/Shanghai` 计算并显式传入：
 
 ```text
 targetDate=YYYY-MM-DD
+branch=automation/daily/YYYY-MM-DD
+contentPath=content/briefs/YYYY-MM-DD.yaml
 ```
 
-Repository tooling 不允许 system-clock fallback。
-
-固定分支：
-
-```text
-automation/daily/YYYY-MM-DD
-```
-
-固定内容路径：
-
-```text
-content/briefs/YYYY-MM-DD.yaml
-```
-
-分支名同时是同日 candidate 的 idempotency key。
+Repository tooling 不允许 system-clock fallback。分支名同时是同日 candidate 的 idempotency key。
 
 ## 6. 70A — Scheduled Daily Repository Contract · Done
 
-PR #25 已于 `2026-09-04T01:51:45Z` 合并：
+PR #25 已合并：
 
 ```text
-PR                    #25 merged
 feature head          f7a7c60daf766dafbca3e9b7cbee06c569bbb535
 main                   1fcdc4caecc234af7ef2426e4c9d320513eb2efb
 final PR Build         33738006368 success
@@ -135,52 +121,24 @@ main Artifact          9920458469
 main Artifact SHA-256  eec5edee0c1891921611aad73fd99b54097c816b7ba02e8fc028d43a92734b01
 ```
 
-70A 已实现：
+70A 已实现 deletion/rename-safe change collection、strict target identity、exact-target guard、published-base protection、provider-neutral decision/report/PR metadata 与 mandatory read-only Preview guard。
 
-- deletion / rename-safe Git change collector：`git diff --name-status -z --find-renames`；
-- pure Path Guard policy 同时检查 rename/copy old/new path；
-- real Git deletion + rename integration contract；
-- strict/calendar-valid `targetDate`；
-- canonical Daily branch / content path；
-- `dailyBriefSchema` candidate identity + `publishedAt === targetDate`；
-- provider-neutral decision vocabulary；
-- exact-target Scheduled Daily guard；
-- normal Scheduled Daily 禁止已有 base target 修改；
-- published base 强制 correction workflow；
-- provider-neutral `DailyAutomationReport`；
-- deterministic PR metadata renderer；
-- prompt idempotency/correction semantics 对齐；
-- `scheduled-daily` static defense-in-depth mode；
-- `automation/daily/**` PR 强制执行 Scheduled Daily guard；
-- PR Build 权限仍为 `contents: read`。
+## 7. 70B — ChatGPT Scheduled Daily Adapter · Live Gate
 
-70A 没有改变公开站点输出，因此 fresh main full Build 通过后无需单独触发 Production Pages deploy。
-
-## 7. 70B — ChatGPT Scheduled Daily Adapter · Ready for Review
-
-Implementation Plan：[`2026-09-04-chatgpt-scheduled-daily-adapter.md`](../superpowers/plans/2026-09-04-chatgpt-scheduled-daily-adapter.md)
+PR #26 已于 `2026-09-04T06:44:56Z` 合并：
 
 ```text
-branch                       feat/chatgpt-scheduled-daily-adapter
-PR                           #26 Ready for Review
-final head                   515295cef40636a2300d5043d592fa8c6e2388a2
+PR                           #26 merged
+feature head                 515295cef40636a2300d5043d592fa8c6e2388a2
+main                         6419b3dfeeb3caa7f3f577351728a0e8dd780d91
 RED                          33827531033 adapter entry missing
 final PR Build               33827615741 success
 Preview Artifact             9920550137
 Preview Artifact SHA-256     6ae074aab9863647bccdadbee63d2048cacd4b464f2c1edbdb80d88e212273d0
 Trusted Preview              33827736463 success
-```
-
-首个 Provider Adapter 复用现有 ChatGPT Scheduled Task，而不是创建第二个任务。
-
-已确认现有任务：
-
-```text
-Title       Agent 前沿资讯
-Timezone    Asia/Shanghai
-Cadence     daily
-State       disabled
-Legacy      still points to XiaoDaoJiang/ai-frontier HTML publishing
+post-merge Site Build        33845663516 success
+main Artifact                9926441727
+main Artifact SHA-256        a72cb53f61b29fdfdf6a6737f4599b698bc9e5be6b7f1ecc47b2528dece184e0
 ```
 
 70B Repository 侧已实现：
@@ -191,65 +149,53 @@ Legacy      still points to XiaoDaoJiang/ai-frontier HTML publishing
 - integration-base / deterministic branch / open PR preflight；
 - connected GitHub branch + exact file + exactly-one-PR transport contract；
 - provider-neutral report/PR metadata 继续由 70A 定义；
-- 明确禁止 direct main write / auto merge / Production Pages deploy；
-- 明确禁止恢复已退役 `XiaoDaoJiang/ai-frontier`；
+- 禁止 direct main write / auto merge / Production Pages deploy；
+- 禁止恢复已退役 `XiaoDaoJiang/ai-frontier`；
 - focused adapter drift test；
 - `docs/operations/chatgpt-scheduled-daily.md` 运维 runbook。
 
-### 70B TDD Evidence
+### External ChatGPT task migration · Done
 
-RED — run `33827531033`：已有 70A contracts 全部通过，最后精确失败：
-
-```text
-AssertionError: ChatGPT Scheduled Daily adapter must exist
-```
-
-GREEN — run `33827615741`：full PR Preview Build success。
-
-Trusted Preview — run `33827736463`：
+复用现有 task，不创建第二个 Scheduler：
 
 ```text
-trusted artifact download  success
-preview branch publish      success
-public availability smoke   success
-preview URL comment         success
+Title       Agent 前沿资讯
+Timezone    Asia/Shanghai
+Cadence     daily
+State       enabled
+Bootstrap   Orbis main / config/adapters/chatgpt-scheduled-daily.md
+Legacy      XiaoDaoJiang/ai-frontier behavior removed from active prompt
+Notify      existing notification settings preserved
 ```
 
-### Scope / Authority Audit
+外部 task bootstrap 只负责读取当前 Orbis adapter / repository contract 并使用 connected GitHub transport。公共 Roadmap 不记录外部平台 opaque task ID，避免把非必要平台标识提交到公开仓库。
 
-PR #26 changed files exactly：
+### 70B TDD / Integration Evidence
 
 ```text
-config/adapters/chatgpt-scheduled-daily.md
-docs/operations/chatgpt-scheduled-daily.md
-package.json
-tools/content-automation/chatgpt-adapter.test.ts
+RED               33827531033  ChatGPT Scheduled Daily adapter must exist
+GREEN PR Build    33827615741  success
+Trusted Preview   33827736463  success
+main merge        #26 → 6419b3dfeeb3caa7f3f577351728a0e8dd780d91
+fresh main Build  33845663516  success
+Scheduler         existing task migrated + enabled
 ```
 
-未修改：
+### 70B remaining Live Gate
+
+70B 尚未标记 Done。第一个 eligible real run 必须证明：
 
 ```text
-content/**
-apps/**
-packages/**
-dist/**
-.github/workflows/**
+explicit targetDate
+→ deterministic automation/daily/<date>
+→ exact content/briefs/<date>.yaml
+→ exactly one PR
+→ Scheduled Daily Guard
+→ full Build
+→ Trusted Preview
 ```
 
-没有新增 Production authority。
-
-### 外部任务迁移 Gate
-
-在 PR #26 合并 + fresh main Build 之前，现有 `Agent 前沿资讯` task 保持 disabled，不修改为读取未合并 adapter。
-
-合并后：
-
-1. 更新现有 `Agent 前沿资讯` task，而不是新建第二个任务；
-2. prompt 缩减成读取 Orbis main `config/adapters/chatgpt-scheduled-daily.md` 的 bootstrap；
-3. 保持 Asia/Shanghai daily cadence；
-4. 启用 task；
-5. 保持当前通知配置不变；
-6. 第一个 eligible real run 必须证明 deterministic branch + exact Daily + one PR transport。
+如果该日期已经在 main 以 `published` 存在，`already-published` 是正确 no-write 行为，但不能单独完成首次 transport proof；继续等待下一个 eligible targetDate。
 
 ## 8. Automation Run Report
 
@@ -270,19 +216,6 @@ unverified[]
 failureStage?
 ```
 
-失败阶段至少：
-
-```text
-discovery
-verification
-generation
-schema
-guard
-git
-pr
-preview
-```
-
 不记录 chain-of-thought、密钥、内部 prompt 或无必要抓取原文。
 
 ## 9. Correction Workflow
@@ -299,7 +232,7 @@ Scheduled Daily → no write / already-published
 correction/daily/YYYY-MM-DD/<reason-slug>
 ```
 
-Correction PR 必须说明错误/遗漏、reason、新的一手证据以及核心结论是否变化。Scheduled Job 不自动进入 correction mode。
+Scheduled Job 不自动进入 correction mode。
 
 ## 10. Preview / Publish Boundary
 
@@ -318,7 +251,7 @@ Human / Policy Review 通过后才 merge main。Pages 继续由既有 governed P
 
 ## 11. 70C — Real-cycle Validation
 
-必须至少：
+70C 在首次 real transport proof 后开始累计正式 soak evidence，必须至少：
 
 - 连续 3 次真实 Daily cycle；
 - 同日 rerun / idempotency drill；
@@ -356,20 +289,13 @@ Human / Policy Review 通过后才 merge main。Pages 继续由既有 governed P
 
 - [x] Plan 60 / Milestone F Done；
 - [x] Plan 70 design approved；
-- [x] 70A TDD implementation；
-- [x] PR #25 merged to main；
-- [x] post-merge main Build `33827357380`；
 - [x] 70A Done；
-- [x] 70B Implementation Plan；
-- [x] 70B feature branch + PR #26；
-- [x] 70B adapter RED evidence `33827531033`；
-- [x] 70B final full Build `33827615741`；
-- [x] 70B Trusted Preview `33827736463`；
-- [x] PR #26 Ready for Review；
-- [ ] PR #26 merged to main；
-- [ ] post-merge fresh main Build；
-- [ ] external ChatGPT task migrated + enabled；
+- [x] PR #26 merged to main；
+- [x] post-merge fresh main Build `33845663516`；
+- [x] external ChatGPT task migrated；
+- [x] external ChatGPT task enabled；
 - [ ] first eligible real transport proof；
+- [ ] 70B Done；
 - [ ] 70C three-cycle validation + correction drill。
 
-**当前下一步：人工合并 PR #26；合并并通过 fresh main 后，迁移并启用现有 ChatGPT Scheduled Task。**
+**当前下一步：等待启用后的第一个 eligible Scheduled Daily run；检查 deterministic branch / exact Brief / exactly-one-PR / CI / Trusted Preview，并以真实证据决定 70B 是否 Done、是否开始 70C soak。**
