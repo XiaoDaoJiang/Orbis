@@ -1,10 +1,10 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 基线：`main@1fcdc4caecc234af7ef2426e4c9d320513eb2efb`
+> 基线：`main@6419b3dfeeb3caa7f3f577351728a0e8dd780d91`
 > 基线日期：2026-09-04
 > 阶段：Product Capability Phase
-> 当前目标：Plan 70 · Scheduled Content Automation · 70B Review Gate
+> 当前目标：Plan 70 · Scheduled Content Automation · 70B Live Gate
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -19,21 +19,17 @@
 - Plan 70 · Scheduled Content Automation：**In Progress**
   - design：Approved
   - 70A Repository Contract：**Done** — PR #25
-    - main：`1fcdc4caecc234af7ef2426e4c9d320513eb2efb`
-    - post-merge Site Build：`33827357380` Passed
-    - main Artifact：`9920458469`
-    - Artifact SHA-256：`eec5edee0c1891921611aad73fd99b54097c816b7ba02e8fc028d43a92734b01`
-  - 70B ChatGPT Scheduled Daily Adapter：**Review Gate**
-    - plan：`docs/superpowers/plans/2026-09-04-chatgpt-scheduled-daily-adapter.md`
-    - branch：`feat/chatgpt-scheduled-daily-adapter`
-    - PR：**#26 Ready for Review**
-    - head：`515295cef40636a2300d5043d592fa8c6e2388a2`
-    - RED：`33827531033` — adapter entry missing
-    - final PR Build：`33827615741` Passed
-    - Preview Artifact：`9920550137`
-    - Preview Artifact SHA-256：`6ae074aab9863647bccdadbee63d2048cacd4b464f2c1edbdb80d88e212273d0`
-    - Trusted Preview：`33827736463` Passed
-    - external task migration：blocked until PR #26 merge + fresh main Build
+  - 70B ChatGPT Scheduled Daily Adapter：**Live Gate** — PR #26 merged
+    - main：`6419b3dfeeb3caa7f3f577351728a0e8dd780d91`
+    - post-merge Site Build：`33845663516` Passed
+    - main Artifact：`9926441727`
+    - Artifact SHA-256：`a72cb53f61b29fdfdf6a6737f4599b698bc9e5be6b7f1ecc47b2528dece184e0`
+    - existing ChatGPT task：`Agent 前沿资讯`
+    - scheduler state：enabled
+    - timezone/cadence：Asia/Shanghai · daily
+    - bootstrap：current Orbis `main` → `config/adapters/chatgpt-scheduled-daily.md`
+    - notification settings：preserved
+    - first real transport proof：pending
 
 ## 当前产品基线
 
@@ -56,19 +52,21 @@ Scheduled Content Automation · In Progress
   │   ├── published-main overwrite protection
   │   ├── provider-neutral run/PR metadata
   │   └── mandatory read-only PR Preview guard
-  ├── 70B ChatGPT Adapter · Review Gate
-  │   ├── thin provider adapter
-  │   ├── connected GitHub one-branch / one-PR transport contract
-  │   ├── adapter drift contract + operations runbook
-  │   └── existing task migration after merge
+  ├── 70B ChatGPT Adapter · Live Gate
+  │   ├── provider adapter merged to main
+  │   ├── existing Scheduled Task migrated + enabled
+  │   ├── connected GitHub one-branch / one-PR contract
+  │   └── first eligible real transport proof pending
   └── 70C Real-cycle Validation
 ```
 
-70A 已随 PR #25 合并，并在 fresh `main@1fcdc4caecc234af7ef2426e4c9d320513eb2efb` 上通过完整 Site Build。由于 70A 只改变 Repository Contract / CI，不改变公开站点输出，因此不要求额外 Production Pages deploy。
+70A 已随 PR #25 合并，并在 fresh main 上通过完整 Site Build。
 
-70B Repository 侧也已完成：PR #26 final Build 与 Trusted Preview 均通过，scope 仅包含 ChatGPT adapter、focused contract、operations runbook 与 test wiring，没有修改 `content/**`、`apps/**`、`packages/**`、`dist/**` 或 workflows。
+70B Repository 侧已随 PR #26 合并。PR Build `33827615741`、Trusted Preview `33827736463` 与 post-merge main Build `33845663516` 均通过；PR #26 只包含 ChatGPT adapter、focused contract、operations runbook 与 test wiring，没有修改 `content/**`、`apps/**`、`packages/**`、`dist/**` 或 workflows，也没有增加 Production authority。
 
-已确认现有 ChatGPT task `Agent 前沿资讯` 仍存在、当前 disabled、Asia/Shanghai daily cadence，但 prompt 仍指向已退役 `XiaoDaoJiang/ai-frontier` HTML 发布链。不会创建第二个任务；PR #26 合并并通过 fresh main 后才迁移并启用现有任务。
+现有 ChatGPT task `Agent 前沿资讯` 已原地迁移，不创建第二个 Scheduler。旧 `XiaoDaoJiang/ai-frontier` HTML 发布 prompt 已被替换为 Orbis thin bootstrap；task 已启用，继续使用 Asia/Shanghai daily cadence，并保持原通知配置。
+
+70B 尚未 Done：必须由第一个 eligible real run 证明 `targetDate → automation/daily/<date> → exact Brief → exactly one PR → Scheduled Daily Guard → full Build → Trusted Preview`。若目标日期已在 main published，`already-published` 是合法 no-write 结果，但不能替代首次 branch/PR transport proof。
 
 ## Roadmap
 
@@ -98,8 +96,8 @@ Scheduled Content Automation · In Progress
         ↓
 70 Scheduled Content Automation In Progress
   ├── 70A Repository Contract  Done · PR #25
-  ├── 70B ChatGPT Adapter      Review Gate · PR #26
-  └── 70C Real-cycle Validation Next after task migration / first transport proof
+  ├── 70B ChatGPT Adapter      Live Gate · PR #26 merged / task enabled
+  └── 70C Real-cycle Validation Next after first transport proof
 ```
 
 ## 每个计划的统一交付规则
@@ -120,6 +118,7 @@ Scheduled Content Automation · In Progress
 - `Design Review`：当前计划已成为产品目标，正在锁定语义与边界；
 - `In Progress`：设计已批准，已有实施计划、分支或 PR；
 - `Review Gate`：实现、CI、Preview 已完成，等待人工集成；
+- `Live Gate`：实现已进入 main、外部 adapter 已启用，等待真实运行证据；
 - `Production Gate`：实现与 main Build 已完成，但 exact-SHA Production Pages 验证尚未完成；
-- `Done`：全部计划 PR 已进入 `main`，并完成对应 Preview / main / Production 验证；
+- `Done`：全部计划 PR 已进入 `main`，并完成对应 Preview / main / Production / real-run 验证；
 - `Deferred`：明确推迟。
