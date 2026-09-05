@@ -1,0 +1,25 @@
+{
+  "latest": "2026-09-05",
+  "issues": [
+    {
+      "date": "2026-09-05",
+      "title": "Agent 正在进入生命周期治理阶段：Memory、控制面与确定性执行成为新的可靠性边界",
+      "path": "2026/09/05/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "title": "Harness 正在成为模型之外的能力层",
+      "path": "2026/08/28/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    }
+  ]
+}
