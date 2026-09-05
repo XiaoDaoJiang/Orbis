@@ -1,0 +1,209 @@
+kind: brief
+cadence: daily
+publishedAt: 2026-09-05
+status: published
+title: Agent 正在进入生命周期治理阶段：Memory、控制面与确定性执行成为新的可靠性边界
+summary: 最近 48 小时的新信号显示，Agent 工程重点正在从“能否完成任务”转向“如何长期运行、如何受控变更、如何验证完成”：Memory 需要生命周期策略，基础设施 Agent 需要共享控制面，生产操作需要确定性执行，而 Coding Agent 的模型升级则进一步放大验证闭环的重要性。
+topics:
+  - agent-harness
+  - coding-agent
+  - mcp
+signals:
+  - title: Memory 需要像数据资产一样管理生命周期
+    summary: 长期运行 Agent 会积累过期、冲突和低价值记忆，TTL、相关性评分、合并、删除与回归测试开始成为生产级 Memory 的基础能力。
+    impact: high
+  - title: Agent 操作基础设施时应调用控制面而不是裸 CLI
+    summary: HyperPod InstantStart 把 Web、REST 与 MCP Agent 统一到同一后端校验和持久状态，说明可靠的 Agent Ops 依赖受控 API 与幂等流程。
+    impact: high
+  - title: 高风险自动化要求模型只决定 What，确定性代码执行 How
+    summary: Intuit 的灾备 Agent 把模型限制在解释、选择与协调层，真正的 failover 仍由既有系统执行并经过策略门、审批与审计。
+    impact: high
+  - title: 更强 Coding Agent 让验证闭环成为默认完成条件
+    summary: GPT-6 Astra 进入 GitHub Copilot 后，长时自主编码能力进一步普及，但 GitHub 强调其价值来自规划、诊断与自我验证，而不只是生成更多代码。
+    impact: medium
+sections:
+  - id: memory-lifecycle
+    layout: architecture
+    title: Agent Memory 的核心问题从“记住”转向“何时忘记”
+    conclusion: 生产级 Memory 不应无限增长，而应建立按类型区分的保留、评分、合并、删除与质量回归流程。
+    facts:
+      - AWS 在 2026-09-04 发布 AgentCore Memory 生命周期方案，把 episodic、semantic 与 procedural memory 区分为不同保留价值。
+      - 示例方案使用 nightly Step Functions 工作流执行 TTL 过期、相关性评分、低分记忆合并与剩余项清理。
+      - 官方样例同时提供回归测试框架，用于比较生命周期处理前后的 Agent 回答质量，避免“清理成功但能力退化”。
+    limitations:
+      - 相关性评分阈值、TTL 与合并策略具有明显业务依赖，不能直接复制默认参数到所有 Agent。
+      - LLM 驱动的记忆合并本身也可能丢失关键细节或引入错误，需要保留 provenance 与回归证据。
+    references:
+      - title: Designing lifecycle policies for AgentCore memory
+        url: https://aws.amazon.com/blogs/machine-learning/designing-lifecycle-policies-for-agentcore-memory/
+        supports: 支持 Memory 类型划分、TTL、相关性评分、合并、清理与质量回归设计。
+        accessedAt: 2026-09-05
+      - title: sample-memory-lifecycle-policies-for-bedrock-agentcore
+        url: https://github.com/aws-samples/sample-memory-lifecycle-policies-for-bedrock-agentcore
+        supports: 支持可部署的生命周期工作流、审计与回归测试实现。
+        accessedAt: 2026-09-05
+  - id: guarded-control-plane
+    layout: system-map
+    title: Agent Ops 的可靠性来自共享控制面
+    conclusion: 当 Agent 开始操作集群、训练和推理资源时，最佳边界不是放开 Shell，而是让 Agent 与人类 UI 复用同一组校验、状态和幂等 API。
+    facts:
+      - HyperPod InstantStart 将 Web UI、REST API 与 MCP tools 作为同一控制面的三种入口，底层复用相同 backend APIs。
+      - Agent 负责规划多阶段操作并轮询异步状态，但可用区、实例类型和容量类型等责任边界仍显式留给操作者。
+      - MCP 工具封装领域操作与完成状态，状态变更不是“一次命令成功即完成”，而是需要持久化阶段并等待 terminal state。
+    limitations:
+      - 该模式仍依赖底层 IAM、Kubernetes 与 AWS 资源治理，控制面不会自动消除权限误配或容量风险。
+      - 项目当前针对 HyperPod/EKS 场景，其他基础设施需要重新设计领域 API 与幂等语义。
+    references:
+      - title: Run agent-driven Amazon SageMaker HyperPod operations with InstantStart
+        url: https://aws.amazon.com/blogs/machine-learning/run-agent-driven-amazon-sagemaker-hyperpod-operations-with-instantstart/
+        supports: 支持共享控制面、MCP 工具、持久状态、人工决策点与幂等操作模式。
+        accessedAt: 2026-09-05
+  - id: deterministic-execution
+    layout: comparison
+    title: 生产 Agent 应把“选择动作”与“执行动作”拆开
+    conclusion: 高风险 Agent 最稳健的结构是模型负责解释与选择，传统确定性系统负责凭证、策略、执行、审计和回滚。
+    facts:
+      - Intuit EWOK Agent 接收自然语言灾备请求，但真正的 asset resolution、policy gate、change record 与 failover 都由 EWOK API 确定性执行。
+      - 模型不持有生产凭证，也没有直接调用 EWOK 的网络路径，执行器通过 request-scoped identity 完成受限调用。
+      - change-freeze、破坏性动作和紧急 override 都被建模为显式策略分支与人工审批，而不是隐藏在自由文本 Prompt 中。
+    limitations:
+      - 该架构降低了模型直接误操作的风险，但仍需要维护 executor、policy engine 和操作 API 的正确性。
+      - 高风险流程中 HITL 会增加响应时间，需要根据操作可逆性和影响面分层设置审批。
+    references:
+      - title: How Intuit built an agentic disaster recovery assistant with Amazon Bedrock
+        url: https://aws.amazon.com/blogs/machine-learning/how-intuit-built-an-agentic-disaster-recovery-assistant-with-amazon-bedrock/
+        supports: 支持 model-decides-what、deterministic-code-executes-how、HITL、审计与最小权限模式。
+        accessedAt: 2026-09-05
+  - id: coding-agent-verification
+    layout: metrics
+    title: Coding Agent 的模型升级正在把验证变成能力本身
+    conclusion: 长时自主编码的差异不应只用生成质量衡量，规划、诊断、测试、独立确认和可审阅证据正在成为新的完成标准。
+    facts:
+      - GitHub 于 2026-09-04 宣布 GPT-6 Astra 在 GitHub Copilot 中 GA，并覆盖 Copilot CLI、coding agent、IDE 与 github.com 等入口。
+      - GitHub 的内部测试强调 Astra 会在执行过程中持续规划和验证，并在宣布完成前独立确认结果。
+      - AWS 的 AI-DLC 样例同样把本地 Coding Agent 与 CI/CD 触发的安全分析、CVE 检查、策略检查和持久化结果组合成连续验证链路。
+    limitations:
+      - GitHub 对 Astra 的效果描述来自内部测试，不能视为所有仓库和任务上的独立 benchmark。
+      - 自动安全分析和质量评分仍可能漏报或误报，最终合并边界仍应保留人工或策略 Review。
+    references:
+      - title: GPT-6 Astra is generally available in GitHub Copilot
+        url: https://github.blog/changelog/2026-09-04-gpt-6-astra-is-generally-available-in-github-copilot/
+        supports: 支持 Astra 在 Copilot 中的可用范围，以及规划、验证和独立确认的官方观察。
+        accessedAt: 2026-09-05
+      - title: AI-driven development lifecycle using Amazon Bedrock AgentCore
+        url: https://aws.amazon.com/blogs/machine-learning/ai-driven-development-lifecycle-using-amazon-bedrock-agentcore/
+        supports: 支持本地 Coding Agent 与 CI/CD 安全验证、多 Agent 分工和 Human-in-the-loop 的组合模式。
+        accessedAt: 2026-09-05
+  - id: lifecycle-control-loop
+    layout: timeline
+    title: Agent 生产化正在形成统一的生命周期控制回路
+    conclusion: Memory、工具、执行和验证正在收敛为同一种工程模式：显式状态、受控边界、可恢复执行、持续评估与人类可接管。
+    facts:
+      - Memory 生命周期要求记录何时创建、何时访问、何时合并或删除，并对处理后的质量重新验证。
+      - 基础设施 Agent 要求每个长操作持久化阶段并轮询到 terminal state，而不是把请求已接受当作完成。
+      - 生产灾备 Agent 要求每个状态变更都经过 typed tool、策略门、change record 与审计链。
+      - Coding Agent 的完成定义也从“生成 diff”扩展为测试、诊断、验证和可审阅证据。
+    limitations:
+      - 这些模式目前来自不同产品与案例，尚未形成跨厂商统一的 Agent lifecycle 标准。
+      - 过度治理会拖慢低风险任务，因此需要按资源敏感度和可逆性分层，而不是所有 Agent 一律采用最重控制。
+    references:
+      - title: Designing lifecycle policies for AgentCore memory
+        url: https://aws.amazon.com/blogs/machine-learning/designing-lifecycle-policies-for-agentcore-memory/
+        supports: 支持 Memory 生命周期与回归验证闭环。
+        accessedAt: 2026-09-05
+      - title: Run agent-driven Amazon SageMaker HyperPod operations with InstantStart
+        url: https://aws.amazon.com/blogs/machine-learning/run-agent-driven-amazon-sagemaker-hyperpod-operations-with-instantstart/
+        supports: 支持 Agent 操作的显式状态、轮询与共享控制面模式。
+        accessedAt: 2026-09-05
+      - title: How Intuit built an agentic disaster recovery assistant with Amazon Bedrock
+        url: https://aws.amazon.com/blogs/machine-learning/how-intuit-built-an-agentic-disaster-recovery-assistant-with-amazon-bedrock/
+        supports: 支持高风险生产操作的策略门、审计与确定性执行模式。
+        accessedAt: 2026-09-05
+projects:
+  - action: TEST
+    name: aws-samples/sample-memory-lifecycle-policies-for-bedrock-agentcore
+    summary: 验证 TTL、相关性评分、记忆合并与回归测试是否适合自己的 Agent Memory 数据分布。
+    maturity: early
+    url: https://github.com/aws-samples/sample-memory-lifecycle-policies-for-bedrock-agentcore
+  - action: READ
+    name: haozhx23/HyperPod-InstantStart
+    summary: 研究共享控制面、MCP bounded tools、持久操作状态与 Agent skills 如何约束基础设施自动化。
+    maturity: growing
+    url: https://github.com/haozhx23/HyperPod-InstantStart
+  - action: READ
+    name: aws-samples/sample-agentic-secure-software-handoffs
+    summary: 研究多 Agent 代码安全分析如何通过 MCP 工具、CI/CD 触发与持久化结果形成验证链。
+    maturity: early
+    url: https://github.com/aws-samples/sample-agentic-secure-software-handoffs
+  - action: TEST
+    name: aws-samples/sample-to-create-mermaid-entity-diagrams-from-sql-using-agentic-ai-on-agentcore
+    summary: 验证本地 Codex Skill、MCP 与云端 Agent Runtime 能否共享同一工程任务边界。
+    maturity: early
+    url: https://github.com/aws-samples/sample-to-create-mermaid-entity-diagrams-from-sql-using-agentic-ai-on-agentcore
+radar:
+  - label: Memory lifecycle policy
+    impact: 91
+    horizon: 15
+    note: 长期 Agent 一旦进入真实使用，过期与冲突记忆会迅速变成质量和合规问题。
+  - label: Guarded agent control plane
+    impact: 95
+    horizon: 12
+    note: 对基础设施和生产资源的 Agent 操作应立即避免裸 Shell 权限，优先复用受控 API。
+  - label: Deterministic execution boundary
+    impact: 97
+    horizon: 8
+    note: 高风险状态变更必须让模型与执行凭证、策略和确定性 executor 分离。
+  - label: Continuous agent verification
+    impact: 93
+    horizon: 10
+    note: 更强 Coding Agent 会放大错误影响，测试、诊断与独立确认应成为完成条件。
+  - label: Lifecycle observability
+    impact: 86
+    horizon: 24
+    note: Session、Memory、Tool 和长任务状态需要跨组件统一追踪才能可靠恢复和审计。
+actions:
+  - title: 给 Agent Memory 建立过期与回归策略
+    description: 按 episodic、semantic、procedural 分类梳理保留周期，先从 TTL 与删除审计开始，再增加相关性评分和合并回归测试。
+  - title: 把高权限工具收口到领域控制面
+    description: 盘点当前 Agent 可直接调用的 Shell、云 CLI 与生产 API，把高风险操作改造成 typed、幂等、可查询 terminal state 的受控工具。
+  - title: 分离模型决策与确定性执行
+    description: 对部署、灾备、数据变更等动作，让模型只返回结构化意图，凭证、策略门、审批、执行和审计交给传统代码。
+  - title: 把验证证据加入 Coding Agent DoD
+    description: 要求 Agent 在完成前提供测试结果、关键诊断、变更摘要与失败边界，不能仅以生成 diff 或自然语言自报完成。
+references:
+  - title: Designing lifecycle policies for AgentCore memory
+    url: https://aws.amazon.com/blogs/machine-learning/designing-lifecycle-policies-for-agentcore-memory/
+    supports: Memory 生命周期、清理、合并、审计和回归验证。
+    accessedAt: 2026-09-05
+  - title: sample-memory-lifecycle-policies-for-bedrock-agentcore
+    url: https://github.com/aws-samples/sample-memory-lifecycle-policies-for-bedrock-agentcore
+    supports: Memory 生命周期样例代码与测试实现。
+    accessedAt: 2026-09-05
+  - title: Run agent-driven Amazon SageMaker HyperPod operations with InstantStart
+    url: https://aws.amazon.com/blogs/machine-learning/run-agent-driven-amazon-sagemaker-hyperpod-operations-with-instantstart/
+    supports: 共享控制面、MCP bounded tools 与可靠 Agent Ops 模式。
+    accessedAt: 2026-09-05
+  - title: How Intuit built an agentic disaster recovery assistant with Amazon Bedrock
+    url: https://aws.amazon.com/blogs/machine-learning/how-intuit-built-an-agentic-disaster-recovery-assistant-with-amazon-bedrock/
+    supports: 高风险 Agent 的确定性执行、策略门、HITL 与审计边界。
+    accessedAt: 2026-09-05
+  - title: GPT-6 Astra is generally available in GitHub Copilot
+    url: https://github.blog/changelog/2026-09-04-gpt-6-astra-is-generally-available-in-github-copilot/
+    supports: Astra 进入 Copilot 以及 GitHub 对长时 Coding Agent 规划与验证能力的官方说明。
+    accessedAt: 2026-09-05
+  - title: AI-driven development lifecycle using Amazon Bedrock AgentCore
+    url: https://aws.amazon.com/blogs/machine-learning/ai-driven-development-lifecycle-using-amazon-bedrock-agentcore/
+    supports: Coding Agent、MCP、CI/CD 安全分析与 Human-in-the-loop 的组合模式。
+    accessedAt: 2026-09-05
+archivePicks:
+  - title: Harness 正在成为模型之外的能力层
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-08-28.yaml
+    supports: 与本期“Runtime 从工具循环转向治理与验证边界”的判断形成连续脉络。
+    publishedAt: 2026-08-28
+  - title: Orbis Weekly — Presentation Becomes a Platform Boundary
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-01-weekly.yaml
+    supports: 提供结构化内容、验证与发布边界的近期归档背景。
+    publishedAt: 2026-09-01
+presentation:
+  enabled: true
+  template: daily-v1
