@@ -1,12 +1,12 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 当前 main：`3a7245aa907fedeb10141bbb05deb718c6fa7e7d`
+> 当前实现基线：`main@ebd38ef890ba3f3d40d03b754085cbd73a44a080`
 > 基线日期：2026-09-07
 > 阶段：Product Capability Phase
-> 当前目标：Milestone H · Evidence Integrity → **Plan 80 / 80B Review Gate · PR #35**
+> 当前目标：Milestone H · Evidence Integrity → **Plan 80 / 80C Review Gate · PR #36**
 
-`docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
+`docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与实施状态。详细历史证据、设计推导和每个 Slice 的验证记录保留在对应 Plan / Design / Implementation Plan 中；本 README 只维护当前入口与统一 Gate，避免复制易过期的流水账。
 
 ## 当前推进状态
 
@@ -19,179 +19,116 @@
 - Plan 70 · Scheduled Content Automation：**Done**
   - 70A Repository Contract：Done — PR #25
   - 70B ChatGPT Scheduled Daily Adapter：Done — PR #26 + transport proof #27
-  - 70C Real-cycle Validation：Done — stable `3/3` + rerun / published no-write / correction drill
+  - 70C Real-cycle Validation：Done — stable `3/3` + rerun / published no-write / explicit correction drill
 - Product Capability Roadmap Refresh · 2026-09-07：**Done**
   - Selected：Milestone H — Evidence Integrity
   - Design：[`2026-09-07-evidence-integrity-design.md`](../superpowers/specs/2026-09-07-evidence-integrity-design.md) — **Approved**
 - Plan 80 · Evidence Integrity：**In Progress**
   - 80A Evidence Contract：**Done** — PR #34 merged + fresh main Build `34098464587`
-  - 80B Real Correction Provenance + Reading UI：**Review Gate** — PR #35
-  - 80C Correction Guard + Closeout：**Blocked by PR #35 merge + fresh main Build**
+  - 80B Real Correction Provenance + Reading UI：**Done** — PR #35 merged + fresh main Build `34108101313`
+  - 80C Correction Guard + Production Closeout：**Review Gate** — PR #36
 
-## Milestone G closeout
-
-Plan 70 已完成完整真实链路：
+## Milestone H 当前闭环
 
 ```text
-Repository Contract
+80A Evidence Contract
+    Done
     ↓
-ChatGPT Scheduled Daily Adapter
+Evidence V1 Daily Schema
+claim → evidence relation
+frozen legacy boundary
+Scheduled Daily Evidence V1 enforcement
     ↓
-3 consecutive stable cycles
+80B Real Correction Provenance + Reading UI
+    Done
     ↓
-same-day rerun / idempotency
+2026-09-07 full re-verification
+16 stable factual claims
+6 canonical references
+PR #33 correction provenance
+reader-visible correction / claim / reference anchors
+11-slide contract preserved
     ↓
-already-published / zero write
-    ↓
-explicit published correction
-    ↓
-Human merge
-    ↓
-fresh corrected main Build
+80C Correction Guard + Production Closeout
+    Review Gate · PR #36
 ```
 
-真实稳定周期：PR #30 / #31 / #32；真实 correction：PR #33。
-
-因此 **Plan 70 / Milestone G：Done**。
-
-## Roadmap Refresh 决策
-
-Milestone G 完成后没有按编号惯性扩功能，而是根据真实使用证据重新排序。PR #33 证明现有 Repository / Build / Preview / correction workflow 能安全工作，但旧 Daily 模型仍缺少 claim → evidence 的机器可检查关系。
-
-选择：
+80C 当前已完成 implementation-side contract：
 
 ```text
-1. Evidence Integrity / Correction Provenance   Selected → Milestone H
-2. Static Search / Full-text Retrieval          Defer
-3. Weekly Scheduled Automation                  Defer
-4. Source / Author Directory                    Defer
-5. Registry auto-mutation / multi-provider      Reject for now
+correction/daily/YYYY-MM-DD/<slug>
+        ↓
+exact one published Evidence V1 Daily
+        ↓
+append-only immutable correction history
+        ↓
+factual mutation must have new correction target
+        ↓
+reference mutation must have explicit provenance
+        ↓
+shared Evidence Integrity validation
+        ↓
+Generic Path Guard + full Build + Trusted Preview
 ```
 
-Milestone H 的核心不是自动判断事实真假，而是：
+最终 80C PR 证据：
 
 ```text
-stable factual claim
-        ↓
-explicit evidence edge
-        ↓
-canonical reference
-        ↓
-Source Registry
-
-published correction
-        ↓
-stable claim target
-        ↓
-reader-visible provenance
+PR                           #36
+Base                         main@ebd38ef890ba3f3d40d03b754085cbd73a44a080
+Head                         d8adc2e1d2468c63b8064ee45460b18851ea9742
+Read-only PR Build           34109064068 success
+Preview Artifact             10013666375
+Artifact SHA-256             f52672691bcd7c6c2670789cfa92d2682b2aa5129a875c4da648c39a342d8347
+Trusted Preview              passed
+Public availability smoke    passed
+PR state                     Ready for review
 ```
 
-**100% structural evidence coverage != 100% factual truth.**
-
-## Plan 80 · Evidence Integrity
-
-### 80A · Evidence Contract — Done
-
-PR #34 已完成并进入 main：
+## 当前 Gate
 
 ```text
-PR head                  71a1b07cfca189c4a74ae3835c467bb73df0a72c
-PR Build                 34096309697 success
-Preview Artifact         10008787225
-Trusted Preview          passed
-main                     3a7245aa907fedeb10141bbb05deb718c6fa7e7d
-fresh main Site Build    34098464587 success
-main Artifact            10009585595
-main Artifact SHA-256    661b64ec92e251ded54a5f68be30e1f9b9752c5460e47ecb973ab55ced5a89fd
+80C implementation Build + Preview   Done
+                ↓
+Human Review / merge PR #36          ← current
+                ↓
+fresh main Site Build
+                ↓
+verify correction guard on exact main SHA
+                ↓
+explicit exact-SHA Production Pages
+                ↓
+public HTTP smoke
+                ↓
+Plan 80 / Milestone H Done
 ```
 
-已落地：Evidence V1 Schema、stable fact IDs、canonical reference IDs、claim/reference validator、frozen legacy debt、human/JSON report、legacy/Evidence renderer compatibility、new Scheduled Daily Evidence V1 enforcement、11-slide regression。
+Production closeout 不能在 PR #36 人工合并前开始，也不能由 Scheduled Daily 或 correction producer 自动触发。
 
-### 80B · Real Correction Provenance + Reading UI — Review Gate
+## Evidence Integrity 的边界
 
-PR #35 以 exact `main@3a7245aa...` 为 base，对真实 2026-09-07 Daily 完成：
+Milestone H 验证的是 evidence relation 的结构、完整性与 correction provenance，不宣称机器自动证明事实真实性。
 
-- 五个 sections 重新回查 primary evidence；
-- 全 Daily 原子迁移为 Evidence V1；
-- 16 factual claims；
-- 6 canonical references；
-- Evidence errors = 0；
-- 2026-09-07 从 frozen legacy debt 删除；
-- PR #33 correction 持久化为 `openclaw-supervisor-version`；
-- Reading stable claim / reference anchors；
-- per-fact evidence links；
-- `已修正 · 2026-09-07` notice + correction history；
-- stable date alias / canonical Reading / 11-slide presentation 合同保持。
+明确不做：
 
-TDD：
+- LLM automatic fact judge；
+- source truth score；
+- citation graph / vector database；
+- automatic historical rewrite；
+- automatic Source / Author / Topic Registry mutation；
+- Scheduled Agent auto-merge；
+- automatic Production Pages deployment；
+- global Evidence rewrite for all content kinds。
 
-```text
-RED    34106180726
-       核心 Evidence / Schema / Astro / Slidev / site 均通过；
-       新 artifact test 误把 date redirect alias 当 Reading HTML → failure
-
-GREEN  34106452727 success
-Head   8092c6bfab06a768cfaed950aa26f72b2c365576
-Artifact 10012620633
-SHA-256 f403fb89658edba98593667cf66b891afd0608f178a30f52eddbaed62e8043d8
-Trusted Preview + public smoke passed
-```
-
-PR #35 当前：**Ready for review / mergeable=true**。不自动 merge。
-
-### 80C · Correction Guard + Closeout — Blocked
-
-80C 必须等待：
-
-```text
-PR #35 Human merge
-        ↓
-fresh main Build
-        ↓
-80C may start
-```
-
-计划新增 correction-specific append-only guard，保证：
-
-- correction branch 只改 exact one published Evidence V1 Daily；
-- correction history 只能 append；
-- 已有 correction 不得删除/改写；
-- factual mutation 必须伴随新 correction event；
-- target / evidence 必须解析；
-- generic Path Guard + full Build + Trusted Preview 仍 mandatory；
-- Scheduled Daily 永远不自动进入 correction flow。
-
-最终 closeout 还需要 fresh final main Build、exact-SHA Production Pages 与 public smoke。
-
-## 当前产品基线
-
-```text
-Structured Content + Registry
-          ↓
-Referential Integrity
-          ↓
-Reading / Presentation / RSS / Discovery
-          ↓
-SEO / Structured Data
-          ↓
-Knowledge Lifecycle · Done
-          ↓
-Scheduled Content Automation · Done
-          ↓
-Evidence Integrity
-  ├── 80A Contract · Done
-  ├── 80B Real Provenance · Review Gate
-  └── 80C Correction Guard · Blocked
-```
-
-## Roadmap
+## Roadmap / Plans
 
 - [00 · Product Capability Roadmap](./00-product-capability-roadmap.md)
 - [2026-09-07 · Product Capability Roadmap Refresh](./2026-09-07-product-capability-roadmap-refresh.md)
 - [Milestone H · Evidence Integrity Design](../superpowers/specs/2026-09-07-evidence-integrity-design.md)
 - [80 · Evidence Integrity](./80-evidence-integrity.md)
-- [80A · Evidence Integrity Contract Plan](../superpowers/plans/2026-09-07-evidence-integrity-contract.md)
-- [80B · Evidence Correction Provenance Plan](../superpowers/plans/2026-09-07-evidence-correction-provenance.md)
+- [80A · Evidence Integrity Contract Implementation Plan](../superpowers/plans/2026-09-07-evidence-integrity-contract.md)
+- [80B · Evidence Correction Provenance Implementation Plan](../superpowers/plans/2026-09-07-evidence-correction-provenance.md)
+- [80C · Correction Guard + Production Closeout Implementation Plan](../superpowers/plans/2026-09-07-evidence-correction-guard.md)
 - [10 · Archive & Discovery Experience](./10-archive-discovery-experience.md)
 - [20 · Presentation Platform](./20-presentation-platform.md)
 - [30 · Weekly Brief](./30-weekly-brief.md)
@@ -200,23 +137,27 @@ Evidence Integrity
 - [60 · Knowledge Lifecycle](./60-knowledge-lifecycle.md)
 - [70 · Scheduled Content Automation](./70-scheduled-content-automation.md)
 
-## 推荐实施顺序
+## Implementation branch policy
+
+Planning branch 只保存 roadmap / design / implementation plan，不承载产品实现。
+
+每个 Slice 必须从执行时的 current `main` 创建独立 feature branch，独立 PR 到 `main`；前一个 Slice merge 并 fresh main Build 后才允许启动后一个 Slice。
+
+Plan 80 branches：
 
 ```text
-10 Archive & Discovery           Done
-20 Presentation Platform        Done
-30 Weekly Brief                 Done
-40 Source & Author Registry     Done
-50 SEO & Sharing                Done
-60 Knowledge Lifecycle          Done
-70 Scheduled Content Automation Done
--- Roadmap Refresh              Done
-80A Evidence Contract           Done
-80B Correction Provenance       Review Gate · PR #35
-80C Correction Guard            Blocked by 80B
+feat/evidence-integrity-contract       # 80A · Done
+feat/evidence-correction-provenance    # 80B · Done
+feat/evidence-correction-guard         # 80C · Review Gate
 ```
 
-**当前下一动作：人工 Review / merge PR #35；合并后先验证 fresh main Build，再启动 80C。**
+Published Daily 的未来显式修正使用：
+
+```text
+correction/daily/YYYY-MM-DD/<kebab-slug>
+```
+
+它与 `automation/daily/YYYY-MM-DD` Scheduled authority 严格隔离。
 
 ## 每个计划的统一交付规则
 
@@ -227,5 +168,19 @@ Evidence Integrity
 5. 新公开输出必须进入 Artifact 检查；
 6. PR 必须通过 Path Guard、完整 `pnpm build` 与 Trusted Preview；
 7. 不提交 generated Slidev source 或 `dist/**`；
-8. Production Pages 继续通过显式 deployment gate；
-9. 完成后同步 Roadmap 状态。
+8. Production Pages 继续通过显式 exact-SHA deployment gate；
+9. Human merge 后必须 fresh main Build；
+10. 完成后同步 Roadmap / Plan 状态。
+
+## Plan 状态约定
+
+- `Planned`：尚未开始；
+- `Design Review`：正在锁定语义与边界；
+- `In Progress`：设计已批准，已有实施或验证进行中；
+- `Review Gate`：实现、CI、Preview 已完成，等待人工集成；
+- `Live Gate`：实现已进入 main、外部 adapter 已启用，等待真实运行证据；
+- `Soak Active`：正在累计连续真实运行证据；
+- `Drills Gate`：稳定周期已满足，只剩显式行为演练 / integration closeout；
+- `Production Gate`：实现与 main Build 已完成，但 exact-SHA Production Pages 验证尚未完成；
+- `Done`：对应计划要求的 Preview / main / Production / real-run / drills 验证全部完成；
+- `Deferred`：明确推迟。
