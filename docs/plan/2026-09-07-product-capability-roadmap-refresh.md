@@ -1,10 +1,11 @@
 # Orbis Product Capability Roadmap Refresh · 2026-09-07
 
-> 状态：Decision Record
+> 状态：Decision Record · Design Review active
 > 基线：`main@b3e793d0c5c7d55358933d4d25c4d77dafd8cd03`
 > Planning branch：`planning/product-capability-roadmap`
 > 前置：Milestone G — Sustainable Automation · Done
 > 结论：推荐下一 Milestone 为 **Milestone H — Evidence Integrity**；本轮不创建 `Plan 80`
+> Design：[`docs/superpowers/specs/2026-09-07-evidence-integrity-design.md`](../superpowers/specs/2026-09-07-evidence-integrity-design.md)
 
 ## 1. 为什么现在必须先 refresh，而不是直接编号下一个 Plan
 
@@ -185,7 +186,36 @@ corrections              1
 
 报告验证的是 evidence structure / coverage，不冒充事实真实性评分。
 
-## 6. 明确非目标
+## 6. Design Review 已收敛的推荐决策
+
+当前设计稿已把 Milestone H 收敛为以下一组必须整体审批的选择：
+
+1. **Daily-first Evidence V1**：不因 Daily 的真实问题全局重构 Weekly / Essay / Knowledge / Presentation；
+2. **一份 top-level canonical reference registry**：Evidence V1 section 不再复制完整 reference objects；
+3. **`facts[]` 升级为 `{ id, text, evidence[] }`**：section-local fact ID 与 section ID 组成稳定 claim address；
+4. **`Reference.supports` 继续是人类说明，不是 relation authority**；
+5. **机器 coverage 只覆盖 factual `facts[]`**：signals / conclusions 等 synthesis 不伪装成机器可语义验证；
+6. **correction events 是唯一 persisted revision provenance**：`lastCorrectedAt` 从 correction history 推导，不双写；
+7. **frozen legacy allowlist**：旧 Daily 明确标记 `legacy-unverified`，禁止把 section refs 机械复制成虚假的 claim coverage；
+8. **2026-09-07 full Daily migration**：第一份真实 Evidence V1 fixture，同时持久化 PR #33 correction provenance；
+9. **new Scheduled Daily 必须 Evidence V1**：只增强内容约束，不扩大写权限；
+10. **correction-specific append-only guard**：历史 correction 不能删除或静默改写；
+11. **Reading 显示 per-fact evidence + correction notice**；
+12. **Slidev 仍保持固定 11 页**，section source link 从 evidence edge 派生。
+
+其中最重要的迁移原则是：
+
+```text
+legacy section references
+        ≠
+verified claim-level evidence
+```
+
+因此历史内容只有在重新核验后才能升级为 Evidence V1。该规则避免 Milestone H 为了“validator 全绿”而反向制造错误的可信度。
+
+完整设计：[`2026-09-07-evidence-integrity-design.md`](../superpowers/specs/2026-09-07-evidence-integrity-design.md)。
+
+## 7. 明确非目标
 
 Milestone H 不做：
 
@@ -200,7 +230,7 @@ Milestone H 不做：
 - Scheduled Agent 自动 merge；
 - Production Pages authority 扩张。
 
-## 7. 建议验收标准
+## 8. 建议验收标准
 
 只有满足以下条件，Milestone H 才值得进入实现计划：
 
@@ -208,16 +238,19 @@ Milestone H 不做：
 2. missing / dangling claim-reference relation 在 `pnpm validate` 或专用 validator 中 fatal fail；
 3. Source Registry relation integrity 继续复用现有 contract；
 4. 至少用 2026-09-07 OpenClaw correction 作为真实 fixture，证明旧错误可以被精确定位并表达为 correction provenance；
-5. Reading UI 显示修正提示，但历史 canonical URL 不变；
-6. Slidev / RSS / archive / sitemap / JSON-LD 既有合同不回归；
-7. PR Build + Trusted Preview 通过；
-8. merge 后 fresh main Build 通过；
-9. 如涉及公开页面变化，再执行 exact-SHA Production Pages + public smoke；
-10. Agent authority 不扩大到 Registry mutation、auto-merge 或 Production deploy。
+5. legacy Daily 不会被静默当作 evidence-covered；
+6. Reading UI 显示 claim evidence 与修正提示，但历史 canonical URL 不变；
+7. Daily Slidev 仍保持 11 页；
+8. Slidev / RSS / archive / sitemap / JSON-LD 既有合同不回归；
+9. correction history append-only；
+10. PR Build + Trusted Preview 通过；
+11. merge 后 fresh main Build 通过；
+12. 如涉及公开页面变化，再执行 exact-SHA Production Pages + public smoke；
+13. Agent authority 不扩大到 Registry mutation、auto-merge 或 Production deploy。
 
-## 8. 下一步 Gate
+## 9. 下一步 Gate
 
-本 refresh 只决定 **问题方向与 Milestone**，不自动创建 `Plan 80`。
+本 refresh 只决定 **问题方向、Milestone 与推荐设计**，不自动创建 `Plan 80`。
 
 正确顺序：
 
@@ -226,9 +259,9 @@ Roadmap Refresh
     ↓
 Milestone H — Evidence Integrity · recommended
     ↓
-Design Review：锁定 claim identity / evidence binding / correction metadata
+Design Review draft · complete
     ↓
-批准设计
+Human approval of 12 design decisions
     ↓
 再决定是否创建下一编号实施计划
 ```
@@ -241,4 +274,4 @@ Design Review：锁定 claim identity / evidence binding / correction metadata
 - 不扩 scheduled authority；
 - 不把 Search / Weekly automation 混入本 Milestone。
 
-**Roadmap refresh 结论：下一个值得建设的能力不是更多自动化，而是让已经自动化生产出来的知识更可验证、更可审计、更容易被正确修正。**
+**Roadmap refresh 结论：下一个值得建设的能力不是更多自动化，而是让已经自动化生产出来的知识更可验证、更可审计、更容易被正确修正。当前停在 Milestone H Design Review approval gate。**
