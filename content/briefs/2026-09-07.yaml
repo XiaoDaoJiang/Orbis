@@ -3,7 +3,7 @@ cadence: daily
 publishedAt: 2026-09-07
 status: published
 title: Agent 的新边界正在变成显式策略层
-summary: 工作区信任、工具访问、网络出口、凭据与 tracing 正从隐式约定变成可验证策略；生产级 Agent 的竞争焦点正在从“会调用工具”转向“每个副作用都有边界和证据”。
+summary: 工作区信任、工具访问、网络出口、凭据与外部生命周期监督正从隐式约定变成可验证策略；生产级 Agent 的竞争焦点正在从“会调用工具”转向“每个副作用都有边界、所有权和证据”。
 topics:
   - agent-harness
   - coding-agent
@@ -18,9 +18,9 @@ signals:
   - title: Egress 与凭据必须和 Agent 进程隔离
     summary: Agentic Workflow Firewall 用网络 allowlist、API proxy sidecar、DLP 与运行时限把外部副作用变成可审计资源。
     impact: high
-  - title: Observability 开始需要数据最小化
-    summary: LangGraphJS 新增 per-node tracePolicy 与 omitPayload，说明 tracing 不能再默认等于记录全部输入输出。
-    impact: medium
+  - title: 生命周期权限正在移出 Agent 主进程
+    summary: OpenClaw 2026.9.2 引入 external supervisor 模式与精确审批绑定，说明 restart、自更新、凭据和会话恢复正成为独立控制面。
+    impact: high
 sections:
   - id: workspace-trust
     layout: timeline
@@ -90,22 +90,23 @@ sections:
         source: github
         supports: 网络 allowlist、凭据隔离、DLP、运行时限制和审计能力。
         accessedAt: 2026-09-07
-  - id: trace-minimization
-    layout: comparison
-    title: Trace 可见性与数据最小化必须同时设计
-    conclusion: Agent observability 正从“尽量记录”转向“保留 span 与 timing，同时按节点裁剪敏感 payload”。
+  - id: external-supervision
+    layout: system-map
+    title: Runtime 生命周期权限正在形成独立 Supervisor Boundary
+    conclusion: Agent 自身不应同时拥有任务推理、服务生命周期、更新权限和凭据控制；这些高风险能力正被拆到可验证的外部监督层。
     facts:
-      - LangGraphJS 1.4.15-rc.0 新增 per-node tracePolicy，可分别处理节点 trace 的 input 和 output。
-      - omitPayload 可以保留节点 span 与 timing 而不记录 payload，适合敏感上下文或大对象场景。
-      - 处理器只影响节点自己的 trace payload，不自动改变 graph state、root run 或 child run。
+      - OpenClaw 2026.9.2 增加 OPENCLAW_SUPERVISOR_MODE=external，使外部 lifecycle owner 可以接管 restart 与 deferral，同时阻止 Agent 侧原生服务变更和 self-update。
+      - 该模式提供版本化的原子 restart-handoff contract，让重启从隐式副作用变成明确交接协议。
+      - 同一版本的 conversational onboarding 使用 typed operations、exact approval binding、masked credential prompts 与 isolated session transcripts，并在完成后安全 handoff 到普通 Agent。
+      - OpenClaw 同时强化 Gateway restart admission、reply session recovery 与一次性 cron lifecycle race 的恢复行为。
     limitations:
-      - 当前实现中 trace processor 抛错时会回退到原始 payload；如果目标是严格脱敏，需要额外的 fail-closed 保护。
-      - 该能力目前发布在 release candidate，正式版行为仍需继续验证。
+      - 这是 OpenClaw 的具体实现，不代表行业已经形成统一 Supervisor 协议。
+      - 将生命周期权限外移只是缩小 Agent 权限面，外部 supervisor 本身仍需要身份、审计和失败恢复机制。
     references:
-      - title: LangGraphJS 1.4.15-rc.0
-        url: https://github.com/langchain-ai/langgraphjs/releases/tag/%40langchain%2Flanggraph%401.4.15-rc.0
+      - title: OpenClaw v2026.9.2
+        url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.2
         source: github
-        supports: per-node tracePolicy、omitPayload 与处理器失败时的回退语义。
+        supports: external supervisor、restart handoff、exact approval binding、masked credentials 与 session recovery。
         accessedAt: 2026-09-07
 projects:
   - action: TEST
@@ -128,11 +129,11 @@ projects:
     summary: 跟踪 workspace trust、extension loading 与 MCP OAuth 安全修复何时进入稳定版本。
     maturity: growing
     url: https://github.com/google-gemini/gemini-cli
-  - action: READ
-    name: langchain-ai/langgraphjs
-    summary: 评估 tracePolicy 是否能成为敏感 Agent workflow 的默认 telemetry redaction 层。
-    maturity: stable
-    url: https://github.com/langchain-ai/langgraphjs
+  - action: TEST
+    name: openclaw/openclaw
+    summary: 验证 external supervisor、restart handoff 与精确 approval binding 是否能隔离生命周期权限。
+    maturity: growing
+    url: https://github.com/openclaw/openclaw
 radar:
   - label: Workspace trust enforcement
     impact: 91
@@ -146,10 +147,10 @@ radar:
     impact: 96
     horizon: 15
     note: 对高权限 Agent 属于上线前基础安全控制。
-  - label: Trace payload minimization
-    impact: 84
-    horizon: 28
-    note: 进入生产观测后应尽早避免敏感上下文无差别落盘。
+  - label: External supervisor boundary
+    impact: 93
+    horizon: 20
+    note: restart、自更新与凭据控制应与 Agent 推理进程分离，并建立显式 handoff。
   - label: Safe output channels
     impact: 92
     horizon: 20
@@ -161,8 +162,8 @@ actions:
     description: 用 Gateway 或 wrapper 明确限制可访问 repo、工具调用次数、超时和允许的写入 sink，不依赖模型自我约束。
   - title: 隔离网络出口与模型密钥
     description: 为高权限 Agent 增加 egress allowlist，并通过独立 credential proxy 注入模型调用能力而不是直接暴露 API key。
-  - title: 为 Trace 建立默认脱敏策略
-    description: 对代码、凭据、用户数据和大 payload 默认 omit 或 redact，并验证处理器异常时不会回退泄露原始内容。
+  - title: 定义外部 Supervisor 交接协议
+    description: 将 restart、自更新、凭据和高风险配置变更移出 Agent 进程，并用版本化 handoff、审批绑定和审计记录约束生命周期操作。
 references:
   - title: Gemini CLI v0.60.0 nightly 20260905
     url: https://github.com/google-gemini/gemini-cli/releases/tag/v0.60.0-nightly.20260905.g85aca163f
@@ -184,10 +185,10 @@ references:
     source: github
     supports: Egress allowlist、API key 隔离、DLP 与运行时审计。
     accessedAt: 2026-09-07
-  - title: LangGraphJS 1.4.15-rc.0
-    url: https://github.com/langchain-ai/langgraphjs/releases/tag/%40langchain%2Flanggraph%401.4.15-rc.0
+  - title: OpenClaw v2026.9.2
+    url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.2
     source: github
-    supports: per-node tracePolicy、omitPayload 与 trace processor 的回退行为。
+    supports: 外部生命周期监督、restart handoff、精确审批绑定、凭据保护与 session recovery。
     accessedAt: 2026-09-07
 archivePicks:
   - title: Harness 正在成为模型之外的能力层
