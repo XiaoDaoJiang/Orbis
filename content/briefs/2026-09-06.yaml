@@ -1,0 +1,211 @@
+kind: brief
+cadence: daily
+publishedAt: 2026-09-06
+status: published
+title: Agent 进入生产后，Memory、执行与协议生命周期都必须被显式治理
+summary: 最近两天最值得工程师关注的变化不是更多 Agent 功能，而是生产系统开始把遗忘、确定性执行、模型访问控制和协议生命周期当成一等工程边界。
+topics:
+  - agent-harness
+  - coding-agent
+  - mcp
+signals:
+  - title: Memory 从“持续累积”转向“主动遗忘”
+    summary: AgentCore 的生命周期方案把 TTL、相关性衰减、合并与回归测试放进同一闭环，说明长期记忆已经成为需要治理的数据资产。
+    impact: high
+  - title: 高风险 Agent 的执行面正在确定性化
+    summary: Intuit 的生产容灾 Agent 让模型负责解释与选择，而把真正的故障切换交给受策略、审批和审计约束的传统代码。
+    impact: high
+  - title: Coding Agent 的模型入口正在独立成控制面
+    summary: GPT-6 Astra 进入 GitHub Copilot 后，长任务验证能力继续增强，同时更高能力模型要求组织把访问、监控与停止机制独立治理。
+    impact: high
+  - title: MCP 框架的可靠性问题集中到生命周期边缘
+    summary: FastMCP 4.0.3 修复混合版本启动重试、任务时间字段和未完成回调清理，显示生产 MCP 的难点正从“能连上”转向严格兼容与资源收尾。
+    impact: medium
+sections:
+  - id: memory-lifecycle
+    layout: timeline
+    title: Agent Memory 需要像数据一样有保留、衰减和回归策略
+    conclusion: 长期记忆不能只做 append-only 存储；生产 Agent 必须定义何时删除、何时合并，以及如何证明遗忘后能力没有退化。
+    facts:
+      - AWS 在 2026-09-04 发布 AgentCore Memory 生命周期方案，按 episodic、semantic、procedural 三类记忆区分保留策略。
+      - 方案组合 TTL 过期、相关性衰减评分和 LLM consolidation，并通过夜间工作流执行清理与合并。
+      - AWS 明确建议在生命周期操作前后运行回归测试，以检查清理是否降低回答质量。
+      - 对涉及个人数据的记忆，还需要提供按用户删除和审计路径，而不能只依赖向量检索层。
+    limitations:
+      - 示例中的阈值、权重和 TTL 是起点，不代表不同业务都适用。
+      - LLM consolidation 本身是有损操作，高风险场景仍需要保留原始证据或人工复核。
+    references:
+      - title: Designing lifecycle policies for AgentCore memory
+        url: https://aws.amazon.com/blogs/machine-learning/designing-lifecycle-policies-for-agentcore-memory/
+        supports: 支持 Agent Memory 分类、TTL、相关性衰减、合并、回归测试与删除治理的工程判断。
+        accessedAt: 2026-09-06
+  - id: deterministic-execution
+    layout: architecture
+    title: 生产 Agent 应让模型决定 What，让确定性代码执行 How
+    conclusion: 一旦 Agent 能触发真实生产变更，模型输出不应直接成为执行动作；执行器、策略门、凭证和审计必须位于模型之外。
+    facts:
+      - Intuit 的 EWOK Agent 已用于生产容灾流程，模型负责解析意图、选择 Skill 和处理需要人工判断的分支。
+      - 真正的故障切换由 EWOK API 与传统执行器完成，模型不持有凭证，也没有直接访问底层容灾系统的网络路径。
+      - 生产变更继续经过 change record、审批、最小权限、速率限制、队列和 circuit breaker 等控制。
+      - 对不可逆或受策略限制的操作，系统要求显式 human-in-the-loop，而不是让模型自行绕过限制。
+    limitations:
+      - 该案例来自 Intuit 与 AWS 的联合架构分享，具体可靠性仍依赖组织内部的运行数据。
+      - Skill Prompt 仍会影响模型决策，因此确定性执行不能替代对输入污染和 Prompt Injection 的防护。
+    references:
+      - title: How Intuit built an agentic disaster recovery assistant with Amazon Bedrock
+        url: https://aws.amazon.com/blogs/machine-learning/how-intuit-built-an-agentic-disaster-recovery-assistant-with-amazon-bedrock/
+        supports: 支持模型决策与确定性执行分离、凭证隔离、审批、审计和容灾 Agent 的生产架构判断。
+        accessedAt: 2026-09-06
+  - id: coding-model-control-plane
+    layout: comparison
+    title: 更强 Coding Model 让“模型能力”和“运行控制”必须分层
+    conclusion: GPT-6 Astra 的 Copilot 上线说明长时编码能力正在快速商品化，但更高能力模型同时放大了权限、监控、暂停和人工接管的重要性。
+    facts:
+      - GitHub 在 2026-09-04 宣布 GPT-6 Astra 已在 GitHub Copilot 中 GA，并强调其长时自主编码中的计划、验证和自检能力。
+      - OpenAI 将 Astra 评估为达到 Critical cybersecurity capability，并为外部 tool-using inference 部署额外 misalignment monitoring。
+      - OpenAI 同时报告 Astra 的书面推理相较 GPT-5.6 Sol 更难监控，因此不能把模型自述当作唯一监督信号。
+      - 更高能力模型可能因安全检查被暂停或停止合法任务，运行时必须提供清晰的恢复与人工接管路径。
+    limitations:
+      - GitHub 的能力描述和 OpenAI 的安全评测主要来自厂商自身测试，生产环境仍需要独立验证。
+      - Critical capability 不等于默认产品配置具备无限制攻击权限，实际可用能力受产品和访问策略约束。
+    references:
+      - title: GPT-6 Astra is generally available in GitHub Copilot
+        url: https://github.blog/changelog/2026-09-04-gpt-6-astra-is-generally-available-in-github-copilot/
+        supports: 支持 Astra 在 GitHub Copilot GA 及其长时编码、验证行为的官方说明。
+        accessedAt: 2026-09-06
+      - title: Safety overview GPT-6 Astra
+        url: https://openai.com/index/safety-overview-gpt-6-astra/
+        supports: 支持 Astra 的 Critical cybersecurity capability、misalignment monitoring 与 monitorability 限制。
+        accessedAt: 2026-09-06
+      - title: GPT-6 Astra A new generation of intelligence
+        url: https://openai.com/index/gpt-6-astra/
+        supports: 支持 Astra 的能力范围、部署控制与自动停止机制的官方说明。
+        accessedAt: 2026-09-06
+  - id: mcp-lifecycle
+    layout: metrics
+    title: MCP 生产可靠性正在暴露在启动、序列化和清理细节里
+    conclusion: 当 MCP 从 Demo 进入长期运行环境，真正影响稳定性的往往是版本兼容、严格客户端字段约束和任务结束后的资源清理。
+    facts:
+      - FastMCP v4.0.3 于 2026-09-05 发布，减少 mixed-era backend 场景中的重复启动重试。
+      - 该版本修复 task timing 字段序列化，以避免被严格 MCP Client 拒绝。
+      - 该版本还修复未完成 Monty callback 的清理，以及 unconstrained sequence 导致输出图片重复的问题。
+    limitations:
+      - v4.0.3 是补丁版本，这些修复不能代表整个 MCP 生态的兼容性已经稳定。
+      - FastMCP 的实现选择也不能直接替代对官方 MCP specification 的兼容测试。
+    references:
+      - title: FastMCP v4.0.3 Once Is Enough
+        url: https://github.com/PrefectHQ/fastmcp/releases/tag/v4.0.3
+        supports: 支持 FastMCP 在启动重试、任务时间字段、输出 Schema 和回调清理方面的最新修复。
+        accessedAt: 2026-09-06
+  - id: production-control-loop
+    layout: system-map
+    title: 生产 Agent 的共同边界正在收敛为四个控制环
+    conclusion: Memory 生命周期、确定性执行、模型访问控制和协议资源清理正在形成同一套生产治理逻辑：任何长期状态和高权限动作都必须可观察、可限制、可恢复。
+    facts:
+      - Memory 需要可删除和可回归验证，避免旧状态长期污染决策。
+      - 高风险动作需要模型外执行器、审批、凭证隔离和不可绕过的策略门。
+      - 高能力 Coding Model 需要独立的访问与监控控制面，而不能只依赖模型对自身行为的解释。
+      - MCP Client 与 Server 需要把初始化、任务字段和结束清理纳入兼容测试，而不是只验证 happy path。
+    limitations:
+      - 这些模式来自不同厂商和项目，尚未形成统一的跨框架标准。
+      - 控制越严格越可能增加延迟和人工摩擦，需要用任务风险分级来决定介入强度。
+    references:
+      - title: Designing lifecycle policies for AgentCore memory
+        url: https://aws.amazon.com/blogs/machine-learning/designing-lifecycle-policies-for-agentcore-memory/
+        supports: 支持长期状态需要生命周期治理和回归验证的判断。
+        accessedAt: 2026-09-06
+      - title: How Intuit built an agentic disaster recovery assistant with Amazon Bedrock
+        url: https://aws.amazon.com/blogs/machine-learning/how-intuit-built-an-agentic-disaster-recovery-assistant-with-amazon-bedrock/
+        supports: 支持高权限动作使用确定性执行器、审批和审计的判断。
+        accessedAt: 2026-09-06
+      - title: Safety overview GPT-6 Astra
+        url: https://openai.com/index/safety-overview-gpt-6-astra/
+        supports: 支持高能力模型需要独立监控和停止机制的判断。
+        accessedAt: 2026-09-06
+      - title: FastMCP v4.0.3 Once Is Enough
+        url: https://github.com/PrefectHQ/fastmcp/releases/tag/v4.0.3
+        supports: 支持 MCP 生命周期边缘需要严格兼容和资源清理测试的判断。
+        accessedAt: 2026-09-06
+projects:
+  - action: TEST
+    name: PrefectHQ/fastmcp
+    summary: 用严格 Client 和混合版本 backend 验证启动、task timing、取消与清理路径，而不只跑基本工具调用。
+    maturity: growing
+    url: https://github.com/PrefectHQ/fastmcp
+  - action: READ
+    name: modelcontextprotocol/specification
+    summary: 对照最新协议定义检查 Client 与 Server 对初始化、任务字段和生命周期语义的假设。
+    maturity: growing
+    url: https://github.com/modelcontextprotocol/specification
+  - action: READ
+    name: openai/codex
+    summary: 研究高能力 Coding Agent 如何把本地 sandbox、审批和模型访问控制拆成独立边界。
+    maturity: growing
+    url: https://github.com/openai/codex
+radar:
+  - label: Memory lifecycle policies
+    impact: 92
+    horizon: 12
+    note: 长期运行 Agent 应立即建立 TTL、合并、删除与回归基线。
+  - label: Deterministic action executor
+    impact: 97
+    horizon: 8
+    note: 任何可修改生产状态的 Agent 都应优先采用模型外执行边界。
+  - label: Model access control plane
+    impact: 90
+    horizon: 18
+    note: 模型升级越来越快，身份、预算、监控和停止策略应与模型本身解耦。
+  - label: MCP lifecycle compatibility
+    impact: 81
+    horizon: 25
+    note: 生产 MCP 应增加严格客户端、版本混合和异常结束测试。
+  - label: Human recovery path
+    impact: 88
+    horizon: 15
+    note: 自动停止与策略门只有配套恢复和人工接管流程才真正可用。
+actions:
+  - title: 给 Agent Memory 建立过期与回归基线
+    description: 按 episodic、semantic、procedural 分类定义 TTL、合并条件和删除策略，并在清理前后跑固定问题集验证质量变化。
+  - title: 把高风险动作移到确定性执行器
+    description: 让模型只输出经过 Schema 校验的意图和参数，真正的生产写操作由持证、可审计、受策略门控制的代码执行。
+  - title: 将模型访问从 Agent Loop 中解耦
+    description: 为高能力模型建立独立身份、预算、路由、监控和暂停策略，使模型切换不改变工具权限与执行边界。
+  - title: 为 MCP 增加生命周期故障测试
+    description: 覆盖混合协议版本、严格字段校验、取消、超时、重复启动和异常结束后的资源清理，避免只测试 happy path。
+references:
+  - title: Designing lifecycle policies for AgentCore memory
+    url: https://aws.amazon.com/blogs/machine-learning/designing-lifecycle-policies-for-agentcore-memory/
+    supports: Agent Memory 生命周期、合并、衰减、回归验证与隐私删除的主要依据。
+    accessedAt: 2026-09-06
+  - title: How Intuit built an agentic disaster recovery assistant with Amazon Bedrock
+    url: https://aws.amazon.com/blogs/machine-learning/how-intuit-built-an-agentic-disaster-recovery-assistant-with-amazon-bedrock/
+    supports: 生产 Agent 的确定性执行、审批、凭证隔离与审计设计依据。
+    accessedAt: 2026-09-06
+  - title: GPT-6 Astra is generally available in GitHub Copilot
+    url: https://github.blog/changelog/2026-09-04-gpt-6-astra-is-generally-available-in-github-copilot/
+    supports: Astra 在 Copilot 的 GA 与长时 Coding Agent 行为说明。
+    accessedAt: 2026-09-06
+  - title: Safety overview GPT-6 Astra
+    url: https://openai.com/index/safety-overview-gpt-6-astra/
+    supports: Astra 的能力级别、监控、停止和 monitorability 限制依据。
+    accessedAt: 2026-09-06
+  - title: GPT-6 Astra A new generation of intelligence
+    url: https://openai.com/index/gpt-6-astra/
+    supports: Astra 的能力范围、部署方式和运行时安全控制依据。
+    accessedAt: 2026-09-06
+  - title: FastMCP v4.0.3 Once Is Enough
+    url: https://github.com/PrefectHQ/fastmcp/releases/tag/v4.0.3
+    supports: MCP 框架最新兼容性、任务序列化和资源清理修复依据。
+    accessedAt: 2026-09-06
+archivePicks:
+  - title: Harness 正在成为模型之外的能力层
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-08-28.yaml
+    supports: 回看 Runtime、权限、验证与可恢复执行为何会成为 Agent 系统的长期边界。
+    publishedAt: 2026-08-28
+  - title: Orbis Weekly Presentation Becomes a Platform Boundary
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-01-weekly.yaml
+    supports: 回看结构化内容、渲染和验证如何通过显式平台边界降低自动化耦合。
+    publishedAt: 2026-09-01
+presentation:
+  enabled: true
+  template: daily-v1
