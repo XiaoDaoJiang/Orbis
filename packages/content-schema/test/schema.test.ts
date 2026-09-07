@@ -54,6 +54,8 @@ assert.equal(briefSchema.parse(valid).sections.length, 5)
 assert.throws(() => briefSchema.parse({ ...valid, signals: valid.signals.slice(0, 3) }))
 assert.throws(() => briefSchema.parse({ ...valid, sections: valid.sections.slice(0, 4) }))
 assert.throws(() => briefSchema.parse({ ...valid, presentation: { enabled: true, template: 'weekly-v1' } }))
+assert.throws(() => dailyBriefSchema.parse({ ...valid, evidenceVersion: 2 }))
+assert.throws(() => dailyBriefSchema.parse({ ...valid, corrections: [] }))
 
 const evidenceReferences = [{
   id: 'source-one',
