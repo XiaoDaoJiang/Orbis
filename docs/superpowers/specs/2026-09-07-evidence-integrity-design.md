@@ -1,11 +1,12 @@
 # Milestone H · Evidence Integrity Design
 
-> Status: Design Review
+> Status: Approved
+> Approved: 2026-09-07
 > Roadmap: Milestone H — Evidence Integrity
 > Baseline: `main@b3e793d0c5c7d55358933d4d25c4d77dafd8cd03`
 > Evidence: published Daily correction PR #33
 > Scope entry: Daily first
-> Constraint: 本设计批准前不创建 `Plan 80`，不修改 Schema，不扩大 Scheduled authority
+> Implementation authority: 仅允许按已批准设计进入 `Plan 80`；不因此扩大 Scheduled Agent authority
 
 ## 1. Goal
 
@@ -541,9 +542,9 @@ LEGACY_DAILY_NOT_ALLOWLISTED
 
 错误输出包含 content path + stable field address，不能只报 generic Zod parse failure。
 
-## 15. Delivery boundaries if design is approved
+## 15. Approved delivery boundaries
 
-批准后再决定编号实施计划。设计建议未来 implementation 分为三个可独立验证的 slice，但当前不创建 Plan：
+设计已批准，授权进入 `Plan 80 · Evidence Integrity`。实施分为三个可独立验证的 slice：
 
 ### Slice H1 — Evidence Contract
 
@@ -613,9 +614,9 @@ Milestone H does not build：
 - Pages deploy authority；
 - global Evidence rewrite for Weekly / Essay / Knowledge / Presentation。
 
-## 18. Design review decisions to approve
+## 18. Approved decisions
 
-Milestone H implementation should not start until the following decisions are approved as one set：
+2026-09-07 Human approval 已确认以下决策作为一个整体进入实现：
 
 1. **Daily-first Evidence V1**，不全局重构 content kinds；
 2. **top-level canonical references + fact evidence IDs**，取消 Evidence V1 section reference object duplication；
@@ -628,4 +629,4 @@ Milestone H implementation should not start until the following decisions are ap
 9. **correction-specific append-only guard**；
 10. **Reading shows evidence/correction，Slide count stays 11**。
 
-**Current gate: Design Review. No `Plan 80` exists or is authorized by this document.**
+**Current gate: Approved → Implementation Planning. `Plan 80` is now authorized; implementation must still proceed through normal branch / PR / Build / Trusted Preview / Human Review gates.**
