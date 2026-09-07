@@ -47,6 +47,11 @@ jobs:
           set -euo pipefail
           target_date="${HEAD_REF#automation/daily/}"
           pnpm automation:daily:guard --base "$ORBIS_PR_BASE_SHA" --target-date "$target_date"
+      - name: Guard published Daily correction
+        if: ${{ startsWith(github.head_ref, 'correction/daily/') }}
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: pnpm evidence:daily:correction:guard --base "$ORBIS_PR_BASE_SHA" --branch "$HEAD_REF"
       - name: Build preview
         run: pnpm build
       - name: Upload public-preview artifact
