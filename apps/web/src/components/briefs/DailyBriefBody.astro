@@ -17,7 +17,7 @@ const { brief, sourceIndex } = Astro.props
     <section>
       <h2>{section.title}</h2>
       <p><strong>{section.conclusion}</strong></p>
-      <ul>{section.facts.map((fact) => <li>{fact}</li>)}</ul>
+      <ul>{section.facts.map((fact) => <li>{typeof fact === 'string' ? fact : fact.text}</li>)}</ul>
       {section.limitations.length > 0 && <p><small>限制：{section.limitations.join('；')}</small></p>}
     </section>
   ))}
