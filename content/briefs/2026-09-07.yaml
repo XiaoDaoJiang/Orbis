@@ -1,0 +1,202 @@
+kind: brief
+cadence: daily
+publishedAt: 2026-09-07
+status: published
+title: Agent 的新边界正在变成显式策略层
+summary: 工作区信任、工具访问、网络出口、凭据与外部生命周期监督正从隐式约定变成可验证策略；生产级 Agent 的竞争焦点正在从“会调用工具”转向“每个副作用都有边界、所有权和证据”。
+topics:
+  - agent-harness
+  - coding-agent
+  - mcp
+signals:
+  - title: Workspace 本身就是安全边界
+    summary: Gemini CLI 的最新安全修复把环境变量变更、路径穿越与系统级配置权限都纳入显式信任检查。
+    impact: high
+  - title: Tool Access 正在收敛到策略网关
+    summary: GitHub 的 Agentic Workflows 与 MCP Gateway 把只读默认、完整性过滤、调用次数和写入通道拆成独立控制面。
+    impact: high
+  - title: Egress 与凭据必须和 Agent 进程隔离
+    summary: Agentic Workflow Firewall 用网络 allowlist、API proxy sidecar、DLP 与运行时限把外部副作用变成可审计资源。
+    impact: high
+  - title: 生命周期权限正在移出 Agent 主进程
+    summary: OpenClaw 2026.9.2 引入 external supervisor 模式与精确审批绑定，说明 restart、自更新、凭据和会话恢复正成为独立控制面。
+    impact: high
+sections:
+  - id: workspace-trust
+    layout: timeline
+    title: Gemini CLI 把 Workspace Trust 从提示语升级为执行约束
+    conclusion: Coding Agent 的第一道安全边界正在前移到工作区、环境变量与系统级配置加载阶段。
+    facts:
+      - Gemini CLI v0.60.0 nightly 在 2026-09-05 增加环境变更同意提示，并清理可能改变运行时行为的环境变量。
+      - 同一版本强化 workspace 路径边界和符号链接解析，减少命令安全检查与文件发现被路径绕过的风险。
+      - 系统级配置路径开始执行更严格的权限与所有权检查。
+    limitations:
+      - 该版本属于 nightly 预发布，能力与默认行为仍可能继续调整。
+      - 这些修复降低宿主环境风险，但不能替代工具级权限和网络隔离。
+    references:
+      - title: Gemini CLI v0.60.0 nightly 20260905
+        url: https://github.com/google-gemini/gemini-cli/releases/tag/v0.60.0-nightly.20260905.g85aca163f
+        source: github
+        supports: 环境变量、workspace 路径边界和系统配置权限的安全修复。
+        accessedAt: 2026-09-07
+  - id: deterministic-boundary
+    layout: architecture
+    title: Reasoning 与 Deterministic Execution 正在被明确拆开
+    conclusion: 生产自动化更适合让 Agent 负责判断，让构建、测试与受控写入继续由确定性工作流执行。
+    facts:
+      - GitHub Agentic Workflows 明确建议构建、测试、lint 和部署继续使用 conventional GitHub Actions。
+      - Agent job 默认采用只读 GitHub 权限和 sandbox，写操作通过经过验证的 safe-outputs job 以受限权限执行。
+      - Agentic Workflow 的 Markdown 源会先编译和验证，再生成标准 GitHub Actions workflow。
+    limitations:
+      - 该设计深度绑定 GitHub Actions 运行模型，迁移到其他执行平台需要重新实现等价的权限与输出门控。
+      - 仓库明确提示 Agentic Workflows 仍需要人工监督，不能把安全默认值理解为零风险。
+    references:
+      - title: GitHub Agentic Workflows
+        url: https://github.com/github/gh-aw
+        source: github
+        supports: 只读默认、sandbox、safe outputs 与 deterministic workflow 的职责边界。
+        accessedAt: 2026-09-07
+  - id: mcp-policy-plane
+    layout: system-map
+    title: MCP Gateway 正从连接器变成 Tool Policy Plane
+    conclusion: MCP 的生产化价值不只在统一调用协议，更在把来源完整性、调用额度和写入方向放到 Agent 外部执行。
+    facts:
+      - GitHub MCP Gateway 支持 allow-only 与 write-sink guard policy，把可读来源与可写目标拆成不同策略。
+      - allow-only 可按 public、owner、repo 和 integrity level 限制输入来源，并支持 blocked users、trusted users 与 approval labels。
+      - tool-call-limits 可以在调用后端前按 session 硬限制单个工具的调用次数，同时 gateway 支持超时和 OpenTelemetry tracing。
+    limitations:
+      - 策略粒度越高，配置和运维复杂度越高，需要版本化策略、测试样例和审计日志配套。
+      - Gateway 控制的是工具边界，无法单独解决 Agent 在已授权工具内部做出错误业务判断的问题。
+    references:
+      - title: GitHub Agentic Workflows MCP Gateway
+        url: https://github.com/github/gh-aw-mcpg
+        source: github
+        supports: MCP guard policies、integrity filtering、tool-call limits 与 tracing。
+        accessedAt: 2026-09-07
+  - id: egress-boundary
+    layout: architecture
+    title: 网络出口和模型凭据开始成为独立 Runtime 资源
+    conclusion: 高权限 Agent 不应直接拥有开放网络与模型密钥，egress policy 和 credential proxy 应成为 Harness 的一等组件。
+    facts:
+      - Agentic Workflow Firewall 通过 Squid proxy 对 outbound HTTP/HTTPS 做 domain allowlist，并把 Agent 放在独立 Docker sandbox 中。
+      - 可选 API proxy sidecar 持有模型 API key，使密钥不进入 Agent 进程。
+      - Firewall 还提供 DLP、agent timeout、流量统计和 audit log，形成运行时副作用证据。
+    limitations:
+      - 当前快速路径依赖 Docker，官方兼容性主要面向 Ubuntu/Linux 环境。
+      - URL 级过滤需要 SSL Bump；更强的 microVM backend 仍属于 preview 能力。
+    references:
+      - title: GitHub Agentic Workflow Firewall
+        url: https://github.com/github/gh-aw-firewall
+        source: github
+        supports: 网络 allowlist、凭据隔离、DLP、运行时限制和审计能力。
+        accessedAt: 2026-09-07
+  - id: external-supervision
+    layout: system-map
+    title: Runtime 生命周期权限正在形成独立 Supervisor Boundary
+    conclusion: Agent 自身不应同时拥有任务推理、服务生命周期、更新权限和凭据控制；这些高风险能力正被拆到可验证的外部监督层。
+    facts:
+      - OpenClaw 2026.9.2 增加 OPENCLAW_SUPERVISOR_MODE=external，使外部 lifecycle owner 可以接管 restart 与 deferral，同时阻止 Agent 侧原生服务变更和 self-update。
+      - 该模式提供版本化的原子 restart-handoff contract，让重启从隐式副作用变成明确交接协议。
+      - 同一版本的 conversational onboarding 使用 typed operations、exact approval binding、masked credential prompts 与 isolated session transcripts，并在完成后安全 handoff 到普通 Agent。
+      - OpenClaw 同时强化 Gateway restart admission、reply session recovery 与一次性 cron lifecycle race 的恢复行为。
+    limitations:
+      - 这是 OpenClaw 的具体实现，不代表行业已经形成统一 Supervisor 协议。
+      - 将生命周期权限外移只是缩小 Agent 权限面，外部 supervisor 本身仍需要身份、审计和失败恢复机制。
+    references:
+      - title: OpenClaw v2026.9.2
+        url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.2
+        source: github
+        supports: external supervisor、restart handoff、exact approval binding、masked credentials 与 session recovery。
+        accessedAt: 2026-09-07
+projects:
+  - action: TEST
+    name: github/gh-aw
+    summary: 验证 read-only agent、safe outputs 与 deterministic CI 的职责拆分。
+    maturity: early
+    url: https://github.com/github/gh-aw
+  - action: TEST
+    name: github/gh-aw-mcpg
+    summary: 用一个真实 MCP server 验证 integrity、tool-call limit 和 write-sink 策略。
+    maturity: early
+    url: https://github.com/github/gh-aw-mcpg
+  - action: TEST
+    name: github/gh-aw-firewall
+    summary: 验证 egress allowlist、API proxy sidecar 和 audit log 对 Coding Agent 的约束。
+    maturity: early
+    url: https://github.com/github/gh-aw-firewall
+  - action: WATCH
+    name: google-gemini/gemini-cli
+    summary: 跟踪 workspace trust、extension loading 与 MCP OAuth 安全修复何时进入稳定版本。
+    maturity: growing
+    url: https://github.com/google-gemini/gemini-cli
+  - action: TEST
+    name: openclaw/openclaw
+    summary: 验证 external supervisor、restart handoff 与精确 approval binding 是否能隔离生命周期权限。
+    maturity: growing
+    url: https://github.com/openclaw/openclaw
+radar:
+  - label: Workspace trust enforcement
+    impact: 91
+    horizon: 12
+    note: 本地 Coding Agent 已直接接触 shell 和文件系统，应立即建立。
+  - label: MCP policy gateway
+    impact: 94
+    horizon: 18
+    note: 多工具系统越复杂，集中权限和调用额度越有价值。
+  - label: Egress and credential isolation
+    impact: 96
+    horizon: 15
+    note: 对高权限 Agent 属于上线前基础安全控制。
+  - label: External supervisor boundary
+    impact: 93
+    horizon: 20
+    note: restart、自更新与凭据控制应与 Agent 推理进程分离，并建立显式 handoff。
+  - label: Safe output channels
+    impact: 92
+    horizon: 20
+    note: 把写入从 Agent 主进程移出，可显著缩小不可逆副作用面。
+actions:
+  - title: 给 Coding Agent 增加 Workspace Trust 检查
+    description: 在执行 shell 或加载项目配置前校验工作区根目录、符号链接、配置文件所有权与运行时环境变量来源。
+  - title: 把 MCP 权限移出 Prompt
+    description: 用 Gateway 或 wrapper 明确限制可访问 repo、工具调用次数、超时和允许的写入 sink，不依赖模型自我约束。
+  - title: 隔离网络出口与模型密钥
+    description: 为高权限 Agent 增加 egress allowlist，并通过独立 credential proxy 注入模型调用能力而不是直接暴露 API key。
+  - title: 定义外部 Supervisor 交接协议
+    description: 将 restart、自更新、凭据和高风险配置变更移出 Agent 进程，并用版本化 handoff、审批绑定和审计记录约束生命周期操作。
+references:
+  - title: Gemini CLI v0.60.0 nightly 20260905
+    url: https://github.com/google-gemini/gemini-cli/releases/tag/v0.60.0-nightly.20260905.g85aca163f
+    source: github
+    supports: Workspace Trust、环境变量与系统配置边界的近期安全修复。
+    accessedAt: 2026-09-07
+  - title: GitHub Agentic Workflows
+    url: https://github.com/github/gh-aw
+    source: github
+    supports: Agent reasoning、deterministic Actions、sandbox 与 safe outputs 的架构边界。
+    accessedAt: 2026-09-07
+  - title: GitHub Agentic Workflows MCP Gateway
+    url: https://github.com/github/gh-aw-mcpg
+    source: github
+    supports: MCP tool policy、integrity filtering、call limits 与 tracing。
+    accessedAt: 2026-09-07
+  - title: GitHub Agentic Workflow Firewall
+    url: https://github.com/github/gh-aw-firewall
+    source: github
+    supports: Egress allowlist、API key 隔离、DLP 与运行时审计。
+    accessedAt: 2026-09-07
+  - title: OpenClaw v2026.9.2
+    url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.2
+    source: github
+    supports: 外部生命周期监督、restart handoff、精确审批绑定、凭据保护与 session recovery。
+    accessedAt: 2026-09-07
+archivePicks:
+  - title: Harness 正在成为模型之外的能力层
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-08-28.yaml
+    source: github
+    supports: 本期关于权限、验证与可恢复执行边界的前置判断。
+    accessedAt: 2026-09-07
+    publishedAt: 2026-08-28
+presentation:
+  enabled: true
+  template: daily-v1
