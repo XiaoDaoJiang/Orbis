@@ -2,6 +2,13 @@
 import type { DailyBrief } from '@orbis/content-schema'
 import ReferenceList from '../ReferenceList.astro'
 import type { ResolvedSource } from '../../lib/content-registry'
+import {
+  claimAnchorId,
+  correctionHistory as buildCorrectionHistory,
+  isEvidenceDailyBrief,
+  latestCorrection as resolveLatestCorrection,
+  referenceAnchorId,
+} from '../../lib/evidence-integrity'
 
 interface Props {
   brief: DailyBrief
@@ -9,20 +16,85 @@ interface Props {
 }
 
 const { brief, sourceIndex } = Astro.props
+const evidenceBrief = isEvidenceDailyBrief(brief) ? brief : undefined
+const referenceById = new Map(evidenceBrief?.references.map((reference) => [reference.id, reference]) ?? [])
+const corrections = evidenceBrief ? buildCorrectionHistory(evidenceBrief) : []
+const latestCorrection = evidenceBrief ? resolveLatestCorrection(evidenceBrief) : undefined
 ---
 <div class="article-body">
+  {latestCorrection && (
+    <aside class="correction-notice" data-evidence-correction data-correction-count={corrections.length}>
+      <h2>已修正 · {latestCorrection.correctedAt}</h2>
+      <p>{latestCorrection.summary}</p>
+      <p><small>受影响事实：</small></p>
+      <ul>
+        {latestCorrection.targets.map((target) => (
+          <li>
+            <a href={`#${claimAnchorId(target.section, target.fact)}`}>
+              {target.section}/{target.fact}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  )}
+
   <h2>Four signals</h2>
   <ul class="signal-list">{brief.signals.map((signal) => <li><strong>{signal.title}</strong><p>{signal.summary}</p></li>)}</ul>
   {brief.sections.map((section) => (
     <section>
       <h2>{section.title}</h2>
       <p><strong>{section.conclusion}</strong></p>
-      <ul>{section.facts.map((fact) => <li>{typeof fact === 'string' ? fact : fact.text}</li>)}</ul>
+      <ul>{section.facts.map((fact) => typeof fact === 'string'
+        ? <li>{fact}</li>
+        : (
+          <li
+            id={claimAnchorId(section.id, fact.id)}
+            data-evidence-claim={`${section.id}/${fact.id}`}
+          >
+            <span>{fact.text}</span>
+            <small class="fact-evidence">
+              证据：{fact.evidence.map((referenceId, index) => {
+                const reference = referenceById.get(referenceId)
+                return (
+                  <span>
+                    <a href={`#${referenceAnchorId(referenceId)}`}>{reference?.title ?? referenceId}</a>
+                    {index < fact.evidence.length - 1 && ' · '}
+                  </span>
+                )
+              })}
+            </small>
+          </li>
+        ))}</ul>
       {section.limitations.length > 0 && <p><small>限制：{section.limitations.join('；')}</small></p>}
     </section>
   ))}
+
   <h2>From signals to action</h2>
   <ul class="action-list">{brief.actions.map((action) => <li><strong>{action.title}</strong><p>{action.description}</p></li>)}</ul>
+
+  {corrections.length > 0 && (
+    <section class="correction-history" data-correction-history>
+      <h2>修正记录</h2>
+      <ol>
+        {corrections.map((correction) => (
+          <li data-correction-id={correction.id}>
+            <p><strong>{correction.correctedAt}</strong> · {correction.summary}</p>
+            <ul>
+              {correction.targets.map((target) => (
+                <li>
+                  <a href={`#${claimAnchorId(target.section, target.fact)}`}>
+                    {target.section}/{target.fact}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )}
+
   <h2>References</h2>
   <ReferenceList references={brief.references} sourceIndex={sourceIndex} />
 </div>
