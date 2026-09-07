@@ -11,6 +11,10 @@ for (const [name, text] of [['daily-task-prompt', daily], ['scheduled-task-promp
   assert.match(text, /content\/briefs\/YYYY-MM-DD\.yaml/, `${name} must document the exact Daily target path`)
   assert.match(text, /already-published/, `${name} must define the published-main no-write outcome`)
   assert.match(text, /correction/i, `${name} must route published corrections explicitly`)
+  assert.match(text, /evidenceVersion:\s*1/, `${name} must require Evidence V1 for new Scheduled Daily candidates`)
+  assert.match(text, /fact.*id|stable fact ID/i, `${name} must require stable fact identities`)
+  assert.match(text, /evidence/i, `${name} must require explicit evidence bindings`)
+  assert.match(text, /reference.*id|reference ID/i, `${name} must require canonical reference identities`)
 }
 
 assert.doesNotMatch(
@@ -24,4 +28,4 @@ assert.doesNotMatch(
   'Scheduled entry prompt must not silently overwrite an existing main target',
 )
 
-console.log('Scheduled Daily prompt idempotency contract passed')
+console.log('Scheduled Daily Evidence V1 prompt contract passed')

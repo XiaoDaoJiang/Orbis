@@ -8,6 +8,8 @@ import {
   sourceSchema,
   topicSchema,
 } from '@orbis/content-schema'
+import { evaluateDailyEvidence } from '../evidence-integrity/daily-evidence.ts'
+import { loadEvidenceIntegrityConfig } from '../evidence-integrity/config.ts'
 import { listFiles, readMarkdownFrontmatter, readYaml } from '../shared/content.ts'
 import {
   validateReferentialIntegrity,
@@ -63,6 +65,23 @@ if (hasSchemaErrors) process.exit(1)
 const integrityErrors = validateReferentialIntegrity(root, entries)
 if (integrityErrors.length) {
   for (const error of integrityErrors) console.error(error)
+  process.exit(1)
+}
+
+const evidenceConfig = await loadEvidenceIntegrityConfig(root)
+const evidenceErrors: string[] = []
+for (const entry of entries) {
+  if (entry.kind !== 'brief' || entry.value.cadence !== 'daily') continue
+  const path = displayPath(entry.path)
+  const report = evaluateDailyEvidence(entry.value, path, evidenceConfig.legacyDailyPaths)
+  console.log(`Evidence integrity ${path}: ${report.mode} claims=${report.claimCount} refs=${report.referenceCount}`)
+  for (const error of report.errors) {
+    evidenceErrors.push(`Evidence integrity: ${path}: ${error.code} ${error.address} -> ${error.message}`)
+  }
+}
+
+if (evidenceErrors.length) {
+  for (const error of evidenceErrors) console.error(error)
   process.exit(1)
 }
 

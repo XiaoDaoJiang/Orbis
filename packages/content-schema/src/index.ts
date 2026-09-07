@@ -53,6 +53,10 @@ export const referenceSchema = z.object({
   accessedAt: dateStringSchema.optional(),
 })
 
+export const evidenceReferenceSchema = referenceSchema.extend({
+  id: registryIdSchema,
+}).strict()
+
 export const archivePickSchema = referenceSchema.extend({
   publishedAt: dateStringSchema.optional(),
 })
@@ -72,6 +76,34 @@ export const briefSectionSchema = z.object({
   limitations: z.array(z.string().min(5)).max(3).default([]),
   references: z.array(referenceSchema).min(1),
 })
+
+export const evidenceFactSchema = z.object({
+  id: registryIdSchema,
+  text: z.string().min(5),
+  evidence: z.array(registryIdSchema).min(1),
+}).strict()
+
+export const dailyEvidenceSectionSchema = z.object({
+  id: registryIdSchema,
+  layout: z.enum(['architecture', 'comparison', 'timeline', 'metrics', 'system-map']),
+  title: z.string().min(3),
+  conclusion: z.string().min(12),
+  facts: z.array(evidenceFactSchema).min(1).max(4),
+  limitations: z.array(z.string().min(5)).max(3).default([]),
+}).strict()
+
+export const dailyCorrectionTargetSchema = z.object({
+  section: registryIdSchema,
+  fact: registryIdSchema,
+}).strict()
+
+export const dailyCorrectionSchema = z.object({
+  id: registryIdSchema,
+  correctedAt: dateStringSchema,
+  summary: z.string().min(12),
+  targets: z.array(dailyCorrectionTargetSchema).min(1),
+  evidence: z.array(registryIdSchema).min(1),
+}).strict()
 
 export const presentationSectionSchema = z.object({
   id: z.string().min(2),
@@ -153,8 +185,10 @@ const legacyBriefBody = {
   presentation: presentationSchema,
 }
 
-export const dailyBriefSchema = briefSharedSchema.extend({
+export const legacyDailyBriefSchema = briefSharedSchema.extend({
   cadence: z.literal('daily'),
+  evidenceVersion: z.never().optional(),
+  corrections: z.never().optional(),
   ...legacyBriefBody,
   signals: z.array(signalSchema).length(4),
   sections: z.array(briefSectionSchema).length(5),
@@ -164,6 +198,25 @@ export const dailyBriefSchema = briefSharedSchema.extend({
     template: z.literal('daily-v1'),
   }),
 })
+
+export const evidenceDailyBriefSchema = briefSharedSchema.extend({
+  cadence: z.literal('daily'),
+  evidenceVersion: z.literal(1),
+  signals: z.array(signalSchema).length(4),
+  sections: z.array(dailyEvidenceSectionSchema).length(5),
+  projects: z.array(projectSchema).max(6).default([]),
+  radar: z.array(radarItemSchema).max(8).default([]),
+  actions: z.array(actionSchema).min(3).max(5),
+  references: z.array(evidenceReferenceSchema).min(1),
+  archivePicks: z.array(archivePickSchema).max(6).default([]),
+  corrections: z.array(dailyCorrectionSchema).default([]),
+  presentation: z.object({
+    enabled: z.boolean(),
+    template: z.literal('daily-v1'),
+  }).strict(),
+}).strict()
+
+export const dailyBriefSchema = z.union([evidenceDailyBriefSchema, legacyDailyBriefSchema])
 
 export const weeklyBriefSchema = briefSharedSchema.extend({
   cadence: z.literal('weekly'),
@@ -241,8 +294,16 @@ export const knowledgeSchema = z.object({
 
 export type Source = z.infer<typeof sourceSchema>
 export type Author = z.infer<typeof authorSchema>
+export type Reference = z.infer<typeof referenceSchema>
+export type EvidenceReference = z.infer<typeof evidenceReferenceSchema>
+export type EvidenceFact = z.infer<typeof evidenceFactSchema>
+export type DailyEvidenceSection = z.infer<typeof dailyEvidenceSectionSchema>
+export type DailyCorrectionTarget = z.infer<typeof dailyCorrectionTargetSchema>
+export type DailyCorrection = z.infer<typeof dailyCorrectionSchema>
 export type Brief = z.infer<typeof briefSchema>
 export type DailyBrief = z.infer<typeof dailyBriefSchema>
+export type LegacyDailyBrief = z.infer<typeof legacyDailyBriefSchema>
+export type EvidenceDailyBrief = z.infer<typeof evidenceDailyBriefSchema>
 export type WeeklyBrief = z.infer<typeof weeklyBriefSchema>
 export type AdHocBrief = z.infer<typeof adHocBriefSchema>
 export type PresentationContent = z.infer<typeof presentationContentSchema>

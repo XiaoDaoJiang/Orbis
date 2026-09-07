@@ -138,6 +138,7 @@ function collectReferenceSources(entry: ParsedContentEntry): ReferenceSource[] {
 
   if ('sections' in value) {
     value.sections.forEach((section, sectionIndex) => {
+      if (!('references' in section) || !Array.isArray(section.references)) return
       section.references.forEach((reference, referenceIndex) => {
         if (reference.source) {
           sources.push({

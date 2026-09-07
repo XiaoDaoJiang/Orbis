@@ -14,6 +14,22 @@ function escapeHtml(value: string) {
     .replaceAll("'", '&#039;')
 }
 
+function factText(fact: string | { text: string }) {
+  return typeof fact === 'string' ? fact : fact.text
+}
+
+function sectionPrimaryReferenceUrl(section: DailyBrief['sections'][number], brief: DailyBrief) {
+  if ('references' in section && Array.isArray(section.references)) {
+    return section.references[0]?.url ?? brief.references[0].url
+  }
+
+  const firstFact = section.facts[0]
+  if (!firstFact || typeof firstFact === 'string') return brief.references[0].url
+  const firstEvidenceId = firstFact.evidence[0]
+  const resolved = brief.references.find((reference) => 'id' in reference && reference.id === firstEvidenceId)
+  return resolved?.url ?? brief.references[0].url
+}
+
 export function renderDailyV1(brief: DailyBrief, context: DailyV1RenderContext) {
   const pages: string[] = []
   const favicon = `${context.siteBase}/favicon.svg`.replace(/^\/\//, '/')
@@ -23,7 +39,7 @@ export function renderDailyV1(brief: DailyBrief, context: DailyV1RenderContext) 
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">FOUR SIGNALS</div>\n\n## 四个关键信号\n\n<div class="signal-grid">\n${brief.signals.map((signal) => `<div class="signal-card"><h3>${escapeHtml(signal.title)}</h3><p>${escapeHtml(signal.summary)}</p><small>${signal.impact.toUpperCase()}</small></div>`).join('\n')}\n</div>\n`)
 
   for (const section of brief.sections) {
-    pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">${section.layout.toUpperCase()}</div>\n\n## ${section.title}\n\n**${section.conclusion}**\n\n<ul class="topic-facts">\n${section.facts.map((fact) => `<li>${escapeHtml(fact)}</li>`).join('\n')}\n</ul>\n\n${section.limitations.length ? `<small>限制：${escapeHtml(section.limitations.join('；'))}</small>` : ''}\n\n[原始来源 ↗](${section.references[0]?.url ?? brief.references[0].url})\n`)
+    pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">${section.layout.toUpperCase()}</div>\n\n## ${section.title}\n\n**${section.conclusion}**\n\n<ul class="topic-facts">\n${section.facts.map((fact) => `<li>${escapeHtml(factText(fact))}</li>`).join('\n')}\n</ul>\n\n${section.limitations.length ? `<small>限制：${escapeHtml(section.limitations.join('；'))}</small>` : ''}\n\n[原始来源 ↗](${sectionPrimaryReferenceUrl(section, brief)})\n`)
   }
 
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">OPEN SOURCE RADAR</div>\n\n## 值得 Clone / Read / Test 的项目\n\n<div class="project-grid">\n${brief.projects.map((project) => `<div class="project-card"><h3>${project.action} · ${escapeHtml(project.name)}</h3><p>${escapeHtml(project.summary)}</p><p><a href="${escapeHtml(project.url)}">GitHub ↗</a></p></div>`).join('\n')}\n</div>\n`)
