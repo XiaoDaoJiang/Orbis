@@ -1,10 +1,10 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 基线：`main@3c5cc91974cea388b87b779f3e367b4c114d7a6c`
+> 基线：`main@b3e793d0c5c7d55358933d4d25c4d77dafd8cd03`
 > 基线日期：2026-09-07
 > 阶段：Product Capability Phase
-> 当前目标：Plan 70 · Scheduled Content Automation · 70C Drills Gate
+> 当前目标：Milestone G · Done / 下一能力阶段规划
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -16,47 +16,109 @@
 - Plan 40 · Source & Author Registry：**Done** — PR #15 / #19
 - Plan 50 · SEO & Sharing：**Done** — PR #21 / #22
 - Plan 60 · Knowledge Lifecycle：**Done** — PR #23 / #24
-- Plan 70 · Scheduled Content Automation：**In Progress**
+- Plan 70 · Scheduled Content Automation：**Done**
   - 70A Repository Contract：**Done** — PR #25
   - 70B ChatGPT Scheduled Daily Adapter：**Done** — PR #26 + transport proof #27
-  - 70C Real-cycle Validation：**Drills Gate** — stable cycles `3/3`
+  - 70C Real-cycle Validation：**Done** — stable cycles `3/3` + all behavior drills
 
-## 70C stable-cycle evidence
+## Milestone G closeout
 
-Cycle 0 / transport proof：PR #27（2026-09-04）。该周期发现并修复 PR #28 / #29 两处 repository infrastructure regression，因此不计入稳定周期。
+Plan 70 完成以下真实链路：
 
-随后三个真实 Scheduled Daily 连续完成且无需 repository infrastructure repair：
+```text
+Repository Contract
+    ↓
+ChatGPT Scheduled Daily Adapter
+    ↓
+Cycle 0 transport proof
+    ↓
+3 consecutive stable cycles
+    ↓
+same-day rerun / idempotency
+    ↓
+already-published / zero write
+    ↓
+explicit published correction
+    ↓
+Human merge
+    ↓
+fresh corrected main Build
+```
+
+### Stable cycles
 
 ```text
 Stable 1/3  2026-09-05  PR #30
-  branch     automation/daily/2026-09-05
-  file       content/briefs/2026-09-05.yaml
-  changed    exactly 1
-  Build      33933722915 success
-  Artifact   9959459260
-  SHA-256    6b3bba0b8594dacdc93b66ec21cb33dfe61acb983850eb910b485c8da9c0c458
-  Preview    trusted public smoke passed
-
 Stable 2/3  2026-09-06  PR #31
-  branch     automation/daily/2026-09-06
-  file       content/briefs/2026-09-06.yaml
-  changed    exactly 1
-  Build      34001239220 success
-  Artifact   9979564620
-  SHA-256    8a1e5e2c972a13c0dfb9562a8b03846dbfb3424e1e8c4f0fb9663189ad06fcfa
-  Preview    trusted public smoke passed
-
 Stable 3/3  2026-09-07  PR #32
-  branch     automation/daily/2026-09-07
-  file       content/briefs/2026-09-07.yaml
-  changed    exactly 1
-  Build      34069576275 success
-  Artifact   10000034839
-  SHA-256    e641c0703ce4ae95f29b1ce2d7984cac7a73ec54fb498d72f80f82cae73a5838
-  Preview    trusted public smoke passed
 ```
 
-9/7 首次内容提交被既有 Registry contract 拒绝，Producer 随后在同一 deterministic branch / PR #32 中只修目标 Daily YAML 并转绿；没有基础设施修补，因此仍计 Stable Cycle 3。该行为发生在同一次 Scheduled Task run 内，不计作独立 same-day rerun drill。
+三个真实稳定周期均保持 exact one-Daily boundary，并在前一日期 PR 合并后通过 same-tree current-main revalidation；没有 repository infrastructure repair。
+
+### Same-day rerun / idempotency · Passed
+
+2026-09-07 在 PR #32 尚为 owned candidate 时，独立 `Run now` 收敛到同一：
+
+```text
+branch       automation/daily/2026-09-07
+PR           #32
+outcome      candidate-updated
+new branch   0
+new PR       0
+```
+
+验证：PR Preview Build `34076897189` success，Trusted Preview public smoke passed。
+
+### Published no-write · Passed
+
+PR #32 合并后再次执行相同 Scheduled Task：
+
+```text
+targetDate   2026-09-07
+outcome      already-published
+main write   0
+branch write 0
+new branch   0
+new PR       0
+merge        0
+Production   0
+```
+
+独立 GitHub 前后状态保持：
+
+```text
+main         6411076d1769b96f6e26b6fd5c6c005c78aad9e8
+9/7 branch   b092233168dabb947734fe0d078a44744f277257
+open 9/7 PR  none
+```
+
+### Explicit correction · Passed
+
+针对 2026-09-07 已发布 Brief 的真实 OpenClaw supervisor 版本归因问题，使用独立 correction flow：
+
+```text
+branch       correction/daily/2026-09-07/openclaw-supervisor-version
+PR           #33
+head         a73ef682ac4e3f7dacefe68dc0bd7706ec5296d7
+changed      exactly 1 file
+PR Build     34088014693 success
+Artifact     10005904775
+SHA-256      de54c7a5374e7806395f077b6fd26c0621b17da04da27446c6acc9931619ef2a
+Preview      34088175467 success
+```
+
+Correction branch 只通过 generic Path Guard；Scheduled Daily exact guard 被明确 skipped，证明 correction 没有冒充普通 Scheduled Daily authority。
+
+Human 合并 #33 后：
+
+```text
+main                      b3e793d0c5c7d55358933d4d25c4d77dafd8cd03
+fresh Site Build          34090549723 success
+main Artifact             10006713925
+Artifact SHA-256          8c56125aea23914874a908550d98675f9d8218c820a7545ead9d2d13929b10af
+```
+
+因此 **Plan 70 Done / Milestone G Done**。
 
 ## 当前产品基线
 
@@ -71,30 +133,15 @@ SEO / Structured Data
           ↓
 Knowledge Lifecycle · Done
           ↓
-Scheduled Content Automation · In Progress
-  ├── 70A Repository Contract · Done
-  ├── 70B ChatGPT Adapter · Done
-  └── 70C Real-cycle Validation · Drills Gate
-      ├── consecutive stable cycles 3 / 3 · Done
-      ├── same-day rerun / idempotency · Pending
-      ├── published no-write · Pending
-      └── explicit correction · Pending
+Scheduled Content Automation · Done
+  ├── repository-owned contract
+  ├── replaceable Scheduler / Producer
+  ├── deterministic Daily identity
+  ├── idempotent same-candidate convergence
+  ├── published no-write protection
+  ├── explicit correction boundary
+  └── mandatory Build / Trusted Preview / Human Review
 ```
-
-## 当前 integration gate
-
-当前 Daily candidates 均为 open、content-only、mergeable：
-
-```text
-#27  2026-09-04
-#30  2026-09-05
-#31  2026-09-06
-#32  2026-09-07
-```
-
-推荐按日期顺序进入 Human / Policy merge gate。四个 PR 最初均基于 `main@3c5cc91974cea388b87b779f3e367b4c114d7a6c` 生成，因此每次前一个 PR 合并后，下一个 PR 必须在新的 current main 上做 same-tree revalidation，再进入 merge；不得直接复用旧 base 的绿色 CI 作为 current-main 集成证明。
-
-至少一个 Daily 进入 `main` 后，才能完成 published `already-published` no-write 与 explicit correction workflow drills。
 
 ## Roadmap
 
@@ -116,21 +163,10 @@ Scheduled Content Automation · In Progress
 40 Source & Author Registry     Done
 50 SEO & Sharing                Done
 60 Knowledge Lifecycle          Done
-70 Scheduled Content Automation In Progress
-  ├── 70A Repository Contract   Done · PR #25
-  ├── 70B ChatGPT Adapter       Done · PR #26 / proof #27
-  └── 70C Real-cycle Validation Drills Gate · stable 3/3
+70 Scheduled Content Automation Done
 ```
 
-## 70C remaining gate
-
-- [x] Stable Cycle 1 / 3 — PR #30
-- [x] Stable Cycle 2 / 3 — PR #31
-- [x] Stable Cycle 3 / 3 — PR #32
-- [x] 三个连续稳定周期无需 repository infrastructure repair
-- [ ] same-day rerun / idempotency drill
-- [ ] published Daily `already-published` no-write drill
-- [ ] explicit correction workflow drill
+下一步不自动生成 Plan 80。先基于当前稳态与真实使用反馈重新评估 Product Capability Roadmap，再定义下一 milestone 的问题、验收标准与边界。
 
 ## 每个计划的统一交付规则
 
