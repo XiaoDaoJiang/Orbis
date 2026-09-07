@@ -19,7 +19,7 @@ signals:
     summary: Agentic Workflow Firewall 用网络 allowlist、API proxy sidecar、DLP 与运行时限把外部副作用变成可审计资源。
     impact: high
   - title: 生命周期权限正在移出 Agent 主进程
-    summary: OpenClaw 2026.9.2 引入 external supervisor 模式与精确审批绑定，说明 restart、自更新、凭据和会话恢复正成为独立控制面。
+    summary: OpenClaw 更早已引入 external supervisor 模式，2026.9.2 继续强化升级、Gateway 重启与 reply recovery，说明 restart、自更新和会话恢复正成为独立控制面。
     impact: high
 sections:
   - id: workspace-trust
@@ -95,18 +95,23 @@ sections:
     title: Runtime 生命周期权限正在形成独立 Supervisor Boundary
     conclusion: Agent 自身不应同时拥有任务推理、服务生命周期、更新权限和凭据控制；这些高风险能力正被拆到可验证的外部监督层。
     facts:
-      - OpenClaw 2026.9.2 增加 OPENCLAW_SUPERVISOR_MODE=external，使外部 lifecycle owner 可以接管 restart 与 deferral，同时阻止 Agent 侧原生服务变更和 self-update。
-      - 该模式提供版本化的原子 restart-handoff contract，让重启从隐式副作用变成明确交接协议。
-      - 同一版本的 conversational onboarding 使用 typed operations、exact approval binding、masked credential prompts 与 isolated session transcripts，并在完成后安全 handoff 到普通 Agent。
-      - OpenClaw 同时强化 Gateway restart admission、reply session recovery 与一次性 cron lifecycle race 的恢复行为。
+      - OpenClaw v2026.7.2-beta.2 已加入 OPENCLAW_SUPERVISOR_MODE=external，使外部 lifecycle owner 可以接管 restart 与 deferral，同时阻止原生 service mutation 和 self-update。
+      - 同一版本提供 versioned atomic restart-handoff consume contract，并修复 Gateway restart admission、reply session recovery 与 one-shot cron lifecycle race。
+      - OpenClaw v2026.9.2 继续强化 upgrade/recovery：自动更新保留 active settings、enabled skills 和 default-agent ownership，并恢复 Git update 后的 Gateway restart。
+      - v2026.9.2 还恢复 active、queued 和 delegated replies after Gateway restarts，并让更多运行中 settings 由其 owner 在线应用。
     limitations:
       - 这是 OpenClaw 的具体实现，不代表行业已经形成统一 Supervisor 协议。
       - 将生命周期权限外移只是缩小 Agent 权限面，外部 supervisor 本身仍需要身份、审计和失败恢复机制。
     references:
+      - title: OpenClaw v2026.7.2-beta.2
+        url: https://github.com/openclaw/openclaw/releases/tag/v2026.7.2-beta.2
+        source: github
+        supports: 支持 external supervisor、阻止原生 service mutation/self-update、versioned restart handoff 与早期 Gateway/session recovery。
+        accessedAt: 2026-09-07
       - title: OpenClaw v2026.9.2
         url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.2
         source: github
-        supports: external supervisor、restart handoff、exact approval binding、masked credentials 与 session recovery。
+        supports: 支持后续 upgrade、Gateway restart、reply recovery 与运行中 settings owner 的恢复能力。
         accessedAt: 2026-09-07
 projects:
   - action: TEST
@@ -131,7 +136,7 @@ projects:
     url: https://github.com/google-gemini/gemini-cli
   - action: TEST
     name: openclaw/openclaw
-    summary: 验证 external supervisor、restart handoff 与精确 approval binding 是否能隔离生命周期权限。
+    summary: 验证 external supervisor、restart handoff 与后续 upgrade/recovery 行为是否能隔离生命周期权限。
     maturity: growing
     url: https://github.com/openclaw/openclaw
 radar:
@@ -185,10 +190,15 @@ references:
     source: github
     supports: Egress allowlist、API key 隔离、DLP 与运行时审计。
     accessedAt: 2026-09-07
+  - title: OpenClaw v2026.7.2-beta.2
+    url: https://github.com/openclaw/openclaw/releases/tag/v2026.7.2-beta.2
+    source: github
+    supports: external supervisor、restart handoff 与早期 Gateway/session recovery。
+    accessedAt: 2026-09-07
   - title: OpenClaw v2026.9.2
     url: https://github.com/openclaw/openclaw/releases/tag/v2026.9.2
     source: github
-    supports: 外部生命周期监督、restart handoff、精确审批绑定、凭据保护与 session recovery。
+    supports: 后续 upgrade、Gateway restart、reply recovery 与运行中 settings 变更能力。
     accessedAt: 2026-09-07
 archivePicks:
   - title: Harness 正在成为模型之外的能力层
