@@ -55,6 +55,80 @@ assert.throws(() => briefSchema.parse({ ...valid, signals: valid.signals.slice(0
 assert.throws(() => briefSchema.parse({ ...valid, sections: valid.sections.slice(0, 4) }))
 assert.throws(() => briefSchema.parse({ ...valid, presentation: { enabled: true, template: 'weekly-v1' } }))
 
+const evidenceReferences = [{
+  id: 'source-one',
+  title: 'Example source',
+  url: 'https://example.com/source',
+  supports: 'Supports the factual statement.',
+}] as const
+
+const validEvidence = {
+  ...valid,
+  evidenceVersion: 1,
+  sections: Array.from({ length: 5 }, (_, index) => ({
+    id: `section-${index + 1}`,
+    layout: 'architecture',
+    title: `Section ${index + 1}`,
+    conclusion: 'A sufficiently descriptive conclusion.',
+    facts: [{
+      id: `claim-${index + 1}`,
+      text: 'A concrete and testable factual statement.',
+      evidence: ['source-one'],
+    }],
+    limitations: [],
+  })),
+  references: evidenceReferences,
+  corrections: [{
+    id: 'fix-claim-one',
+    correctedAt: '2026-01-02',
+    summary: 'Corrects the first claim with explicit source evidence.',
+    targets: [{ section: 'section-1', fact: 'claim-1' }],
+    evidence: ['source-one'],
+  }],
+} as const
+
+assert.equal(dailyBriefSchema.parse(validEvidence).evidenceVersion, 1)
+assert.equal(briefSchema.parse(validEvidence).sections.length, 5)
+assert.throws(() => dailyBriefSchema.parse({ ...validEvidence, evidenceVersion: 2 }))
+assert.throws(() => dailyBriefSchema.parse({
+  ...validEvidence,
+  sections: validEvidence.sections.map((section, index) => index === 0
+    ? { ...section, facts: [{ text: 'Missing stable claim id.', evidence: ['source-one'] }] }
+    : section),
+}))
+assert.throws(() => dailyBriefSchema.parse({
+  ...validEvidence,
+  sections: validEvidence.sections.map((section, index) => index === 0
+    ? { ...section, facts: [{ id: 'claim-one', evidence: ['source-one'] }] }
+    : section),
+}))
+assert.throws(() => dailyBriefSchema.parse({
+  ...validEvidence,
+  sections: validEvidence.sections.map((section, index) => index === 0
+    ? { ...section, facts: [{ id: 'claim-one', text: 'Missing evidence binding.', evidence: [] }] }
+    : section),
+}))
+assert.throws(() => dailyBriefSchema.parse({
+  ...validEvidence,
+  sections: validEvidence.sections.map((section, index) => index === 0
+    ? { ...section, facts: [{ id: 'Claim One', text: 'Invalid stable claim id.', evidence: ['source-one'] }] }
+    : section),
+}))
+assert.throws(() => dailyBriefSchema.parse({
+  ...validEvidence,
+  references: [{ title: 'Missing stable reference id', url: 'https://example.com/source', supports: 'Missing id must fail.' }],
+}))
+assert.throws(() => dailyBriefSchema.parse({
+  ...validEvidence,
+  corrections: [{
+    id: 'bad-correction',
+    correctedAt: '2026-01-02',
+    summary: 'Malformed correction target must fail schema validation.',
+    targets: [{ section: 'section-1' }],
+    evidence: ['source-one'],
+  }],
+}))
+
 const validAdHoc = {
   ...valid,
   cadence: 'ad-hoc',
