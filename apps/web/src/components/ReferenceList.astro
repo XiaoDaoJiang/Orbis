@@ -3,8 +3,10 @@ import {
   resolveReferenceSource,
   type ResolvedSource,
 } from '../lib/content-registry'
+import { referenceAnchorId } from '../lib/evidence-integrity'
 
 interface ReferenceItem {
+  id?: string
   title: string
   url: string
   source?: string
@@ -24,6 +26,8 @@ const { references, sourceIndex } = Astro.props
     const source = resolveReferenceSource(reference.source, sourceIndex)
     return (
       <li
+        id={reference.id ? referenceAnchorId(reference.id) : undefined}
+        data-reference-id={reference.id}
         data-source-id={source?.id}
         data-source-type={source?.type}
         data-trust-tier={source?.trustTier}
