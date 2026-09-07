@@ -1,6 +1,6 @@
 # 70 · Scheduled Content Automation
 
-> 状态：In Progress · 70B Done / 70C Soak Active
+> 状态：In Progress · 70B Done / 70C Drills Gate
 > Roadmap Milestone：G — Sustainable Automation
 > 建议优先级：P2
 > 依赖：Plan 60 · Done；automation design · Approved
@@ -121,20 +121,11 @@ Legacy      XiaoDaoJiang/ai-frontier behavior removed
 Notify      existing notification settings preserved
 ```
 
-70B Repository 侧已实现：
-
-- thin provider adapter；
-- current-main contract bootstrap；
-- explicit Asia/Shanghai `targetDate`；
-- deterministic branch / exact file / exactly-one-PR transport；
-- current branch / PR preflight and same-candidate convergence；
-- no direct main write / auto merge / Production Pages deploy；
-- provider-neutral report semantics；
-- operations runbook and drift contract。
+70B 已实现 thin provider adapter、current-main bootstrap、explicit Asia/Shanghai `targetDate`、deterministic branch / exact file / exactly-one-PR transport、same-candidate convergence、provider-neutral report，以及 no-direct-main / no-auto-merge / no-Production-Pages authority boundary。
 
 ## 6. First real transport proof — PR #27 · Passed
 
-首个 eligible real Scheduled Daily 生成：
+首个 eligible real Scheduled Daily：
 
 ```text
 targetDate   2026-09-04
@@ -145,52 +136,27 @@ changed      exactly 1 content file
 outcome      candidate-created
 ```
 
-最终 same-tree head：
+最终证据：
 
 ```text
-f9bb8ef5f54cb1623ab582057d54e5507b0b299a
-```
-
-最终 merge ref：
-
-```text
-d91e8ac2aeca17bdac6a36eb78ce3ec989f605fa
-parents:
-  main  3c5cc91974cea388b87b779f3e367b4c114d7a6c
-  head  f9bb8ef5f54cb1623ab582057d54e5507b0b299a
-```
-
-最终真实证据：
-
-```text
+final head                   f9bb8ef5f54cb1623ab582057d54e5507b0b299a
+merge ref                    d91e8ac2aeca17bdac6a36eb78ce3ec989f605fa
+integration base             3c5cc91974cea388b87b779f3e367b4c114d7a6c
 PR Preview Build             33857483693 success
 Preview Artifact             9930821104
 Preview Artifact SHA-256     909a16ba162bc345a67f1808836a1c2b734cb187224f2aaaad395c8e2391256d
 Trusted Preview              33857669310 success
 ```
 
-最终 job 实际证明：
+最终 job 证明 exact one-file Daily diff、Scheduled Daily Guard、Schema / `content:validate`、Astro / Slidev / assemble / site checks、Weekly real-date-order、Daily-only archive/latest 与 Trusted Preview public smoke 全部通过。
 
-- PR integration base 正确解析为 `main@3c5cc91974cea388b87b779f3e367b4c114d7a6c`；
-- generic Path Guard 只看到 `A content/briefs/2026-09-04.yaml`；
-- Scheduled Daily Guard passed；
-- ChatGPT adapter contract passed；
-- Schema / `content:validate` passed；
-- Astro / Slidev / assemble / site checks passed；
-- `Weekly artifact real-date-order regression contract passed`；
-- `Homepage latest Brief ordering passed: 2026-09-04`；
-- `Daily latest isolation passed: Weekly=2026-09-01, Daily latest=2026-09-04`；
-- Trusted Preview artifact download / publish / public smoke / URL comment 全部 passed。
-
-因此 **70B first real transport proof 完成，70B Done**。
+因此 **70B Done**。
 
 ## 7. First-cycle hardening evidence
 
-首个真实周期同时暴露了两处 repository infrastructure regression；修复均独立于 automation Daily branch，没有扩大 Scheduled Daily authority。
+Cycle 0 暴露两处 repository infrastructure regression；修复均独立于 automation Daily branch，未扩大 Scheduled Daily authority。
 
 ### PR #28 — Weekly artifact real-date-order regression
-
-旧测试把“真实 Weekly 永远比真实 Daily 新”当成不变式。新 Daily `2026-09-04` 合法超过 Weekly `2026-09-01` 后触发失败。
 
 ```text
 PR                           #28 merged
@@ -200,11 +166,7 @@ Trusted Preview              33852562237 success
 post-merge Site Build        33854389852 success
 ```
 
-修复后 Homepage Latest Brief 按真实 publishedAt 排序，同时继续保持 `/latest/` 和 `archive.json.latest/issues` 为 Daily-only。
-
 ### PR #29 — PR Preview integration-base regression
-
-旧 workflow checkout 新 merge ref，却把事件 payload 中陈旧的 `pull_request.base.sha` 传给 Guard，导致 base 前进后把已合并基础设施文件错误算入 candidate diff。
 
 ```text
 PR                           #29 merged
@@ -217,15 +179,70 @@ main Artifact                9930724616
 main Artifact SHA-256        1028492c557ae5309562430f2216ac9306b731e340f3e1adda0b203e7b450c0b
 ```
 
-Guard 现在统一从 checked-out merge commit 的第一父节点解析 integration base：
+Guard 现在从 checked-out merge commit 第一父节点解析 integration base：
 
 ```text
 git rev-parse HEAD^1
 ```
 
-PR Build 仍是 `contents: read`，没有 Production authority。
+PR Build 继续保持 `contents: read`，无 Production authority。
 
-## 8. Automation Run Report
+## 8. 70C — Three consecutive stable cycles · Passed 3/3
+
+PR #27 定义为 **Cycle 0 / transport proof**，因为当日需要 #28 / #29 infrastructure hardening，不计入稳定周期。
+
+之后连续三个真实 Scheduled Daily 都未要求 repository infrastructure repair，并最终通过 exact Guard → full Build → Trusted Preview。
+
+### Stable Cycle 1 / 3 — 2026-09-05 · PR #30
+
+```text
+targetDate                   2026-09-05
+branch                       automation/daily/2026-09-05
+content                      content/briefs/2026-09-05.yaml
+PR                           #30
+changed files                exactly 1
+head                         2ed5f620364612702c9ba657dea90f609921f47d
+PR Preview Build             33933722915 success
+Preview Artifact             9959459260
+Artifact SHA-256             6b3bba0b8594dacdc93b66ec21cb33dfe61acb983850eb910b485c8da9c0c458
+Trusted Preview public smoke passed
+```
+
+### Stable Cycle 2 / 3 — 2026-09-06 · PR #31
+
+```text
+targetDate                   2026-09-06
+branch                       automation/daily/2026-09-06
+content                      content/briefs/2026-09-06.yaml
+PR                           #31
+changed files                exactly 1
+head                         cccbd9a7af9b0c816263981d6e80ea84516ffeee
+PR Preview Build             34001239220 success
+Preview Artifact             9979564620
+Artifact SHA-256             8a1e5e2c972a13c0dfb9562a8b03846dbfb3424e1e8c4f0fb9663189ad06fcfa
+Trusted Preview public smoke passed
+```
+
+### Stable Cycle 3 / 3 — 2026-09-07 · PR #32
+
+```text
+targetDate                   2026-09-07
+branch                       automation/daily/2026-09-07
+content                      content/briefs/2026-09-07.yaml
+PR                           #32
+changed files                exactly 1
+final head                   9a52d4c064ed30baa2507ecda6b1820df0164dac
+final PR Preview Build       34069576275 success
+Preview Artifact             10000034839
+Artifact SHA-256             e641c0703ce4ae95f29b1ce2d7984cac7a73ec54fb498d72f80f82cae73a5838
+Trusted Preview public smoke passed
+```
+
+9/7 首次 candidate commit `8e62de0aa194499042f5cfea868dbea7721ecb19` 因内容 Source ID 不满足既有 Registry 合同而被现有 CI 拒绝；Producer 随后在**同一个 deterministic branch / 同一个 PR #32** 中只修改目标 Daily YAML，commit `9a52d4c064ed30baa2507ecda6b1820df0164dac` 后完整转绿。该过程没有 repository infrastructure repair，因此仍计为 Stable Cycle 3，同时证明了同一 candidate 的失败后收敛行为。
+
+这两次提交发生在同一次 Scheduled Task 执行内，因此**不**冒充独立的 same-day rerun / idempotency drill。
+
+## 9. Automation Run Report
 
 Repository contract：
 
@@ -246,7 +263,7 @@ failureStage?
 
 不记录 chain-of-thought、密钥、内部 prompt 或无必要抓取原文。
 
-## 9. Correction Workflow
+## 10. Correction Workflow
 
 若 main 已存在 published Daily：
 
@@ -262,7 +279,7 @@ correction/daily/YYYY-MM-DD/<reason-slug>
 
 Scheduled Job 不自动进入 correction mode。
 
-## 10. Preview / Publish Boundary
+## 11. Preview / Publish Boundary
 
 Automation PR：
 
@@ -277,25 +294,31 @@ generic PR Path Guard
 
 Human / Policy Review 通过后才 merge main。Pages 继续由既有 governed Production workflow 管理；Scheduled Producer 不拥有 deploy 权限。
 
-## 11. 70C — Real-cycle Validation · Soak Active
+## 12. 70C remaining drills
 
-70C 已开始，但正式稳定周期从 **0/3** 计数。
+连续稳定周期已经完成 **3/3**。70C 现在只剩三个显式行为演练：
 
-PR #27 定义为 **Cycle 0 / transport proof**：它证明了真实外部 transport，但过程中发现并修复 #28 / #29 两个基础设施问题，因此不计入“三个连续无需基础设施手工修补的真实周期”。
-
-70C 必须至少完成：
-
-- [ ] Stable Cycle 1 / 3；
-- [ ] Stable Cycle 2 / 3；
-- [ ] Stable Cycle 3 / 3；
 - [ ] same-day rerun / idempotency drill；
 - [ ] published Daily `already-published` no-write drill；
-- [ ] explicit correction workflow drill；
-- [ ] 三个连续稳定周期内无需基础设施手工修补。
+- [ ] explicit correction workflow drill。
 
-现有 Scheduled Task 继续保持 enabled。下一 eligible targetDate 若创建新 candidate，只有在不需要 repository infrastructure repair 且完整通过 Guard → Build → Trusted Preview 时，才记为 Stable Cycle 1。
+为了进入 published/no-write 与 correction 语义，至少需要一个 Daily candidate 先通过 Human / Policy Review 合并进入 `main`。当前 #27 / #30 / #31 / #32 均保持 open；Scheduled Producer 不自动 merge。
 
-## 12. 非目标
+推荐集成顺序按日期推进：
+
+```text
+#27  2026-09-04
+ ↓
+#30  2026-09-05
+ ↓
+#31  2026-09-06
+ ↓
+#32  2026-09-07
+```
+
+因为四个 PR 最初都基于 `main@3c5cc91974cea388b87b779f3e367b4c114d7a6c` 生成，每次前一个 PR 合并后，下一个 PR 应在当前 main 上做 same-tree revalidation，再进入人工 merge gate；不得用旧 base 的绿色 CI 直接替代当前-main 集成验证。
+
+## 13. 非目标
 
 - Agent 自动 merge；
 - Agent 直接部署 Pages；
@@ -306,7 +329,7 @@ PR #27 定义为 **Cycle 0 / transport proof**：它证明了真实外部 transp
 - 自动改写已发布历史；
 - 将 Runtime 嵌入 Astro。
 
-## 13. 验收标准
+## 14. 验收标准
 
 - Scheduled Daily 只能修改 exact `content/briefs/<targetDate>.yaml`；
 - deletion / rename 不可绕过 guard；
@@ -320,19 +343,20 @@ PR #27 定义为 **Cycle 0 / transport proof**：它证明了真实外部 transp
 - 三个真实稳定周期无需基础设施调整；
 - 替换 Producer 不修改 content Schema / Build Pipeline。
 
-## 14. 当前 Gate
+## 15. 当前 Gate
 
 - [x] Plan 60 / Milestone F Done；
 - [x] Plan 70 design approved；
 - [x] 70A Done；
-- [x] PR #26 merged；
-- [x] external ChatGPT task migrated + enabled；
-- [x] first eligible real transport proof — PR #27；
-- [x] first-cycle hardening — PR #28 / #29；
 - [x] 70B Done；
-- [ ] 70C Stable Cycle 1 / 3；
-- [ ] 70C Stable Cycle 2 / 3；
-- [ ] 70C Stable Cycle 3 / 3；
-- [ ] idempotency / no-write / correction drills。
+- [x] Cycle 0 transport proof — PR #27；
+- [x] first-cycle hardening — PR #28 / #29；
+- [x] 70C Stable Cycle 1 / 3 — PR #30；
+- [x] 70C Stable Cycle 2 / 3 — PR #31；
+- [x] 70C Stable Cycle 3 / 3 — PR #32；
+- [x] 三个连续稳定周期内无需 repository infrastructure repair；
+- [ ] same-day rerun / idempotency drill；
+- [ ] published Daily `already-published` no-write drill；
+- [ ] explicit correction workflow drill。
 
-**当前下一步：保持现有 Scheduled Task 运行，观察下一个 eligible Daily。若无需基础设施修补并完整通过 exact Guard → full Build → Trusted Preview，则记为 70C Stable Cycle 1 / 3。**
+**当前下一步：进入 Human / Policy integration gate。按 #27 → #30 → #31 → #32 日期顺序合并；每次 base 前进后对下一个 candidate 做 same-tree current-main revalidation。随后在已 published Daily 上执行 no-write 与 correction drills，并补齐独立 same-day rerun / idempotency 证据。**
