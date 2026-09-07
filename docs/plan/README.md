@@ -23,6 +23,7 @@
 - Product Capability Roadmap Refresh · 2026-09-07：**Decision Record**
   - 推荐：**Milestone H — Evidence Integrity**
   - 当前 Gate：**Design Review**
+  - Design：[`2026-09-07-evidence-integrity-design.md`](../superpowers/specs/2026-09-07-evidence-integrity-design.md)
   - 本轮不创建 `Plan 80`
 
 ## Milestone G closeout
@@ -154,9 +155,22 @@ Machine/Human-readable Evidence Report
 Reading UI correction visibility
 ```
 
+Design Review 已形成：
+
+- Daily-first `evidenceVersion: 1`；
+- top-level canonical references；
+- section-local stable fact identity；
+- explicit fact → reference IDs；
+- correction events + derived `lastCorrectedAt`；
+- frozen legacy allowlist，禁止机械伪造历史 coverage；
+- `2026-09-07.yaml` 作为第一份真实迁移 / correction fixture；
+- new Scheduled Daily 必须 Evidence V1；
+- correction-specific append-only guard；
+- Reading 显示 evidence / correction，11 页 Slide contract 保持不变。
+
 这不是 LLM 自动事实判定，也不引入 citation database、服务端 Runtime、自动 Registry mutation、auto-merge 或 Production authority。
 
-在 Design Review 批准 claim identity、evidence binding 与 correction metadata 前，不创建下一编号实施计划。
+在 Design Review 被人工批准前，不创建下一编号实施计划。
 
 ## 当前产品基线
 
@@ -182,13 +196,14 @@ Scheduled Content Automation · Done
           ↓
 Roadmap Refresh
           ↓
-Milestone H · Evidence Integrity · Recommended
+Milestone H · Evidence Integrity · Design Review
 ```
 
 ## Roadmap
 
 - [00 · Product Capability Roadmap](./00-product-capability-roadmap.md)
 - [2026-09-07 · Product Capability Roadmap Refresh](./2026-09-07-product-capability-roadmap-refresh.md)
+- [Milestone H · Evidence Integrity Design](../superpowers/specs/2026-09-07-evidence-integrity-design.md)
 - [10 · Archive & Discovery Experience](./10-archive-discovery-experience.md)
 - [20 · Presentation Platform](./20-presentation-platform.md)
 - [30 · Weekly Brief](./30-weekly-brief.md)
@@ -208,10 +223,10 @@ Milestone H · Evidence Integrity · Recommended
 60 Knowledge Lifecycle          Done
 70 Scheduled Content Automation Done
 -- Roadmap Refresh              Decision Record
-H  Evidence Integrity           Recommended / Design Review Gate
+H  Evidence Integrity           Design Review
 ```
 
-下一步是锁定 Milestone H 的设计边界；在设计批准前不自动生成 `Plan 80`。
+下一步是人工评审并批准 Milestone H 的设计边界；批准前不自动生成 `Plan 80`。
 
 ## 每个计划的统一交付规则
 
