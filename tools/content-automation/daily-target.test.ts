@@ -21,6 +21,7 @@ for (const invalid of ['', '2026-9-03', '2026-02-30', '2025-02-29', '03-09-2026'
 }
 
 const reference = {
+  id: 'official-source',
   title: 'Official source',
   url: 'https://example.com/source',
   supports: 'Supports the scheduled Daily identity fixture.',
@@ -31,14 +32,18 @@ const section = (id: string) => ({
   layout: 'architecture',
   title: `Section ${id}`,
   conclusion: 'A deterministic conclusion long enough for the Daily schema.',
-  facts: ['A deterministic fact for the scheduled Daily identity contract.'],
+  facts: [{
+    id: `claim-${id}`,
+    text: 'A deterministic fact for the scheduled Daily identity contract.',
+    evidence: ['official-source'],
+  }],
   limitations: [],
-  references: [reference],
 })
 
 const validDaily = {
   kind: 'brief',
   cadence: 'daily',
+  evidenceVersion: 1,
   publishedAt: '2026-09-03',
   status: 'published',
   title: 'Scheduled Daily target identity fixture',
@@ -58,11 +63,13 @@ const validDaily = {
     description: 'A deterministic action for the scheduled Daily identity fixture.',
   })),
   archivePicks: [],
+  corrections: [],
   presentation: { enabled: true, template: 'daily-v1' },
 }
 
 const parsed = dailyTarget.assertDailyCandidateIdentity('2026-09-03', validDaily)
 assert.equal(parsed.cadence, 'daily')
+assert.equal(parsed.evidenceVersion, 1)
 assert.equal(parsed.publishedAt, '2026-09-03')
 assert.equal(parsed.presentation.template, 'daily-v1')
 
@@ -79,9 +86,15 @@ assert.throws(
 )
 
 assert.throws(
+  () => dailyTarget.assertDailyCandidateIdentity('2026-09-03', { ...validDaily, evidenceVersion: undefined }),
+  /Evidence V1|evidenceVersion|invalid/i,
+  'Legacy-shaped Daily cannot satisfy Scheduled Daily identity',
+)
+
+assert.throws(
   () => dailyTarget.assertDailyCandidateIdentity('2026-09-03', { ...validDaily, presentation: { enabled: true, template: 'weekly-v1' } }),
   /daily-v1|template|invalid/i,
   'Scheduled Daily must use daily-v1',
 )
 
-console.log('Scheduled Daily target identity contract passed')
+console.log('Scheduled Daily Evidence V1 target identity contract passed')
