@@ -187,6 +187,8 @@ const legacyBriefBody = {
 
 export const legacyDailyBriefSchema = briefSharedSchema.extend({
   cadence: z.literal('daily'),
+  evidenceVersion: z.never().optional(),
+  corrections: z.never().optional(),
   ...legacyBriefBody,
   signals: z.array(signalSchema).length(4),
   sections: z.array(briefSectionSchema).length(5),
