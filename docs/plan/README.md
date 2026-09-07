@@ -4,7 +4,7 @@
 > 基线：`main@b3e793d0c5c7d55358933d4d25c4d77dafd8cd03`
 > 基线日期：2026-09-07
 > 阶段：Product Capability Phase
-> 当前目标：Roadmap Refresh → Milestone H · Evidence Integrity · Recommended / Design Review Gate
+> 当前目标：Milestone H · Evidence Integrity → **Plan 80 / 80A Evidence Contract · Planned**
 
 `docs/plan/` 保存 Orbis 在稳态架构之上的产品能力 Roadmap 与可执行计划。
 
@@ -20,11 +20,13 @@
   - 70A Repository Contract：**Done** — PR #25
   - 70B ChatGPT Scheduled Daily Adapter：**Done** — PR #26 + transport proof #27
   - 70C Real-cycle Validation：**Done** — stable cycles `3/3` + all behavior drills
-- Product Capability Roadmap Refresh · 2026-09-07：**Decision Record**
-  - 推荐：**Milestone H — Evidence Integrity**
-  - 当前 Gate：**Design Review**
-  - Design：[`2026-09-07-evidence-integrity-design.md`](../superpowers/specs/2026-09-07-evidence-integrity-design.md)
-  - 本轮不创建 `Plan 80`
+- Product Capability Roadmap Refresh · 2026-09-07：**Done**
+  - 选择：**Milestone H — Evidence Integrity**
+  - Design：[`2026-09-07-evidence-integrity-design.md`](../superpowers/specs/2026-09-07-evidence-integrity-design.md) — **Approved**
+- Plan 80 · Evidence Integrity：**Planned**
+  - 80A Evidence Contract：**Planned / next**
+  - 80B Real Correction Provenance + Reading UI：**Blocked by 80A**
+  - 80C Correction Guard + Closeout：**Blocked by 80B**
 
 ## Milestone G closeout
 
@@ -127,35 +129,21 @@ Artifact SHA-256          8c56125aea23914874a908550d98675f9d8218c820a7545ead9d2d
 
 ## Roadmap Refresh · 2026-09-07
 
-Milestone G 完成后，没有按编号惯性创建 `Plan 80`。当前先基于完整稳态与真实使用证据刷新 Product Capability Roadmap。
+Milestone G 完成后，没有按编号惯性创建 `Plan 80`，而是先基于完整稳态与真实使用证据刷新 Product Capability Roadmap。
 
 最强真实证据来自 PR #33：Repository / Build / Preview / correction workflow 都按设计工作，但已发布 Daily 仍出现 factual attribution error。现有 Schema 能验证 Reference / Source 的存在与关系，却不能机器验证“哪条 factual claim 由哪条 reference 支撑”，correction 也主要只存在于 Git / PR 历史。
 
-因此当前排序为：
+因此重新排序后选择：
 
 ```text
-1. Evidence Integrity / Correction Provenance   Recommended
+1. Evidence Integrity / Correction Provenance   Selected → Milestone H
 2. Static Search / Full-text Retrieval          Defer · 缺少真实失败证据
 3. Weekly Scheduled Automation                  Defer · 缺少重复人工负担证据
 4. Source / Author Directory                    Defer
 5. Registry auto-mutation / multi-provider      Reject for now
 ```
 
-推荐下一 Milestone：
-
-```text
-Milestone H — Evidence Integrity
-        ↓
-Claim → Evidence Contract
-        ↓
-Correction Provenance
-        ↓
-Machine/Human-readable Evidence Report
-        ↓
-Reading UI correction visibility
-```
-
-Design Review 已形成：
+Milestone H Design 已于 2026-09-07 获人工批准：
 
 - Daily-first `evidenceVersion: 1`；
 - top-level canonical references；
@@ -170,7 +158,39 @@ Design Review 已形成：
 
 这不是 LLM 自动事实判定，也不引入 citation database、服务端 Runtime、自动 Registry mutation、auto-merge 或 Production authority。
 
-在 Design Review 被人工批准前，不创建下一编号实施计划。
+## Milestone H · Plan 80
+
+```text
+80A Evidence Contract
+    ↓
+Evidence V1 Schema + frozen legacy boundary
+    ↓
+claim/reference integrity + report
+    ↓
+legacy/Evidence V1 renderer compatibility
+    ↓
+new Scheduled Daily Evidence V1 enforcement
+    ↓
+PR Build / Trusted Preview / Human Review
+
+80B Real Correction Provenance + Reading UI
+    ↓
+2026-09-07 full re-verification / migration
+    ↓
+PR #33 correction provenance
+    ↓
+reader-visible evidence / correction
+
+80C Correction Guard + Closeout
+    ↓
+append-only correction workflow contract
+    ↓
+main / Production / smoke
+    ↓
+Milestone H Done
+```
+
+当前只授权执行 **80A**。80B 必须等待 80A merge + fresh main Build；80C 必须等待 80B。
 
 ## 当前产品基线
 
@@ -194,9 +214,9 @@ Scheduled Content Automation · Done
   ├── explicit correction boundary
   └── mandatory Build / Trusted Preview / Human Review
           ↓
-Roadmap Refresh
+Milestone H · Evidence Integrity
           ↓
-Milestone H · Evidence Integrity · Design Review
+80A Evidence Contract · Planned
 ```
 
 ## Roadmap
@@ -204,6 +224,8 @@ Milestone H · Evidence Integrity · Design Review
 - [00 · Product Capability Roadmap](./00-product-capability-roadmap.md)
 - [2026-09-07 · Product Capability Roadmap Refresh](./2026-09-07-product-capability-roadmap-refresh.md)
 - [Milestone H · Evidence Integrity Design](../superpowers/specs/2026-09-07-evidence-integrity-design.md)
+- [80 · Evidence Integrity](./80-evidence-integrity.md)
+- [80A · Evidence Integrity Contract Implementation Plan](../superpowers/plans/2026-09-07-evidence-integrity-contract.md)
 - [10 · Archive & Discovery Experience](./10-archive-discovery-experience.md)
 - [20 · Presentation Platform](./20-presentation-platform.md)
 - [30 · Weekly Brief](./30-weekly-brief.md)
@@ -222,11 +244,14 @@ Milestone H · Evidence Integrity · Design Review
 50 SEO & Sharing                Done
 60 Knowledge Lifecycle          Done
 70 Scheduled Content Automation Done
--- Roadmap Refresh              Decision Record
-H  Evidence Integrity           Design Review
+-- Roadmap Refresh              Done
+H  Evidence Integrity           Approved
+80A Evidence Contract           Planned / Next
+80B Correction Provenance       Blocked by 80A
+80C Correction Guard            Blocked by 80B
 ```
 
-下一步是人工评审并批准 Milestone H 的设计边界；批准前不自动生成 `Plan 80`。
+下一步是从执行时的 current `main` 创建 `feat/evidence-integrity-contract`，按 80A 计划先写 RED contract tests；不在 planning branch 上直接实现代码，也不先迁移生产内容。
 
 ## 每个计划的统一交付规则
 
