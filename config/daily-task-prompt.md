@@ -7,7 +7,7 @@
 
 ## 1. 目标
 
-每天从高信号 AI / Agent 技术变化中筛选真正值得工程师关注的主题，回查一手来源，形成可验证的工程判断，并产出一份符合 Orbis `dailyBriefSchema` 的结构化 Daily Brief。
+每天从高信号 AI / Agent 技术变化中筛选真正值得工程师关注的主题，回查一手来源，形成可验证的工程判断，并产出一份符合 Orbis 当前 Daily Schema 的结构化 Daily Brief。
 
 Agent 只负责内容，不负责 HTML、页面模板、Slidev 源码、archive、latest 或 GitHub Pages 产物。
 
@@ -76,6 +76,8 @@ Scheduled Daily 不得自动进入 correction workflow，也不得静默覆盖 `
 
 社区讨论只能补充体验、限制和争议，不能替代官方事实。厂商自报 benchmark 必须注明属于官方报告；个人实验不能写成普遍结论。
 
+Evidence V1 把这项编辑要求进一步结构化：每个 section factual fact 都必须有 stable fact ID，并通过 `evidence[]` 明确绑定 canonical top-level reference ID。`supports` 仍是给 Reviewer 阅读的说明，不能替代机器可检查的 evidence edge。
+
 ## 6. 选题与写作原则
 
 最终内容应围绕 4–8 个高价值信号形成统一判断，不做新闻流水账。
@@ -89,7 +91,9 @@ Scheduled Daily 不得自动进入 correction workflow，也不得静默覆盖 `
 - 避免“震撼、颠覆、杀疯了、遥遥领先”等营销措辞；
 - 不暴露 RSS 抓取、内部 Prompt、自动化或部署实现细节。
 
-## 7. Daily Brief Schema 合同
+Synthesis 字段（如 `signals[].summary`、`section.conclusion`、`actions[]`）不得引入没有出现在 evidence-bound facts 中的新的关键外部事实。Evidence coverage 只证明结构化证据绑定完整，不代表机器自动证明事实真实性。
+
+## 7. Daily Brief Schema 合同 · Evidence V1
 
 输出文件固定为：
 
@@ -97,23 +101,41 @@ Scheduled Daily 不得自动进入 correction workflow，也不得静默覆盖 `
 
 对 Scheduled Daily，文件名日期必须等于显式 `targetDate`。
 
-核心字段必须符合 `dailyBriefSchema`：
+所有**新 Scheduled Daily candidate** 必须使用 `evidenceVersion: 1`：
 
 ```yaml
 kind: brief
 cadence: daily
+evidenceVersion: 1
 publishedAt: YYYY-MM-DD
 status: published
 title: ...
 summary: ...
 topics: [...]
 signals: [...]       # 恰好 4 项
-sections: [...]      # 恰好 5 项
+sections:            # 恰好 5 项
+  - id: stable-section-id
+    layout: architecture
+    title: ...
+    conclusion: ...
+    facts:
+      - id: stable-fact-id
+        text: 具体 factual claim
+        evidence:
+          - canonical-reference-id
+    limitations: []
 projects: [...]      # 最多 6 项
 radar: [...]         # 最多 8 项
 actions: [...]       # 3–5 项
-references: [...]    # 至少 1 项
+references:
+  - id: canonical-reference-id
+    title: ...
+    url: https://...
+    source: existing-source-registry-id
+    supports: 该来源支撑的事实说明
+    accessedAt: YYYY-MM-DD
 archivePicks: [...]  # 最多 6 项
+corrections: []      # 正常新 Daily 为空；Scheduled Daily 不自动写历史 correction
 presentation:
   enabled: true
   template: daily-v1
@@ -123,9 +145,39 @@ presentation:
 
 每项包含 `title`、`summary`、`impact: high | medium | watch`。必须恰好 4 项，并覆盖本期最重要的四个判断。
 
-### sections
+### sections / facts
 
-必须恰好 5 项。每项包含：`id`、`layout`、`title`、`conclusion`、`facts`、`limitations`、`references`。`layout` 只能是 `architecture | comparison | timeline | metrics | system-map`。
+必须恰好 5 个 sections。每个 section 包含 `id`、`layout`、`title`、`conclusion`、`facts`、`limitations`。`layout` 只能是 `architecture | comparison | timeline | metrics | system-map`。
+
+Evidence V1 的每个 `facts[]` 项是对象而不是字符串：
+
+```yaml
+- id: stable-fact-id
+  text: factual claim
+  evidence: [canonical-reference-id]
+```
+
+要求：
+
+- section ID 与 fact ID 使用稳定 lowercase kebab-case；
+- fact ID 在所属 section 内唯一；
+- 每个 fact 至少一个 evidence ID；
+- 同一个 fact 不重复同一 evidence ID；
+- evidence ID 必须解析到本 Daily top-level `references[]`；
+- Evidence V1 section 不再重复持久化完整 `references[]` object。
+
+### references
+
+`references[]` 是本 Daily 唯一 canonical evidence registry。每项必须有 stable reference ID，并包含 `title`、`url`、可选 `source`、`supports`、可选 `accessedAt`。
+
+- reference ID 在 Daily 内唯一；
+- 声明 `source` 时必须使用已存在 Source Registry ID；
+- canonical evidence reference 必须被至少一个 fact 或 correction 使用；
+- 仅用于延伸阅读、但不支撑本期 factual fact 的历史链接应放 `archivePicks`，不要伪装成 evidence reference。
+
+### corrections
+
+正常 Scheduled Daily candidate 的 `corrections` 应为空。已发布内容的事实修正必须进入显式 correction workflow；Scheduled Daily 不自动进入 correction mode。
 
 ### projects
 
@@ -139,19 +191,17 @@ presentation:
 
 必须 3–5 项，每项都应是工程师可执行动作。
 
-### references
-
-只放本期实际使用的高价值来源，每项包含 `title`、`url`、可选 `source`、`supports`、可选 `accessedAt`。
-
 ### archivePicks
 
 从 Orbis 已有结构化内容中选择仍有长期价值、且与本期有关的历史内容。优先读取 `content/briefs/**`、`content/essays/**`、`content/knowledge/**`；不得依赖旧 `docs/archive.json` 或旧 HTML 历史站。
+
+已发布的 pre-H legacy Daily 仅作为冻结迁移债务继续读取；新 Scheduled Daily 不得继续产出 legacy string-facts / section-references shape。
 
 ## 8. 固定 11 页语义
 
 `daily-v1` 模板自动把结构化字段映射为 11 页：封面、FOUR SIGNALS、五个 sections、OPEN SOURCE RADAR、IMPACT × ADOPTION HORIZON、FROM SIGNALS TO ACTION、EXTENDED READING。
 
-Agent 不手写页面，也不改变模板布局、视觉系统、导航或交互。
+Agent 不手写页面，也不改变模板布局、视觉系统、导航或交互。Evidence V1 不增加第 12 页。
 
 ## 9. 写入与校验
 
@@ -160,17 +210,21 @@ Agent 不手写页面，也不改变模板布局、视觉系统、导航或交�
 1. 再次确认显式 `targetDate` 来自 Asia/Shanghai，并与 branch、contentPath、`publishedAt` 完全一致；
 2. 确认 base 不存在目标 Daily；若 base 已 published，返回 `already-published` 且不写入；若 base 存在其他状态，返回 `revision-required`；
 3. 对 Scheduled Daily 使用确定性分支 `automation/daily/YYYY-MM-DD`，同日 rerun 只更新同一 candidate；
-4. 运行 `pnpm validate`；
-5. 环境允许且依赖完整时运行 `pnpm build`；
-6. 环境具备完整 Git base 时运行 `pnpm automation:daily:guard --base <integration-base> --target-date <targetDate>`；
-7. 仅提交允许的 structured content 路径；
-8. 不提交 `apps/slides/generated/**`、`dist/**` 或任何生成 HTML。
+4. 确认 candidate 使用 `evidenceVersion: 1`、stable fact ID、explicit evidence ID 与 canonical reference ID；
+5. 运行 `pnpm validate`；
+6. 可单独运行 `pnpm evidence:daily:report` 检查 evidence coverage / migration debt；
+7. 环境允许且依赖完整时运行 `pnpm build`；
+8. 环境具备完整 Git base 时运行 `pnpm automation:daily:guard --base <integration-base> --target-date <targetDate>`；
+9. 仅提交允许的 structured content 路径；
+10. 不提交 `apps/slides/generated/**`、`dist/**` 或任何生成 HTML。
 
 构建系统负责自动产生阅读版、演示版、日期路由、`/latest/`、`/archive.json` 与 `/rss.xml`。
 
 ## 10. Correction boundary
 
 已发布 Daily 的事实修正必须使用单独的 correction workflow，并在 PR 中说明错误、修正原因和新证据。Scheduled Daily Job 不自动修改历史，也不因为 rerun 自动进入 correction mode。
+
+Evidence V1 correction provenance 与 append-only correction guard 属于显式 correction workflow；正常 Scheduled Daily 不能删除、重写或制造历史 correction event。
 
 ## 11. 禁止事项
 
@@ -180,7 +234,9 @@ Agent 不手写页面，也不改变模板布局、视觉系统、导航或交�
 - 生成单文件 HTML 作为仓库源文件；
 - 直接修改 Astro / Vue / Slidev 模板来适配当天内容；
 - 修改 GitHub Actions 或 Pages 配置；
+- 修改 `config/evidence-integrity.yaml` legacy allowlist；
+- 创建或修改 Source / Author / Topic Registry；
 - 直接 push `main`、自动 merge 或触发 Production Pages deploy；
-- 伪造来源、验证结果、CI、PR Preview 或生产部署状态。
+- 伪造来源、evidence coverage、验证结果、CI、PR Preview 或生产部署状态。
 
-Orbis 的长期原则是：**内容是源，展示是构建产物；候选由 Agent 生产，发布由 Repository Gate 决定。**
+Orbis 的长期原则是：**内容是源，展示是构建产物；候选由 Agent 生产，发布由 Repository Gate 决定；证据关系必须显式，事实真实性仍由证据与 Human Review 负责。**
