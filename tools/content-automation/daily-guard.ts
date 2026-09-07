@@ -4,6 +4,8 @@ import { resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { briefSchema } from '@orbis/content-schema'
 import { parse } from 'yaml'
+import { loadEvidenceIntegrityConfig } from '../evidence-integrity/config.ts'
+import { evaluateDailyEvidence } from '../evidence-integrity/daily-evidence.ts'
 import { collectChangedEntries } from '../path-guard/change-set.ts'
 import { evaluateGuardPolicy, type GuardMode } from '../path-guard/policy.ts'
 import { evaluateScheduledDailyChanges } from './daily-guard-policy.ts'
@@ -70,7 +72,12 @@ const violations = [
 
 if (!violations.length) {
   const candidateSource = parse(await readFile(resolve(root, target.contentPath), 'utf8'))
-  assertDailyCandidateIdentity(targetDate, candidateSource)
+  const candidate = assertDailyCandidateIdentity(targetDate, candidateSource)
+  const evidenceConfig = await loadEvidenceIntegrityConfig(root)
+  const report = evaluateDailyEvidence(candidate, target.contentPath, evidenceConfig.legacyDailyPaths)
+  for (const error of report.errors) {
+    violations.push(`${error.code} ${error.address}: ${error.message}`)
+  }
 }
 
 console.log(`Scheduled Daily guard target=${targetDate} base=${base} changes=${changes.length} baseStatus=${baseStatus ?? 'missing'}`)
