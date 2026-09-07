@@ -36,7 +36,7 @@ sections:
     references:
       - title: Gemini CLI v0.60.0 nightly 20260905
         url: https://github.com/google-gemini/gemini-cli/releases/tag/v0.60.0-nightly.20260905.g85aca163f
-        source: google-gemini
+        source: github
         supports: 环境变量、workspace 路径边界和系统配置权限的安全修复。
         accessedAt: 2026-09-07
   - id: deterministic-boundary
@@ -104,7 +104,7 @@ sections:
     references:
       - title: LangGraphJS 1.4.15-rc.0
         url: https://github.com/langchain-ai/langgraphjs/releases/tag/%40langchain%2Flanggraph%401.4.15-rc.0
-        source: langchain
+        source: github
         supports: per-node tracePolicy、omitPayload 与处理器失败时的回退语义。
         accessedAt: 2026-09-07
 projects:
@@ -166,7 +166,7 @@ actions:
 references:
   - title: Gemini CLI v0.60.0 nightly 20260905
     url: https://github.com/google-gemini/gemini-cli/releases/tag/v0.60.0-nightly.20260905.g85aca163f
-    source: google-gemini
+    source: github
     supports: Workspace Trust、环境变量与系统配置边界的近期安全修复。
     accessedAt: 2026-09-07
   - title: GitHub Agentic Workflows
@@ -186,13 +186,13 @@ references:
     accessedAt: 2026-09-07
   - title: LangGraphJS 1.4.15-rc.0
     url: https://github.com/langchain-ai/langgraphjs/releases/tag/%40langchain%2Flanggraph%401.4.15-rc.0
-    source: langchain
+    source: github
     supports: per-node tracePolicy、omitPayload 与 trace processor 的回退行为。
     accessedAt: 2026-09-07
 archivePicks:
   - title: Harness 正在成为模型之外的能力层
     url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-08-28.yaml
-    source: orbis
+    source: github
     supports: 本期关于权限、验证与可恢复执行边界的前置判断。
     accessedAt: 2026-09-07
     publishedAt: 2026-08-28
