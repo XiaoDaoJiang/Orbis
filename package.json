@@ -24,7 +24,8 @@
     "test:multi-presentation": "tsx tools/multi-presentation-check/index.ts",
     "test:path-guard": "tsx tools/path-guard/change-set.test.ts && tsx tools/path-guard/policy.test.ts && tsx tools/path-guard/change-set.integration.test.ts",
     "test:content-automation": "tsx tools/content-automation/daily-target.test.ts && tsx tools/content-automation/daily-decision.test.ts && tsx tools/content-automation/daily-guard-policy.test.ts && tsx tools/content-automation/pr-metadata.test.ts && tsx tools/content-automation/preview-workflow.test.ts && tsx tools/content-automation/prompt-contract.test.ts && tsx tools/content-automation/chatgpt-adapter.test.ts",
-    "test:evidence-integrity": "tsx tools/evidence-integrity/daily-evidence.test.ts && tsx tools/evidence-integrity/renderer-contract.test.ts",
+    "test:evidence-integrity": "tsx tools/evidence-integrity/daily-evidence.test.ts && tsx tools/evidence-integrity/renderer-contract.test.ts && tsx tools/evidence-integrity/ui-contract.test.ts",
+    "test:evidence-ui-artifact": "tsx tools/evidence-integrity/ui-artifact-check.ts",
     "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts && tsx tools/generate-slides/weekly-v1.test.ts",
     "test:weekly-brief": "tsx tools/weekly-brief/weekly-schema.test.ts && tsx tools/weekly-brief/weekly-source-validation.test.ts && tsx tools/weekly-brief/weekly-artifact-date-order.test.ts",
     "test:content-registry": "tsx tools/validate-content/registry-contract.test.ts && tsx tools/validate-content/referential-integrity-unit.test.ts && tsx tools/validate-content/referential-integrity.test.ts",
@@ -41,7 +42,7 @@
     "test:knowledge-lifecycle-ui-fixtures": "tsx tools/knowledge-lifecycle/ui-fixture-build.test.ts",
     "test:knowledge-lifecycle-ui-artifact": "tsx tools/knowledge-lifecycle/ui-artifact-check.ts",
     "test:weekly-artifact": "tsx tools/weekly-brief/weekly-artifact-check.ts",
-    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm test:seo-web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact && pnpm test:knowledge-lifecycle-ui-artifact"
+    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm test:seo-web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:evidence-ui-artifact && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact && pnpm test:knowledge-lifecycle-ui-artifact"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",
