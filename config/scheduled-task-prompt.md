@@ -55,12 +55,46 @@ contentPath  = content/briefs/YYYY-MM-DD.yaml
 
 Scheduled Task 不得自动进入 correction workflow，不得静默覆盖已存在的 main Daily。
 
+## Evidence V1 合同
+
+所有**新 Scheduled Daily candidate** 必须使用 Evidence V1：
+
+```yaml
+evidenceVersion: 1
+sections:
+  - id: stable-section-id
+    facts:
+      - id: stable-fact-id
+        text: 具体 factual claim
+        evidence:
+          - canonical-reference-id
+references:
+  - id: canonical-reference-id
+    title: Primary source
+    url: https://example.com/source
+    source: existing-source-registry-id
+    supports: 该来源支撑的事实说明
+```
+
+要求：
+
+- 每个 factual fact 必须有 stable fact ID；
+- 每个 fact 至少绑定一个明确 evidence reference ID；
+- `references[]` 是该 Daily 唯一 canonical evidence registry，每项必须有 stable reference ID；
+- Evidence V1 section 不重复持久化完整 `references[]` object；
+- 不得生成 dangling evidence 或未被任何 fact/correction 使用的 canonical evidence reference；
+- `supports` 仍是给人阅读的说明，不是机器 relation authority；
+- signal / conclusion / action 等 synthesis 字段不得引入 evidence-bound facts 中不存在的新的关键外部事实；
+- Evidence coverage 只证明结构化证据绑定完整，不代表机器自动证明事实真实性。
+
+旧已发布 Daily 的 legacy shape 只用于冻结迁移兼容，不允许新 Scheduled Daily 继续使用。
+
 ## 必须执行
 
 - 第一项外部信息读取动作必须是读取 `feeds.yaml` 中所有 `enabled: true` 的 RSS；
 - RSS 只用于发现候选主题，所有最终事实必须回查官方发布、原始论文、GitHub、模型卡或官方文档；
 - 聚焦 Agent、LLM、Coding Agent、Agent Harness、Agent Runtime、MCP、Memory、Evaluation、Verification、Security、AI Infra 与高价值开源项目；
-- 生成一个符合 `dailyBriefSchema` 的 `content/briefs/YYYY-MM-DD.yaml`，日期必须等于 `targetDate`；
+- 生成一个符合当前 `dailyBriefSchema` / Evidence V1 合同的 `content/briefs/YYYY-MM-DD.yaml`，日期必须等于 `targetDate`；
 - Daily 必须保持固定 4 个 signals、5 个 sections、3–5 个 actions，并使用 `presentation.template: daily-v1`；
 - `presentation.enabled` 默认设为 `true`，由构建系统自动生成 Astro 阅读版、11 页 Slidev 演示版、RSS、日期路由、`archive.json` 与 `/latest/`；
 - 不生成或提交 HTML、CSS、JavaScript、Astro、Vue、Slidev generated source、`dist/**`、archive 文件或 latest 文件；
@@ -78,7 +112,7 @@ Producer 的职责是产生或更新一个受控 candidate：
 Asia/Shanghai targetDate
   -> automation/daily/YYYY-MM-DD
   -> content/briefs/YYYY-MM-DD.yaml
-  -> schema / Scheduled Daily guard
+  -> Evidence V1 schema / evidence integrity / Scheduled Daily guard
   -> content-only PR
   -> repository full Build
   -> Trusted Preview
@@ -98,6 +132,7 @@ Agent 的职责到“提交结构化候选内容 PR”结束。
 ```text
 content/briefs/YYYY-MM-DD.yaml
   -> schema validation
+  -> evidence integrity
   -> Astro
   -> Slidev daily-v1
   -> RSS
