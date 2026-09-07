@@ -1,4 +1,4 @@
-import { dailyBriefSchema, type DailyBrief } from '@orbis/content-schema'
+import { evidenceDailyBriefSchema, type EvidenceDailyBrief } from '@orbis/content-schema'
 import type { DailyTarget } from './contracts.ts'
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -30,14 +30,14 @@ export function resolveDailyTarget(targetDate: string): DailyTarget {
   }
 }
 
-export function assertDailyCandidateIdentity(targetDate: string, source: unknown): DailyBrief {
+export function assertDailyCandidateIdentity(targetDate: string, source: unknown): EvidenceDailyBrief {
   const date = assertTargetDate(targetDate)
-  const parsed = dailyBriefSchema.safeParse(source)
+  const parsed = evidenceDailyBriefSchema.safeParse(source)
   if (!parsed.success) {
     const detail = parsed.error.issues
       .map((issue) => `${issue.path.join('.') || '<root>'}: ${issue.message}`)
       .join('; ')
-    throw new Error(`Invalid Scheduled Daily candidate: ${detail}`)
+    throw new Error(`Invalid Scheduled Daily Evidence V1 candidate: ${detail}`)
   }
 
   if (parsed.data.publishedAt !== date) {
