@@ -1,11 +1,11 @@
 # 80 · Evidence Integrity
 
-> 状态：Planned
+> 状态：In Progress · 80A Review Gate
 > Roadmap Milestone：H — Evidence Integrity
 > 设计：[`docs/superpowers/specs/2026-09-07-evidence-integrity-design.md`](../superpowers/specs/2026-09-07-evidence-integrity-design.md) · Approved
 > 基线：`main@b3e793d0c5c7d55358933d4d25c4d77dafd8cd03`
 > 真实证据：published Daily correction PR #33
-> 首个实施 Slice：80A — Evidence Contract
+> 当前实施 Slice：80A — Evidence Contract · **Review Gate · PR #34**
 
 ## 1. 目标
 
@@ -37,7 +37,7 @@ Plan 80 不判断事实自动为真；它验证的是 evidence relation 的结�
 
 Milestone G 已经证明 Scheduled Daily 的 transport、idempotency、Build、Preview、published no-write 和 explicit correction workflow 稳定。
 
-PR #33 真实暴露了剩余缺口：OpenClaw external supervisor 的首次版本归因错误可以在现有 Schema / Build / Preview 下通过，因为当前：
+PR #33 真实暴露了剩余缺口：OpenClaw external supervisor 的首次版本归因错误可以在现有 Schema / Build / Preview 下通过，因为当前旧模型：
 
 ```text
 facts[]              = string[]
@@ -115,26 +115,57 @@ correctionCount
 
 ## 4. 80A — Evidence Contract
 
-> 状态：Planned / next implementation slice
+> 状态：**Review Gate · PR #34**
+> Branch：`feat/evidence-integrity-contract`
+> Final head：`71a1b07cfca189c4a74ae3835c467bb73df0a72c`
 
 目标：先建立可执行合同与迁移边界，不先扩 UI 或 correction workflow authority。
 
-### Scope
+### 已实现
 
-- Evidence V1 Daily Schema primitives；
-- `EvidenceFact` / `EvidenceReference` / `DailyCorrection`；
-- frozen legacy Daily allowlist；
-- Evidence V1 claim/reference integrity validator；
-- stable error codes / field addresses；
-- human-readable + machine-readable evidence report；
-- existing referential integrity adapter 支持 legacy / Evidence V1 两种已批准模式；
-- Daily Reading / Slide renderer 的最小 dual-mode compatibility；
-- Scheduled Daily contract 更新为新 candidate 必须 Evidence V1；
-- Scheduled Daily guard 调用 evidence validator；
-- unit / integration / artifact regression tests。
+- [x] Evidence V1 Daily Schema primitives；
+- [x] `EvidenceFact` / `EvidenceReference` / `DailyCorrection`；
+- [x] frozen legacy Daily allowlist；
+- [x] Evidence V1 claim/reference integrity evaluator；
+- [x] stable error codes / field addresses；
+- [x] human-readable + machine-readable evidence report；
+- [x] existing referential integrity adapter 支持 legacy / Evidence V1 两种已批准模式；
+- [x] Daily Reading / Slide renderer 的最小 dual-mode compatibility；
+- [x] Scheduled Daily contract 更新为新 candidate 必须 Evidence V1；
+- [x] Scheduled Daily guard 调用 evidence validator；
+- [x] legacy-shaped Daily 显式拒绝伪 `evidenceVersion` / `corrections` metadata；
+- [x] Evidence V1 renderer fixture 证明 Daily 保持 11 页；
+- [x] unit / integration / existing artifact regression chain 通过完整 `pnpm build`。
+
+### Final PR validation
+
+```text
+PR                           #34
+Base                         main@b3e793d0c5c7d55358933d4d25c4d77dafd8cd03
+Head                         71a1b07cfca189c4a74ae3835c467bb73df0a72c
+Read-only PR Build           34096309697 success
+Preview Artifact             10008787225
+Artifact SHA-256             5d1c1eaafbfab5cbaae0d479cc3a73d6fb9c5726cd673b01f59ddc27873ff535
+Trusted Preview              passed
+Public availability smoke    passed
+PR state                     Ready for review
+```
+
+Trusted Preview：
+
+```text
+https://raw.githack.com/XiaoDaoJiang/Orbis/preview-pr-34/index.html
+```
+
+PR #34 的 changed paths 不包含 `content/**`、Source / Author / Topic Registry、generated source、`dist/**` 或 Pages workflow。
+
+### TDD evidence note
+
+Schema contract tests 先于 Evidence V1 implementation 提交；最早 cloud run 因后续提交触发 PR concurrency 被取消，因此不冒充 RED evidence。最终 authoritative GREEN 为 run `34096309697`。
 
 ### 80A 不做
 
+- 不迁移 `content/briefs/2026-09-07.yaml`；
 - 不迁移全部历史 Daily；
 - 不展示 correction notice；
 - 不实现 correction-specific append-only guard；
@@ -143,7 +174,7 @@ correctionCount
 
 ### Frozen legacy boundary
 
-H activation 时将 exact pre-H Daily path 固定为 migration debt：
+当前 exact pre-H Daily migration debt：
 
 ```text
 content/briefs/2026-08-28.yaml
@@ -162,9 +193,25 @@ Weekly `2026-09-01-weekly.yaml` 不属于 Daily Evidence V1 legacy allowlist。
 - 经人工重新核验迁移后从 allowlist 删除；
 - 不允许机械 `fact -> all section references` 伪造 claim-level coverage。
 
+### 80A 当前 Gate
+
+```text
+PR #34 Build + Preview   Done
+          ↓
+Human Review             ← current
+          ↓
+Human merge
+          ↓
+fresh main Build
+          ↓
+80B may start
+```
+
+**PR #34 不自动 merge。**
+
 ## 5. 80B — Real Correction Provenance + Reading UI
 
-> 状态：Blocked by 80A
+> 状态：**Blocked by PR #34 Human merge + fresh main Build**
 
 目标：用真实 2026-09-07 correction 把 Evidence V1 从结构合同推进到用户可见产品能力。
 
@@ -230,23 +277,17 @@ Closeout：
 - public smoke；
 - roadmap closeout。
 
-## 7. 预计实施顺序
+## 7. 实施顺序
 
 ```text
 80A Evidence Contract
     ↓
-Schema primitives
+PR #34 Review Gate              ← current
     ↓
-Legacy boundary
+Human merge
     ↓
-Evidence integrity evaluator + report
+fresh main Build
     ↓
-Renderer compatibility
-    ↓
-Scheduled Daily Evidence V1 enforcement
-    ↓
-PR Build / Trusted Preview / Human Review
-
 80B Real Correction Provenance
     ↓
 2026-09-07 full re-verification + migration
@@ -256,7 +297,7 @@ Reading evidence / correction UI
 Artifact regression
     ↓
 PR Build / Trusted Preview / Human Review
-
+    ↓
 80C Correction Guard + Closeout
     ↓
 append-only correction contract
@@ -276,11 +317,9 @@ Planning branch 继续只保存 roadmap / design / plan。
 
 代码实现必须从当前 `main` 创建独立 feature branch，不直接在 `planning/product-capability-roadmap` 上混入 implementation。
 
-推荐：
-
 ```text
-feat/evidence-integrity-contract       # 80A
-feat/evidence-correction-provenance    # 80B
+feat/evidence-integrity-contract       # 80A · PR #34
+feat/evidence-correction-provenance    # 80B · only after 80A merge + fresh main Build
 feat/evidence-correction-guard         # 80C
 ```
 
@@ -288,9 +327,7 @@ feat/evidence-correction-guard         # 80C
 
 ## 9. TDD / validation policy
 
-80A 从 contract tests 开始，不先改实现。
-
-RED / GREEN 应至少覆盖：
+80A contract coverage 包含：
 
 - Evidence V1 valid fixture；
 - duplicate fact ID；
@@ -303,10 +340,11 @@ RED / GREEN 应至少覆盖：
 - invalid correction evidence；
 - legacy Daily allowlisted；
 - non-allowlisted legacy Daily rejected；
+- legacy-shaped Daily with Evidence metadata rejected；
 - new Scheduled Daily legacy shape rejected；
 - Weekly / Ad-hoc existing schema isolation；
 - Daily 11-page Slidev regression；
-- archive / latest / RSS / sitemap / structured-data regressions。
+- archive / latest / RSS / sitemap / structured-data regressions through full build。
 
 ## 10. Failure model
 
@@ -347,10 +385,10 @@ Plan 80 不做：
 
 ## 12. Milestone H Done 条件
 
-- [ ] Evidence V1 Daily Schema + relation contract；
-- [ ] frozen legacy migration boundary；
-- [ ] human / machine evidence report；
-- [ ] new Scheduled Daily requires Evidence V1；
+- [ ] Evidence V1 Daily Schema + relation contract integrated into main；
+- [ ] frozen legacy migration boundary integrated into main；
+- [ ] human / machine evidence report integrated into main；
+- [ ] new Scheduled Daily requires Evidence V1 on main；
 - [ ] 2026-09-07 full real re-verification / migration；
 - [ ] PR #33 correction provenance persisted；
 - [ ] Reading evidence links + correction notice；
@@ -364,4 +402,4 @@ Plan 80 不做：
 - [ ] no authority expansion；
 - [ ] roadmap / planning closeout。
 
-**当前下一动作：进入 80A — Evidence Contract 的实施计划与 TDD，不启动 80B / 80C。**
+**当前下一动作：人工 Review / merge PR #34；合并后必须先验证 fresh main Build，之后才允许启动 80B。**
