@@ -1,15 +1,15 @@
 # 80 · Evidence Integrity
 
-> 状态：In Progress · 80A Review Gate
+> 状态：In Progress · 80B Review Gate
 > Roadmap Milestone：H — Evidence Integrity
 > 设计：[`docs/superpowers/specs/2026-09-07-evidence-integrity-design.md`](../superpowers/specs/2026-09-07-evidence-integrity-design.md) · Approved
-> 基线：`main@b3e793d0c5c7d55358933d4d25c4d77dafd8cd03`
+> 当前 main：`3a7245aa907fedeb10141bbb05deb718c6fa7e7d`
 > 真实证据：published Daily correction PR #33
-> 当前实施 Slice：80A — Evidence Contract · **Review Gate · PR #34**
+> 当前实施 Slice：80B — Real Correction Provenance + Reading UI · **Review Gate · PR #35**
 
 ## 1. 目标
 
-让 Orbis 从“有引用的结构化内容”升级为“重要 factual claim 具有机器可检查 evidence binding 的结构化内容”，并把已发布 correction 升级为正式的内容 provenance。
+让 Orbis 从“有引用的结构化内容”升级为“重要 factual claim 具有机器可检查 evidence binding 的结构化内容”，并把已发布 correction 升级为正式、读者可见、可审计的内容 provenance。
 
 ```text
 factual fact
@@ -31,62 +31,19 @@ stable section/fact target
 reader-visible correction provenance
 ```
 
-Plan 80 不判断事实自动为真；它验证的是 evidence relation 的结构、完整性和可审计性。
+Plan 80 验证 evidence relation 的结构与完整性；**100% structural evidence coverage != 100% factual truth**。
 
-## 2. 为什么现在做
-
-Milestone G 已经证明 Scheduled Daily 的 transport、idempotency、Build、Preview、published no-write 和 explicit correction workflow 稳定。
-
-PR #33 真实暴露了剩余缺口：OpenClaw external supervisor 的首次版本归因错误可以在现有 Schema / Build / Preview 下通过，因为当前旧模型：
-
-```text
-facts[]              = string[]
-section.references[] = Reference[]
-brief.references[]   = Reference[]
-Reference.supports   = free text
-```
-
-存在来源不等于具体 claim 已经与来源建立可检查关系。
-
-## 3. 已批准核心合同
+## 2. 已批准核心合同
 
 ### Evidence V1 · Daily first
 
-只先改 Daily，不强迫 Weekly / Ad-hoc / Presentation / Essay / Knowledge 同步迁移。
-
-Evidence-aware Daily：
-
-```yaml
-evidenceVersion: 1
-
-sections:
-  - id: external-supervision
-    facts:
-      - id: external-supervisor-introduced
-        text: OpenClaw v2026.7.2-beta.2 已加入 ...
-        evidence:
-          - openclaw-v2026-7-2-beta-2
-
-references:
-  - id: openclaw-v2026-7-2-beta-2
-    title: OpenClaw v2026.7.2-beta.2
-    url: ...
-    source: github
-    supports: ...
-```
-
-稳定 claim address：
-
-```text
-<section.id>/<fact.id>
-```
-
-### Canonical evidence registry
-
-- `references[]` 是 Daily 内唯一 canonical evidence registry；
+- 只先覆盖 Daily；Weekly / Ad-hoc / Presentation / Essay / Knowledge 不被强制迁移；
+- `facts[]` 使用 `{ id, text, evidence[] }`；
+- stable claim address 为 `<section.id>/<fact.id>`；
+- top-level `references[]` 是 Daily 内唯一 canonical evidence registry；
 - `facts[].evidence[]` 只存 reference IDs；
-- Evidence V1 section 不再重复完整 reference object；
-- `Reference.supports` 保持 human-readable explanation，不承担 relation authority；
+- Evidence V1 section 不再重复完整 reference objects；
+- `Reference.supports` 保留 human-readable explanation，不承担 relation authority；
 - Source identity 继续使用现有 Source Registry。
 
 ### Correction provenance
@@ -100,9 +57,10 @@ corrections:
     summary: ...
     targets:
       - section: external-supervision
-        fact: external-supervisor-introduced
+        fact: external-supervisor-mode
     evidence:
       - openclaw-v2026-7-2-beta-2
+      - openclaw-v2026-9-2
 ```
 
 派生：
@@ -113,142 +71,238 @@ lastCorrectedAt
 correctionCount
 ```
 
-## 4. 80A — Evidence Contract
+## 3. 80A — Evidence Contract · Done
 
-> 状态：**Review Gate · PR #34**
-> Branch：`feat/evidence-integrity-contract`
-> Final head：`71a1b07cfca189c4a74ae3835c467bb73df0a72c`
+> 状态：**Done**
+> PR：#34 merged
+> Implementation head：`71a1b07cfca189c4a74ae3835c467bb73df0a72c`
+> main merge commit：`3a7245aa907fedeb10141bbb05deb718c6fa7e7d`
 
-目标：先建立可执行合同与迁移边界，不先扩 UI 或 correction workflow authority。
-
-### 已实现
+80A 已完成：
 
 - [x] Evidence V1 Daily Schema primitives；
 - [x] `EvidenceFact` / `EvidenceReference` / `DailyCorrection`；
 - [x] frozen legacy Daily allowlist；
-- [x] Evidence V1 claim/reference integrity evaluator；
+- [x] deterministic claim/reference integrity evaluator；
 - [x] stable error codes / field addresses；
-- [x] human-readable + machine-readable evidence report；
-- [x] existing referential integrity adapter 支持 legacy / Evidence V1 两种已批准模式；
-- [x] Daily Reading / Slide renderer 的最小 dual-mode compatibility；
-- [x] Scheduled Daily contract 更新为新 candidate 必须 Evidence V1；
-- [x] Scheduled Daily guard 调用 evidence validator；
-- [x] legacy-shaped Daily 显式拒绝伪 `evidenceVersion` / `corrections` metadata；
-- [x] Evidence V1 renderer fixture 证明 Daily 保持 11 页；
-- [x] unit / integration / existing artifact regression chain 通过完整 `pnpm build`。
+- [x] human-readable + JSON evidence report；
+- [x] referential integrity adapter 支持 frozen legacy / Evidence V1；
+- [x] Web / Slidev dual-mode compatibility；
+- [x] new Scheduled Daily candidate 必须 Evidence V1；
+- [x] Scheduled guard 调用 evidence validator；
+- [x] legacy-shaped Daily 拒绝伪 `evidenceVersion` / `corrections` metadata；
+- [x] Evidence V1 renderer fixture 保持 11 页；
+- [x] PR Build + Trusted Preview；
+- [x] Human merge；
+- [x] fresh main Build。
 
-### Final PR validation
+### 80A final validation
 
 ```text
 PR                           #34
-Base                         main@b3e793d0c5c7d55358933d4d25c4d77dafd8cd03
-Head                         71a1b07cfca189c4a74ae3835c467bb73df0a72c
-Read-only PR Build           34096309697 success
+PR head                      71a1b07cfca189c4a74ae3835c467bb73df0a72c
+PR Build                     34096309697 success
 Preview Artifact             10008787225
 Artifact SHA-256             5d1c1eaafbfab5cbaae0d479cc3a73d6fb9c5726cd673b01f59ddc27873ff535
 Trusted Preview              passed
-Public availability smoke    passed
-PR state                     Ready for review
+Human merge                  passed
+main                         3a7245aa907fedeb10141bbb05deb718c6fa7e7d
+fresh main Site Build        34098464587 success
+main Artifact                10009585595
+main Artifact SHA-256        661b64ec92e251ded54a5f68be30e1f9b9752c5460e47ecb973ab55ced5a89fd
 ```
 
-Trusted Preview：
+80A 没有修改任何 `content/**`，因此 Evidence contract 与真实历史内容迁移保持独立 Review boundary。
+
+## 4. 80B — Real Correction Provenance + Reading UI · Review Gate
+
+> 状态：**Review Gate · PR #35**
+> Implementation base：`main@3a7245aa907fedeb10141bbb05deb718c6fa7e7d`
+> Branch：`feat/evidence-correction-provenance`
+> Final head：`8092c6bfab06a768cfaed950aa26f72b2c365576`
+> Implementation plan：[`2026-09-07-evidence-correction-provenance.md`](../superpowers/plans/2026-09-07-evidence-correction-provenance.md)
+
+### 4.1 Real re-verification · Done
+
+2026-09-07 全部五个 sections 在迁移前重新回查 primary evidence：
 
 ```text
-https://raw.githack.com/XiaoDaoJiang/Orbis/preview-pr-34/index.html
+workspace-trust          Gemini CLI v0.60.0 nightly release
+deterministic-boundary   GitHub Agentic Workflows README
+mcp-policy-plane         GitHub MCP Gateway README
+egress-boundary          Agentic Workflow Firewall usage guide
+external-supervision     OpenClaw v2026.7.2-beta.2 + v2026.9.2 releases
 ```
 
-PR #34 的 changed paths 不包含 `content/**`、Source / Author / Topic Registry、generated source、`dist/**` 或 Pages workflow。
+结果：没有发现第二个需要删除的事实错误，但若干 claim 被收窄到与 primary source 更精确一致，包括：
 
-### TDD evidence note
+- `.lock.yml` compilation semantics；
+- API proxy credential injection；
+- Firewall URL-path / SSL Bump limitation；
+- OpenClaw beta2 supervisor/recovery 与 v2026.9.2 later upgrade/reply recovery 的版本边界。
 
-Schema contract tests 先于 Evidence V1 implementation 提交；最早 cloud run 因后续提交触发 PR concurrency 被取消，因此不冒充 RED evidence。最终 authoritative GREEN 为 run `34096309697`。
+### 4.2 Full Daily Evidence V1 migration · Done
 
-### 80A 不做
+`content/briefs/2026-09-07.yaml` 已完整、原子迁移：
 
-- 不迁移 `content/briefs/2026-09-07.yaml`；
-- 不迁移全部历史 Daily；
-- 不展示 correction notice；
-- 不实现 correction-specific append-only guard；
-- 不自动修改 Source Registry；
-- 不增加 auto-merge / Pages 权限。
+```text
+mode                    evidence-v1
+sections                5
+factual claims          16
+canonical references     6
+corrections              1
+Evidence errors          0
+```
 
-### Frozen legacy boundary
+已完成：
 
-当前 exact pre-H Daily migration debt：
+- [x] `evidenceVersion: 1`；
+- [x] 全部 16 facts 使用 stable fact IDs；
+- [x] 全部 factual facts 显式绑定 evidence；
+- [x] canonical top-level EvidenceReference 去重；
+- [x] 无 unused canonical evidence reference；
+- [x] 2026-09-07 从 frozen legacy debt 删除；
+- [x] 其他 legacy Daily 不修改。
+
+当前剩余 frozen legacy debt：
 
 ```text
 content/briefs/2026-08-28.yaml
 content/briefs/2026-09-04.yaml
 content/briefs/2026-09-05.yaml
 content/briefs/2026-09-06.yaml
-content/briefs/2026-09-07.yaml
 ```
 
-Weekly `2026-09-01-weekly.yaml` 不属于 Daily Evidence V1 legacy allowlist。
+### 4.3 PR #33 correction provenance · Done
 
-规则：
-
-- 新 Daily 永远不能加入 allowlist；
-- legacy Daily 可继续渲染，但 report 为 `legacy-unverified`；
-- 经人工重新核验迁移后从 allowlist 删除；
-- 不允许机械 `fact -> all section references` 伪造 claim-level coverage。
-
-### 80A 当前 Gate
+已持久化真实 correction event：
 
 ```text
-PR #34 Build + Preview   Done
+id            openclaw-supervisor-version
+correctedAt   2026-09-07
+```
+
+Correction targets 使用 stable current fact identities，并绑定：
+
+```text
+openclaw-v2026-7-2-beta-2
+openclaw-v2026-9-2
+```
+
+旧错误文本不复制进 content source；Git history 保留历史版本。
+
+### 4.4 Reading Evidence / correction UI · Done
+
+Evidence V1 Reading page 已提供：
+
+- [x] stable claim anchors `#claim-<section-id>-<fact-id>`；
+- [x] stable reference anchors `#ref-<reference-id>`；
+- [x] per-fact Evidence links；
+- [x] Source Registry enrichment 保持；
+- [x] `已修正 · 2026-09-07` notice；
+- [x] latest correction summary；
+- [x] correction history；
+- [x] correction → affected fact navigation；
+- [x] legacy Daily Reading compatibility。
+
+Public identity 保持：
+
+```text
+Reading canonical       /briefs/2026-09-07/
+Stable date alias       /2026/09/07/
+Date alias behavior     redirect → /slides/2026-09-07/
+Daily slides            11
+```
+
+80B 没有新增第二 canonical route，也没有改变 archive/RSS/sitemap identity。
+
+### 4.5 TDD Evidence
+
+#### RED · Artifact-layer assumption exposed
+
+```text
+Run       34106180726
+Head      ae2820b7811d4c00e414938cb52d46c10cb29e4f
+Result    failure
+```
+
+RED 前所有核心合同均已通过：
+
+```text
+Schema / Evidence evaluator        passed
+Reading UI pure contract           passed
+11-slide Evidence renderer         passed
+content:validate                    passed
+2026-09-07 evidence-v1             claims=16 refs=6
+Source/Topic/Author integrity      passed
+Astro / Slidev                     passed
+site/archive/latest                passed
+```
+
+唯一失败：artifact test 错把 `/2026/09/07/` 当 Reading HTML。真实产品合同是：
+
+```text
+/briefs/2026-09-07/  = Reading canonical
+/2026/09/07/         = stable Slide redirect alias
+```
+
+因此修正测试层，不改产品路由。
+
+#### GREEN · Final head
+
+```text
+PR                           #35
+Head                         8092c6bfab06a768cfaed950aa26f72b2c365576
+Read-only PR Build           34106452727 success
+Preview Artifact             10012620633
+Artifact SHA-256             f403fb89658edba98593667cf66b891afd0608f178a30f52eddbaed62e8043d8
+Trusted Preview              passed
+Public availability smoke    passed
+PR state                     Ready for review
+```
+
+Final artifact contract 分层证明：
+
+1. Reading HTML 含 correction notice、16 stable claims、Evidence links 与 ref anchors；
+2. date alias 仍以 Reading 为 canonical，并 redirect 到 11 页 Daily presentation；
+3. Preview path 不泄露进 canonical identity。
+
+### 4.6 Authority boundary
+
+80B 没有：
+
+- 修改 Source / Author / Topic Registry identity；
+- 迁移其他 legacy Daily；
+- 扩大 Scheduled Daily authority；
+- 实现 correction-specific append-only guard；
+- auto-merge；
+- direct main write；
+- Production Pages deploy；
+- 提交 generated source 或 `dist/**`。
+
+### 80B current Gate
+
+```text
+PR #35 Build + Preview    Done
           ↓
-Human Review             ← current
+Human Review              ← current
           ↓
 Human merge
           ↓
 fresh main Build
           ↓
-80B may start
+80C may start
 ```
 
-**PR #34 不自动 merge。**
+**PR #35 不自动 merge。**
 
-## 5. 80B — Real Correction Provenance + Reading UI
+## 5. 80C — Correction Guard + Production Closeout
 
-> 状态：**Blocked by PR #34 Human merge + fresh main Build**
-
-目标：用真实 2026-09-07 correction 把 Evidence V1 从结构合同推进到用户可见产品能力。
-
-### Scope
-
-- 对 `content/briefs/2026-09-07.yaml` 全部 5 sections 做真实重新核验；
-- 所有 factual facts 建立 stable IDs；
-- 所有 facts 达到 explicit evidence coverage；
-- canonical top-level EvidenceReference 去重；
-- 持久化 PR #33 OpenClaw correction event；
-- correction target 精确指向稳定 fact address；
-- Reading UI 每个 fact 增加 stable anchor + evidence markers；
-- Reference List 增加 stable ref anchor；
-- 页面显示 latest correction notice / history；
-- canonical route / archive identity 不改变；
-- Slidev 仍保持 11 页。
-
-### 80B 实质验收
-
-```text
-2026-09-07
-mode                    evidence-v1
-claims                  N
-claims with evidence    N
-unused references       0
-corrections              1
-```
-
-必须明确：`100% evidence coverage != 100% factual truth`。
-
-## 6. 80C — Correction Guard + Production Closeout
-
-> 状态：Blocked by 80B
+> 状态：**Blocked by PR #35 Human merge + fresh main Build**
 
 目标：把 correction provenance 变成不可绕过的 repository workflow contract，并完成 Milestone H 真实闭环。
 
-### Scope
+### Planned scope
 
 新增 correction-specific guard，概念入口：
 
@@ -256,117 +310,65 @@ corrections              1
 pnpm evidence:daily:correction:guard --base <integration-base>
 ```
 
-验证：
+必须验证：
 
 - branch 只修改 exact one existing published Daily；
 - changed Daily 必须 Evidence V1；
-- correction events 对 base 只能 append；
+- correction events 相对 base 只能 append；
 - 旧 correction 不能删除 / 改写；
 - factual mutation 必须伴随新 correction event；
 - correction target / evidence 必须解析；
 - generic Path Guard + full validation + full Build 仍 mandatory；
 - Scheduled Daily 永远不自动进入 correction flow。
 
-Closeout：
+80C closeout：
 
+- correction guard unit / integration / behavior drills；
 - PR Build；
 - Trusted Preview；
 - Human merge；
 - fresh main Build；
-- public UI 变化后的 exact-SHA Production Pages；
+- exact-SHA Production Pages（80B 已产生 public UI 变化）；
 - public smoke；
 - roadmap closeout。
 
-## 7. 实施顺序
+## 6. 实施顺序
 
 ```text
-80A Evidence Contract
-    ↓
-PR #34 Review Gate              ← current
-    ↓
+80A Evidence Contract              Done
+        ↓
+PR #34 merge + fresh main Build    Done
+        ↓
+80B Real Correction Provenance     Review Gate · PR #35
+        ↓
 Human merge
-    ↓
+        ↓
 fresh main Build
-    ↓
-80B Real Correction Provenance
-    ↓
-2026-09-07 full re-verification + migration
-    ↓
-Reading evidence / correction UI
-    ↓
-Artifact regression
-    ↓
-PR Build / Trusted Preview / Human Review
-    ↓
+        ↓
 80C Correction Guard + Closeout
-    ↓
+        ↓
 append-only correction contract
-    ↓
-workflow / behavior drills
-    ↓
+        ↓
+behavior drills
+        ↓
 main Build
-    ↓
-Production + smoke
-    ↓
+        ↓
+Production + public smoke
+        ↓
 Milestone H Done
 ```
 
-## 8. Implementation branch policy
-
-Planning branch 继续只保存 roadmap / design / plan。
-
-代码实现必须从当前 `main` 创建独立 feature branch，不直接在 `planning/product-capability-roadmap` 上混入 implementation。
+## 7. Implementation branch policy
 
 ```text
-feat/evidence-integrity-contract       # 80A · PR #34
-feat/evidence-correction-provenance    # 80B · only after 80A merge + fresh main Build
-feat/evidence-correction-guard         # 80C
+feat/evidence-integrity-contract       # 80A · merged PR #34
+feat/evidence-correction-provenance    # 80B · PR #35 Review Gate
+feat/evidence-correction-guard         # 80C · blocked
 ```
 
-每个 slice 独立 PR 到 `main`，前一 slice 合并并 fresh main Build 后再启动下一 slice，避免 stacked implementation 分支重新出现 Plan 40 时的恢复复杂度。
+每个 slice 必须独立 PR 到 `main`；前一 slice merge + fresh main Build 后才允许下一 slice，避免 stacked implementation 恢复复杂度。
 
-## 9. TDD / validation policy
-
-80A contract coverage 包含：
-
-- Evidence V1 valid fixture；
-- duplicate fact ID；
-- duplicate reference ID；
-- missing evidence；
-- dangling evidence ID；
-- unused reference；
-- missing Source Registry ID；
-- invalid correction target；
-- invalid correction evidence；
-- legacy Daily allowlisted；
-- non-allowlisted legacy Daily rejected；
-- legacy-shaped Daily with Evidence metadata rejected；
-- new Scheduled Daily legacy shape rejected；
-- Weekly / Ad-hoc existing schema isolation；
-- Daily 11-page Slidev regression；
-- archive / latest / RSS / sitemap / structured-data regressions through full build。
-
-## 10. Failure model
-
-稳定错误类别：
-
-```text
-SCHEMA_INVALID
-DUPLICATE_CLAIM_ID
-DUPLICATE_REFERENCE_ID
-MISSING_EVIDENCE
-DANGLING_EVIDENCE_REFERENCE
-UNUSED_REFERENCE
-MISSING_SOURCE_REGISTRY_ID
-INVALID_CORRECTION_TARGET
-INVALID_CORRECTION_EVIDENCE
-CORRECTION_HISTORY_MUTATED
-LEGACY_DAILY_NOT_ALLOWLISTED
-```
-
-错误必须包含 content path 与 stable field / claim address。
-
-## 11. Global non-goals
+## 8. Global non-goals
 
 Plan 80 不做：
 
@@ -383,23 +385,25 @@ Plan 80 不做：
 - Scheduled Agent auto-merge；
 - Pages deploy authority。
 
-## 12. Milestone H Done 条件
+## 9. Milestone H Done 条件
 
-- [ ] Evidence V1 Daily Schema + relation contract integrated into main；
-- [ ] frozen legacy migration boundary integrated into main；
-- [ ] human / machine evidence report integrated into main；
-- [ ] new Scheduled Daily requires Evidence V1 on main；
-- [ ] 2026-09-07 full real re-verification / migration；
-- [ ] PR #33 correction provenance persisted；
-- [ ] Reading evidence links + correction notice；
-- [ ] Slide count remains 11；
+- [x] Evidence V1 Daily Schema + relation contract integrated into main；
+- [x] frozen legacy migration boundary integrated into main；
+- [x] human / machine evidence report integrated into main；
+- [x] new Scheduled Daily requires Evidence V1 on main；
+- [ ] 2026-09-07 full real re-verification / migration integrated into main；
+- [ ] PR #33 correction provenance integrated into main；
+- [ ] Reading evidence links + correction notice integrated into main；
+- [x] Slide count remains 11 in 80B PR validation；
 - [ ] correction-specific append-only guard；
 - [ ] legacy correction behavior verified；
-- [ ] RSS / archive / sitemap / JSON-LD regressions green；
-- [ ] 80A / 80B / 80C independently pass PR Build + Trusted Preview；
+- [x] RSS / archive / sitemap / JSON-LD regressions green in 80B PR；
+- [x] 80A independently passed PR Build + Trusted Preview + fresh main Build；
+- [x] 80B independently passed PR Build + Trusted Preview；
+- [ ] 80C independently passes PR Build + Trusted Preview；
 - [ ] fresh final main Build；
-- [ ] exact-SHA Production Pages + public smoke for final public UI；
-- [ ] no authority expansion；
+- [ ] exact-SHA Production Pages + public smoke for public Evidence UI；
+- [x] no authority expansion through 80A / 80B；
 - [ ] roadmap / planning closeout。
 
-**当前下一动作：人工 Review / merge PR #34；合并后必须先验证 fresh main Build，之后才允许启动 80B。**
+**当前下一动作：人工 Review / merge PR #35；合并后先验证 fresh main Build，之后才允许启动 80C。**
