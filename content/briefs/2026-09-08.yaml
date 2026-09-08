@@ -1,0 +1,231 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: 2026-09-08
+status: published
+title: Agent 的瓶颈正在从模型能力转向 Harness 吞吐与运行契约
+summary: 并行 Agent 已开始形成可度量的组织级劳动力，模型与 Harness 的协同优化继续提高任务吞吐；与此同时，人类 steering、API 漂移和长运行进程身份正成为新的规模化约束。
+topics:
+  - agent-harness
+  - coding-agent
+  - mcp
+signals:
+  - title: 并行 Agent 劳动力已经跨过组织级阈值
+    summary: OpenAI 报告研究组织的 Agent 总运行量已超过人类工作量，Agent orchestration 开始需要像算力和队列一样被度量。
+    impact: high
+  - title: 模型与 Harness 的协同优化开始产生乘数效应
+    summary: GPT-6 Astra 与更新后的 Codex harness 在同一任务基准上组合提升完成速度，说明不能再只用模型分数评估 Coding Agent。
+    impact: high
+  - title: Human Steering 正在变成稀缺控制资源
+    summary: Agent 能承担更长、更复杂的任务，但高难任务仍需要显著人工 steering，瓶颈正在从生成 token 转向审阅与决策容量。
+    impact: high
+  - title: Runtime 正在把接口、版本与生命周期写成可检查契约
+    summary: OpenHands 用 pinned OpenAPI 管理客户端漂移，Codex 则把 executor build identity 与 PID generation 写入运行时边界。
+    impact: high
+sections:
+  - id: research-parallelism
+    layout: metrics
+    title: Agent 劳动力开始成为组织级容量指标
+    conclusion: 当并行 Agent 的累计运行量超过人类工作量后，工程团队需要直接管理 Agent 并发、队列、预算和有效产出，而不只是统计调用次数。
+    facts:
+      - id: research-intern-threshold
+        text: OpenAI 表示其自动化 research intern 目标已经达到：在人员指导下，Agent 可以承担原本需要熟练研究人员数天完成的定义清晰研究任务。
+        evidence:
+          - openai-research-acceleration
+      - id: agent-workdays-ratio
+        text: 截至 2026 年 8 月中旬，OpenAI 研究组织报告每 1 个 human workday 对应约 3.1 个 agent-workdays 的 Agent 运行量。
+        evidence:
+          - openai-research-acceleration
+      - id: concurrent-agent-workflows
+        text: OpenAI 描述研究人员同时运行多个 Coding Agent 的工作方式正在增加，并展示同时推进四个及以上 Agent 任务的典型工作流。
+        evidence:
+          - openai-research-acceleration
+    limitations:
+      - 这些数字来自 OpenAI 自身研究组织，不能直接外推到其他团队的任务结构与生产率。
+      - agent-workday 衡量的是运行投入而不是科研成果，更多运行时间不等于同比例的有效产出。
+  - id: steering-bottleneck
+    layout: comparison
+    title: Agent 越能长跑，人类 Steering 越接近稀缺资源
+    conclusion: 长时 Agent 的下一个容量瓶颈不是单纯增加并发，而是为高价值决策保留足够的人类审阅、纠偏和停止能力。
+    facts:
+      - id: longer-horizon-delegation
+        text: OpenAI 报告研究人员正在把更高层级、更长时间跨度的工作委托给 Coding Agent，而不是只让 Agent 完成局部代码修改。
+        evidence:
+          - openai-research-acceleration
+      - id: success-rises-with-steering
+        text: OpenAI 的内部评估显示 2026 年 1 月到 7 月各难度任务的成功率上升，但任务复杂度提高时仍需要显著 human steering。
+        evidence:
+          - openai-research-acceleration
+      - id: humans-retain-governance
+        text: OpenAI 明确保留由人来设定研究优先级，并决定何时扩大、暂停或部署研究结果与 Agent 工作流。
+        evidence:
+          - openai-research-acceleration
+    limitations:
+      - steering 强度会受到任务定义、工具权限和评测方式影响，不能只用统一的人机比例做容量规划。
+      - 厂商内部成功率提升不能替代团队在自身代码库和风险等级上的独立评测。
+  - id: model-harness-co-design
+    layout: architecture
+    title: 模型升级和 Harness 升级必须作为一个系统评测
+    conclusion: Coding Agent 的真实吞吐来自模型推理、交互协议与执行 Harness 的组合；只替换模型而不复测完整任务链会漏掉关键收益与风险。
+    facts:
+      - id: mind2web-combined-speedup
+        text: OpenAI 报告 GPT-6 Astra 配合更新后的 Codex harness，在 Mind2Web 上相对当前 GPT-5.6 Sol 体验实现约 1.9 倍更快的任务完成速度。
+        evidence:
+          - openai-gpt-6-astra
+      - id: asynchronous-clarification
+        text: GPT-6 Astra 在 Codex 中可以提出聚焦问题，同时继续推进不依赖答案的工作，并在关键决策需要用户输入时等待。
+        evidence:
+          - openai-gpt-6-astra
+      - id: osworld-time-quality
+        text: OpenAI 报告 Astra 在 OSWorld 2.0 得分 72.6%，单任务约 40 分钟；GPT-5.6 Sol 为 65.7%，单任务约 75 分钟。
+        evidence:
+          - openai-gpt-6-astra
+    limitations:
+      - 这些 benchmark 与耗时均来自 OpenAI 官方评测，真实仓库中的收益需要按任务类型重新验证。
+      - 更快完成任务不自动意味着更低总成本；并发数、重试、人工 review 与工具调用仍会影响端到端资源消耗。
+  - id: api-contract-scaling
+    layout: architecture
+    title: Agent 平台开始用固定契约管理快速演进的客户端
+    conclusion: 当 Agent Server、浏览器客户端和自动化层独立演进时，API schema 必须被固定到可复现版本，并把 drift 变成 CI 可见失败。
+    facts:
+      - id: openhands-v145-release-artifacts
+        text: OpenHands software-agent-sdk v1.45.0 于 2026-09-07 发布，并为 Agent Server 提供多平台二进制、openapi.json 与 SHA256SUMS 等发布产物。
+        evidence:
+          - openhands-v1-45-release
+      - id: browser-typescript-client
+        text: v1.45.0 的 TypeScript client 明确面向浏览器并支持 remote conversations，但官方标记为 alpha，说明 API 仍可能发生破坏性变化。
+        evidence:
+          - openhands-ts-client-v1-45
+      - id: pinned-openapi-contract
+        text: OpenHands TypeScript client 从 package 配置中固定的精确 Agent Server release 获取 openapi.json，CI 会重新生成 schema 并在发生差异时失败。
+        evidence:
+          - openhands-ts-client-v1-45
+      - id: moving-main-audit-separated
+        text: OpenHands 将对 SDK main 的 drift 检查放到单独的周期审计，并记录精确 commit SHA；普通客户端 PR 不从持续移动的 main 生成契约。
+        evidence:
+          - openhands-ts-client-v1-45
+    limitations:
+      - TypeScript client 当前仍是 alpha，不适合作为稳定生产 API 的成熟度证明。
+      - OpenAPI 能约束接口形状，但不能独立保证事件顺序、执行语义或跨版本行为完全兼容。
+  - id: runtime-identity-lifecycle
+    layout: system-map
+    title: 长运行 Agent Runtime 需要知道“正在运行的是哪一代进程”
+    conclusion: 当 Agent Server 可以长期驻留、重启和替换时，build identity、process generation 和 stale-state recovery 应成为显式 Runtime contract。
+    facts:
+      - id: codex-alpha-release
+        text: OpenAI Codex rust-v0.154.0-alpha.6 于 2026-09-07 发布为 prerelease，该 tagged source 包含 exec-server build identity 与 app-server daemon PID lifecycle 相关变更。
+        evidence:
+          - codex-alpha-154-6-release
+      - id: executor-build-identity
+        text: Codex exec-server 在接受连接前缓存当前 executor 的 build identity，并基于 build commit 与 target 生成 provider_id 写入 EnvironmentInfo。
+        evidence:
+          - codex-build-identity
+      - id: pid-generation-record
+        text: Codex app-server daemon 的 PID record 同时保存 pid 与 process_start_time，PID reservation 用锁串行化 detached launch，并用启动时间判断 stale record 是否仍对应同一进程。
+        evidence:
+          - codex-pid-lifecycle
+      - id: graceful-force-stop
+        text: Codex 的 PID-managed stop 路径先请求受管 app-server 正常关闭，经过 grace period 后才强制终止，并持续校验记录对应的进程是否仍然存活。
+        evidence:
+          - codex-pid-lifecycle
+    limitations:
+      - 该 Codex 版本是 alpha prerelease，Runtime 设计仍可能快速变化。
+      - PID 与 build identity 解决的是进程代际和兼容性可见性，不能替代任务级幂等、状态恢复与权限控制。
+projects:
+  - action: TEST
+    name: OpenHands/software-agent-sdk
+    summary: 用固定 Agent Server release 验证 OpenAPI drift CI、浏览器 TypeScript client 与 WebSocket conversation 的版本契约。
+    maturity: growing
+    url: https://github.com/OpenHands/software-agent-sdk
+  - action: TEST
+    name: openai/codex
+    summary: 验证 exec-server build identity、PID generation 与 stale-record recovery 在进程替换和异常退出下的行为。
+    maturity: growing
+    url: https://github.com/openai/codex
+  - action: READ
+    name: OpenHands/automation
+    summary: 研究调度、webhook、run history 与 dispatch 如何从 Agent Server 生命周期中拆分为独立控制面。
+    maturity: early
+    url: https://github.com/OpenHands/automation
+radar:
+  - label: Parallel agent orchestration
+    impact: 96
+    horizon: 12
+    note: Agent 运行量超过单人工作量后，并发、队列和预算会迅速成为真实工程问题。
+  - label: Human steering capacity
+    impact: 95
+    horizon: 10
+    note: 长时高难任务仍依赖人工纠偏，review 与关键决策容量应优先量化。
+  - label: Model and harness co-design
+    impact: 94
+    horizon: 18
+    note: 完整任务吞吐已明显受模型和 Harness 组合影响，应使用端到端基准评测。
+  - label: API contract drift control
+    impact: 90
+    horizon: 20
+    note: Agent Server 与多语言客户端独立发布后，固定 schema 与 drift CI 很快成为基础能力。
+  - label: Runtime build and process identity
+    impact: 88
+    horizon: 25
+    note: 长运行服务支持升级与恢复后，需要显式区分不同 build 和 process generation。
+actions:
+  - title: 开始记录 Agent Workdays 与 Steering 时间
+    description: 同时统计 Agent 并发运行量、成功任务数、人工 review 与纠偏耗时，找出真正限制吞吐的控制环。
+  - title: 把模型和 Harness 作为一个版本单元评测
+    description: 每次模型或 Harness 变化都跑同一组端到端任务，记录成功率、完成时间、重试和人工介入，而不是只比较模型 benchmark。
+  - title: 为 Agent API 建立 Pinned Contract CI
+    description: 将客户端绑定到精确服务版本和 schema artifact，PR 中禁止从 moving main 生成契约，并把 drift 作为可见失败处理。
+  - title: 给长运行 Runtime 增加代际身份
+    description: 在握手和状态记录中携带 build identity 与 process generation，并为 stale PID、重启和进程替换建立可测试恢复路径。
+references:
+  - id: openai-research-acceleration
+    title: Research acceleration: The view inside OpenAI
+    url: https://openai.com/index/research-acceleration-view-inside-openai/
+    supports: 研究组织的 Agent workdays、并行工作方式、长任务 delegation、human steering 与人工治理边界。
+    accessedAt: 2026-09-08
+  - id: openai-gpt-6-astra
+    title: GPT-6 Astra: A new generation of intelligence
+    url: https://openai.com/index/gpt-6-astra/
+    supports: Astra 与更新后 Codex harness 的组合速度、异步澄清行为和 OSWorld 2.0 官方评测。
+    accessedAt: 2026-09-08
+  - id: openhands-v1-45-release
+    title: OpenHands software-agent-sdk v1.45.0
+    url: https://github.com/OpenHands/software-agent-sdk/releases/tag/v1.45.0
+    source: github
+    supports: v1.45.0 发布时间、Agent Server 多平台二进制、openapi.json 与校验产物。
+    accessedAt: 2026-09-08
+  - id: openhands-ts-client-v1-45
+    title: OpenHands Agent Server TypeScript Client v1.45.0
+    url: https://github.com/OpenHands/software-agent-sdk/blob/v1.45.0/clients/typescript/README.md
+    source: github
+    supports: 浏览器客户端成熟度、固定 OpenAPI contract、drift CI 与仓库职责边界。
+    accessedAt: 2026-09-08
+  - id: codex-alpha-154-6-release
+    title: Codex rust-v0.154.0-alpha.6
+    url: https://github.com/openai/codex/releases/tag/rust-v0.154.0-alpha.6
+    source: github
+    supports: Codex alpha.6 prerelease 的发布日期与 tagged runtime source identity。
+    accessedAt: 2026-09-08
+  - id: codex-build-identity
+    title: Codex exec-server build identity
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.6/codex-rs/exec-server/src/server/build_identity.rs
+    source: github
+    supports: executor build identity 缓存以及由 build commit 与 target 生成 provider_id 的实现。
+    accessedAt: 2026-09-08
+  - id: codex-pid-lifecycle
+    title: Codex app-server daemon PID lifecycle
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.6/codex-rs/app-server-daemon/src/backend/pid.rs
+    source: github
+    supports: PID reservation、process_start_time、stale record 清理与 graceful-to-force stop 生命周期。
+    accessedAt: 2026-09-08
+archivePicks:
+  - title: Agent 的新边界正在变成显式策略层
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-07.yaml
+    source: github
+    supports: 衔接本期关于 Harness、Runtime 与控制面边界的前一日判断。
+    accessedAt: 2026-09-08
+    publishedAt: 2026-09-07
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
