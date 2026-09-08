@@ -1,18 +1,19 @@
 # Plan 80C · Correction Guard + Production Closeout
 
-> Status: Review Gate · PR #36
+> Status: Production Gate
 > Milestone: H — Evidence Integrity
 > Implementation base: `main@ebd38ef890ba3f3d40d03b754085cbd73a44a080`
 > Implementation branch: `feat/evidence-correction-guard`
 > Final implementation head: `d8adc2e1d2468c63b8064ee45460b18851ea9742`
-> 80B: PR #35 merged
-> 80B fresh main Build: `34108101313` success
-> Main artifact: `10013259615`
-> Main artifact SHA-256: `1a5925bbea154e3f6ec5a06585498779467f53266a38c5ed09a22b06d17b5dae`
+> PR: #36 merged
+> Final main: `fee254c81e899bc77c4671eda472071c390621a9`
+> Fresh main Build: `34179976055` success
+> Main artifact: `10038587455`
+> Main artifact SHA-256: `bb1ce4aaddbafa7d7423d9b1b182f6843760f6cb0dfd630ac70615462f0e01f5`
 
 ## Goal
 
-Turn published Daily correction provenance into an enforceable repository contract without expanding Scheduled, merge, Registry, or Pages authority.
+Turn published Daily correction provenance into an enforceable repository contract without expanding Scheduled, merge, Registry, or Pages authority, then close Milestone H through an explicit Production deployment and public smoke.
 
 ## Implemented correction contract
 
@@ -31,71 +32,47 @@ A valid correction PR must satisfy all of the following:
 5. all pre-existing correction events are semantically immutable and preserve order;
 6. candidate appends at least one new correction event;
 7. existing stable sections/facts/references may not be silently removed or renamed;
-8. any factual text/evidence mutation requires a newly appended correction event targeting that fact;
-9. newly added factual claims also require newly appended correction provenance;
+8. factual text/evidence mutation requires a newly appended correction targeting that fact;
+9. newly added factual claims also require appended correction provenance;
 10. changing an existing canonical reference requires explicit appended correction evidence plus targets for all affected facts;
 11. every appended correction target/evidence resolves under the normal Evidence Integrity evaluator;
-12. generic Path Guard and full `pnpm build` remain mandatory.
+12. Generic Path Guard and full `pnpm build` remain mandatory.
 
-The guard validates structure/provenance, not truth.
+The guard validates provenance structure, not factual truth.
 
 ## Branch / workflow isolation
 
-PR Preview Build now keeps three distinct paths:
+PR Preview Build keeps three distinct paths:
 
 ```text
-feature/*                 -> generic Path Guard
+feature/*                 -> Generic Path Guard
 
-automation/daily/*        -> generic Path Guard + Scheduled Daily guard
+automation/daily/*        -> Generic Path Guard + Scheduled Daily guard
 
-correction/daily/*        -> generic Path Guard + correction guard
+correction/daily/*        -> Generic Path Guard + Published Daily correction guard
 ```
 
 Scheduled Daily never invokes correction mode automatically.
 
-## Implemented TDD / behavior coverage
+## TDD / behavior coverage
 
-The final 80C build includes:
+The final implementation proves:
 
-- valid append-only correction;
-- wrong correction branch/date/change-set rejection;
-- base target missing / non-published rejection;
-- legacy base/candidate fail-closed behavior;
-- publishedAt mismatch rejection;
-- existing correction delete/edit/reorder rejection;
-- candidate with no appended correction rejection;
-- factual text/evidence mutation without new targeting correction rejection;
-- factual mutation with new targeting correction acceptance;
-- newly added fact requires appended correction target;
-- stable section/fact/reference identity preservation;
-- reference mutation requires correction evidence + affected fact target coverage;
-- dangling correction target rejection through shared Evidence evaluator;
-- real temporary-Git integration tests for valid and invalid correction history;
-- PR Preview branch routing contract for Scheduled vs correction workflows.
+- valid append-only correction passes;
+- correction-history delete/edit/reorder fails closed;
+- wrong branch/date/change-set fails closed;
+- base missing / non-published / legacy Daily correction fails closed;
+- factual mutation without matching new correction target fails closed;
+- factual mutation with matching new correction target passes;
+- stable section/fact/reference identity cannot silently disappear;
+- reference mutation requires correction evidence and affected fact targets;
+- dangling correction target/evidence fails through the shared Evidence evaluator;
+- real temporary-Git integration exercises both valid and invalid correction flows;
+- normal feature, Scheduled Daily and correction PR authority remain isolated.
 
-No real published content is changed merely to demonstrate the guard.
+No real published content was modified merely to demonstrate the guard.
 
-## Implementation surface
-
-The 80C implementation PR changes only guard/tooling/workflow/tests/docs/package wiring:
-
-```text
-.github/workflows/pr-preview-build.yml
-AGENTS.md
-docs/operations/chatgpt-scheduled-daily.md
-docs/operations/published-daily-correction.md
-package.json
-tools/content-automation/preview-workflow.test.ts
-tools/evidence-integrity/correction-policy.ts
-tools/evidence-integrity/correction-policy.test.ts
-tools/evidence-integrity/correction-legacy.test.ts
-tools/evidence-integrity/correction-guard.ts
-tools/evidence-integrity/correction-guard.integration.test.ts
-```
-
-No `content/**`, Registry identity, generated Slidev source, `dist/**`, merge policy, or Production Pages authority is changed.
-
-## Final PR validation
+## 80C implementation validation
 
 ```text
 PR                           #36
@@ -106,62 +83,55 @@ Preview Artifact             10013666375
 Artifact SHA-256             f52672691bcd7c6c2670789cfa92d2682b2aa5129a875c4da648c39a342d8347
 Trusted Preview              passed
 Public availability smoke    passed
-PR state                     Ready for review
+Human merge                  passed
+Merge commit                 fee254c81e899bc77c4671eda472071c390621a9
 ```
 
-Observed contract results:
+## Fresh final main Gate · Passed
+
+PR #36 was human-merged. The repository default branch is exactly:
 
 ```text
-Generic Path Guard                               passed
-Scheduled Daily guard                            skipped · correct feature-branch isolation
-Published correction workflow step               skipped · correct feature-branch isolation
-Scheduled + correction workflow contract         passed
-Published Daily correction policy                passed
-Legacy published correction fail-closed          passed
-Published Daily correction real-Git integration  passed
-Evidence V1 11-slide renderer                    passed
-Evidence provenance UI artifact                  passed
-Full pnpm build                                   passed
-Preview artifact upload                           passed
+main                         fee254c81e899bc77c4671eda472071c390621a9
+fresh Site Build             34179976055 success
+main Artifact                10038587455
+main Artifact SHA-256        bb1ce4aaddbafa7d7423d9b1b182f6843760f6cb0dfd630ac70615462f0e01f5
 ```
 
-Trusted Preview:
+The current main PR Preview workflow contains the `correction/daily/*` routing and invokes `evidence:daily:correction:guard`, so the correction contract is integrated into the exact final main tree rather than existing only on the feature branch.
+
+## Current Production Gate
+
+80C implementation and final-main validation are complete. The remaining authority boundary is intentionally explicit:
 
 ```text
-https://raw.githack.com/XiaoDaoJiang/Orbis/preview-pr-36/index.html
-```
-
-## Human Review Gate
-
-```text
-80C implementation Build + Preview   Done
-                ↓
-Human Review / merge PR #36          ← current
-                ↓
-fresh main Site Build
-                ↓
-verify correction guard on main
-                ↓
-explicit exact-SHA Production Pages
-                ↓
+PR #36 Human merge              Done
+        ↓
+fresh main Site Build           Done
+        ↓
+correction guard on exact main  Verified
+        ↓
+Orbis Pages Production
+workflow_dispatch on main
+inputs.deploy = true            ← current
+        ↓
 public HTTP smoke
-                ↓
+        ↓
 Plan 80 / Milestone H Done
 ```
 
-PR #36 must not be auto-merged.
+The Production workflow is manual by design. It grants Pages write / OIDC only to its deploy job when `github.ref == refs/heads/main` and `inputs.deploy == true`; merge, Scheduled Daily, correction producer, and ordinary PR builds do not receive that authority.
 
-## Merge / production closeout
+## Production closeout acceptance
 
-After human merge:
+After the explicit Production run succeeds, verify:
 
-1. require fresh `main` Site Build and artifact;
-2. confirm the correction guard and branch routing are present on the exact final main SHA;
-3. because 80B changed public Reading UI, deploy Production Pages from that exact final main SHA through the repository's existing explicit deployment workflow only;
-4. verify `/briefs/2026-09-07/` exposes the correction notice, stable claim/ref anchors and canonical identity;
-5. verify `/2026/09/07/` still redirects to the 11-page Daily presentation while keeping Reading canonical identity;
-6. verify public archive/latest/RSS/sitemap remain healthy;
-7. update Plan 80 / README / Roadmap to Milestone H Done.
+1. Production run `head_sha` equals `fee254c81e899bc77c4671eda472071c390621a9`;
+2. `/briefs/2026-09-07/` exposes the correction notice and stable claim/ref anchors;
+3. `/2026/09/07/` keeps its stable redirect to the 11-page Daily presentation;
+4. `/archive.json`, `/latest/`, `/rss.xml`, `/sitemap.xml` remain healthy;
+5. canonical identity does not contain Preview paths;
+6. Roadmap / Plan 80 / README are closed as Milestone H Done.
 
 ## Non-goals / authority boundary
 
