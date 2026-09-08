@@ -179,12 +179,12 @@ actions:
     description: 在握手和状态记录中携带 build identity 与 process generation，并为 stale PID、重启和进程替换建立可测试恢复路径。
 references:
   - id: openai-research-acceleration
-    title: Research acceleration: The view inside OpenAI
+    title: "Research acceleration: The view inside OpenAI"
     url: https://openai.com/index/research-acceleration-view-inside-openai/
     supports: 研究组织的 Agent workdays、并行工作方式、长任务 delegation、human steering 与人工治理边界。
     accessedAt: 2026-09-08
   - id: openai-gpt-6-astra
-    title: GPT-6 Astra: A new generation of intelligence
+    title: "GPT-6 Astra: A new generation of intelligence"
     url: https://openai.com/index/gpt-6-astra/
     supports: Astra 与更新后 Codex harness 的组合速度、异步澄清行为和 OSWorld 2.0 官方评测。
     accessedAt: 2026-09-08
