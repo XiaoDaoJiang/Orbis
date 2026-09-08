@@ -1,21 +1,18 @@
 # Plan 80C · Correction Guard + Production Closeout
 
-> Status: Production Gate
-> Milestone: H — Evidence Integrity
+> Status: Done
+> Milestone: H — Evidence Integrity · Done
 > Implementation base: `main@ebd38ef890ba3f3d40d03b754085cbd73a44a080`
 > Implementation branch: `feat/evidence-correction-guard`
 > Final implementation head: `d8adc2e1d2468c63b8064ee45460b18851ea9742`
 > PR: #36 merged
 > Final main: `fee254c81e899bc77c4671eda472071c390621a9`
-> Fresh main Build: `34179976055` success
-> Main artifact: `10038587455`
-> Main artifact SHA-256: `bb1ce4aaddbafa7d7423d9b1b182f6843760f6cb0dfd630ac70615462f0e01f5`
+> Production run: `34191412383` success
+> Closeout: [`../../plan/2026-09-08-milestone-h-evidence-integrity-closeout.md`](../../plan/2026-09-08-milestone-h-evidence-integrity-closeout.md)
 
-## Goal
+## Goal · Achieved
 
-Turn published Daily correction provenance into an enforceable repository contract without expanding Scheduled, merge, Registry, or Pages authority, then close Milestone H through an explicit Production deployment and public smoke.
-
-## Implemented correction contract
+Published Daily correction provenance is now an enforceable repository contract without expanding Scheduled, merge, Registry, or Pages authority.
 
 Repository command:
 
@@ -23,56 +20,56 @@ Repository command:
 pnpm evidence:daily:correction:guard --base <integration-base> --branch <correction-branch>
 ```
 
-A valid correction PR must satisfy all of the following:
+## Implemented correction contract
 
-1. branch identity is `correction/daily/<YYYY-MM-DD>/<slug>`;
-2. exactly one changed path exists and it is `content/briefs/<YYYY-MM-DD>.yaml`;
-3. the target already exists in base and is `published`;
-4. base and candidate are both Evidence V1 Daily briefs with matching `publishedAt`;
-5. all pre-existing correction events are semantically immutable and preserve order;
+A valid correction PR must satisfy:
+
+1. branch identity `correction/daily/<YYYY-MM-DD>/<slug>`;
+2. exactly one changed path: `content/briefs/<YYYY-MM-DD>.yaml`;
+3. base target exists and is `published`;
+4. base and candidate are Evidence V1 Daily with matching identity;
+5. pre-existing correction events are immutable and order-preserving;
 6. candidate appends at least one new correction event;
-7. existing stable sections/facts/references may not be silently removed or renamed;
-8. factual text/evidence mutation requires a newly appended correction targeting that fact;
-9. newly added factual claims also require appended correction provenance;
-10. changing an existing canonical reference requires explicit appended correction evidence plus targets for all affected facts;
-11. every appended correction target/evidence resolves under the normal Evidence Integrity evaluator;
+7. existing stable section/fact/reference identities cannot silently disappear or be renamed;
+8. factual text/evidence mutations require newly appended correction targets;
+9. new factual claims require new provenance;
+10. canonical reference mutation requires explicit correction evidence plus affected fact targets;
+11. appended targets/evidence resolve through normal Evidence Integrity;
 12. Generic Path Guard and full `pnpm build` remain mandatory.
 
 The guard validates provenance structure, not factual truth.
 
 ## Branch / workflow isolation
 
-PR Preview Build keeps three distinct paths:
-
 ```text
-feature/*                 -> Generic Path Guard
+feature/*                 → Generic Path Guard
 
-automation/daily/*        -> Generic Path Guard + Scheduled Daily guard
+automation/daily/*        → Generic Path Guard + Scheduled Daily guard
 
-correction/daily/*        -> Generic Path Guard + Published Daily correction guard
+correction/daily/*        → Generic Path Guard + Published Daily correction guard
 ```
 
 Scheduled Daily never invokes correction mode automatically.
 
-## TDD / behavior coverage
+## TDD / behavior coverage · Passed
 
-The final implementation proves:
+The implementation proves:
 
 - valid append-only correction passes;
 - correction-history delete/edit/reorder fails closed;
 - wrong branch/date/change-set fails closed;
-- base missing / non-published / legacy Daily correction fails closed;
-- factual mutation without matching new correction target fails closed;
+- missing/non-published/legacy base fails closed;
+- factual mutation without matching provenance fails closed;
 - factual mutation with matching new correction target passes;
-- stable section/fact/reference identity cannot silently disappear;
-- reference mutation requires correction evidence and affected fact targets;
+- stable section/fact/reference identity is preserved;
+- reference mutation requires correction evidence + affected fact target coverage;
 - dangling correction target/evidence fails through the shared Evidence evaluator;
-- real temporary-Git integration exercises both valid and invalid correction flows;
-- normal feature, Scheduled Daily and correction PR authority remain isolated.
+- real temporary-Git integration covers valid and invalid flows;
+- feature, Scheduled Daily and correction PR authority remain isolated.
 
-No real published content was modified merely to demonstrate the guard.
+No real published content was changed merely to demonstrate the guard.
 
-## 80C implementation validation
+## Implementation validation · Passed
 
 ```text
 PR                           #36
@@ -89,8 +86,6 @@ Merge commit                 fee254c81e899bc77c4671eda472071c390621a9
 
 ## Fresh final main Gate · Passed
 
-PR #36 was human-merged. The repository default branch is exactly:
-
 ```text
 main                         fee254c81e899bc77c4671eda472071c390621a9
 fresh Site Build             34179976055 success
@@ -98,42 +93,27 @@ main Artifact                10038587455
 main Artifact SHA-256        bb1ce4aaddbafa7d7423d9b1b182f6843760f6cb0dfd630ac70615462f0e01f5
 ```
 
-The current main PR Preview workflow contains the `correction/daily/*` routing and invokes `evidence:daily:correction:guard`, so the correction contract is integrated into the exact final main tree rather than existing only on the feature branch.
+The exact final main includes `correction/daily/* → evidence:daily:correction:guard` routing.
 
-## Current Production Gate
+## Production closeout · Passed
 
-80C implementation and final-main validation are complete. The remaining authority boundary is intentionally explicit:
+The existing explicit Production workflow was manually dispatched on the exact final main with deployment enabled.
 
 ```text
-PR #36 Human merge              Done
-        ↓
-fresh main Site Build           Done
-        ↓
-correction guard on exact main  Verified
-        ↓
-Orbis Pages Production
-workflow_dispatch on main
-inputs.deploy = true            ← current
-        ↓
-public HTTP smoke
-        ↓
-Plan 80 / Milestone H Done
+Production run               34191412383
+head_sha                     fee254c81e899bc77c4671eda472071c390621a9
+Build production artifact    success
+Deploy to GitHub Pages       success
+Pages Artifact               10042373095
+Pages Artifact SHA-256       e0bed6d0c91b1fe095d42a807a73f1a8967a9d127c3babdcddc534d7412b45c9
+Production URL               https://xiaodaojiang.github.io/Orbis/
 ```
 
-The Production workflow is manual by design. It grants Pages write / OIDC only to its deploy job when `github.ref == refs/heads/main` and `inputs.deploy == true`; merge, Scheduled Daily, correction producer, and ordinary PR builds do not receive that authority.
+Built-in public smoke passed `/`, `/latest/`, `/archive.json`, `/rss.xml`, `/favicon.svg`, and latest structured Daily `/2026/09/07/`.
 
-## Production closeout acceptance
+The exact deployed artifact was also inspected and confirms the 2026-09-07 Reading correction notice, stable claim/ref anchors, evidence links, correction history, stable Slides redirect, Reading canonical, archive/latest identity, RSS and sitemap.
 
-After the explicit Production run succeeds, verify:
-
-1. Production run `head_sha` equals `fee254c81e899bc77c4671eda472071c390621a9`;
-2. `/briefs/2026-09-07/` exposes the correction notice and stable claim/ref anchors;
-3. `/2026/09/07/` keeps its stable redirect to the 11-page Daily presentation;
-4. `/archive.json`, `/latest/`, `/rss.xml`, `/sitemap.xml` remain healthy;
-5. canonical identity does not contain Preview paths;
-6. Roadmap / Plan 80 / README are closed as Milestone H Done.
-
-## Non-goals / authority boundary
+## Authority boundary preserved
 
 - no automatic correction generation;
 - no auto-merge;
@@ -142,3 +122,5 @@ After the explicit Production run succeeds, verify:
 - no truth scoring;
 - no historical bulk migration;
 - no Scheduled Daily authority expansion.
+
+**80C — Done. Milestone H production closeout passed.**
