@@ -41,7 +41,7 @@ Normal provider outcomes include:
 - `blocked` — candidate ownership or repository state is ambiguous/conflicting;
 - `failed` — a concrete execution stage failed.
 
-A correction to already-published history is never started automatically.
+A correction to already-published history is never started automatically. Explicit published Evidence V1 corrections use the separate [`Published Daily Correction Workflow`](./published-daily-correction.md).
 
 ## Failure inspection
 

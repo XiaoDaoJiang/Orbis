@@ -8,9 +8,18 @@ assert.match(
   /startsWith\(github\.head_ref, 'automation\/daily\/'\)/,
   'PR Preview Build must activate the Scheduled Daily guard for automation/daily/* branches',
 )
-assert.match(workflow, /HEAD_REF:\s*\$\{\{ github\.head_ref \}\}/)
 assert.match(workflow, /target_date="\$\{HEAD_REF#automation\/daily\/\}"/)
 assert.match(workflow, /automation:daily:guard/)
+
+assert.match(
+  workflow,
+  /startsWith\(github\.head_ref, 'correction\/daily\/'\)/,
+  'PR Preview Build must activate the published correction guard for correction/daily/* branches',
+)
+assert.match(workflow, /name:\s*Guard published Daily correction/)
+assert.match(workflow, /evidence:daily:correction:guard --base "\$ORBIS_PR_BASE_SHA" --branch "\$HEAD_REF"/)
+
+assert.match(workflow, /HEAD_REF:\s*\$\{\{ github\.head_ref \}\}/)
 assert.match(workflow, /name:\s*Resolve PR integration base/)
 assert.match(
   workflow,
@@ -30,4 +39,4 @@ assert.match(workflow, /permissions:\s*\n\s*contents:\s*read/)
 assert.doesNotMatch(workflow, /pages:\s*write/)
 assert.doesNotMatch(workflow, /id-token:\s*write/)
 
-console.log('Scheduled Daily PR Preview workflow contract passed')
+console.log('Scheduled Daily and correction PR Preview workflow contract passed')
