@@ -3,9 +3,9 @@
 > 状态：Active planning
 > 当前实现基线：`main@fee254c81e899bc77c4671eda472071c390621a9`
 > 阶段：Product Capability Phase
-> 当前目标：Milestone H · Evidence Integrity → **Plan 80 / Production Gate**
+> 当前目标：**Milestone H · Evidence Integrity — Done → Post-H Product Capability Roadmap Refresh**
 
-`docs/plan/` 保存 Orbis 稳态架构之上的产品能力 Roadmap 与实施状态。详细设计、TDD、PR 与 Artifact 证据保留在对应 Plan / Design / Implementation Plan；本 README 只维护当前入口和统一 Gate。
+`docs/plan/` 保存 Orbis 稳态架构之上的产品能力 Roadmap 与实施状态。详细设计、TDD、PR、Artifact 与 Production 证据保留在对应 Plan / Design / Closeout 文档中；本 README 只维护当前入口和统一 Gate。
 
 ## 当前推进状态
 
@@ -17,101 +17,84 @@
 - Plan 60 · Knowledge Lifecycle：**Done** — PR #23 / #24
 - Plan 70 · Scheduled Content Automation：**Done** — PR #25 / #26 + stable cycles / drills
 - Product Capability Roadmap Refresh · 2026-09-07：**Done**
-  - Selected：Milestone H — Evidence Integrity
-  - Design：**Approved**
-- Plan 80 · Evidence Integrity：**Production Gate**
-  - 80A Evidence Contract：**Done** — PR #34 + fresh main Build
-  - 80B Real Correction Provenance + Reading UI：**Done** — PR #35 + fresh main Build
-  - 80C Correction Guard：**Done in main** — PR #36 merged
-  - Production closeout：**Pending explicit Production Pages dispatch + public smoke**
+- Plan 80 · Evidence Integrity：**Done**
+  - 80A Evidence Contract：Done — PR #34
+  - 80B Real Correction Provenance + Reading UI：Done — PR #35
+  - 80C Correction Guard + Production Closeout：Done — PR #36 + Production run `34191412383`
 
-## Milestone H 已进入 main
-
-当前 final implementation SHA：
+## Milestone H final evidence
 
 ```text
-main                         fee254c81e899bc77c4671eda472071c390621a9
-fresh Site Build             34179976055 success
-main Artifact                10038587455
-Artifact SHA-256             bb1ce4aaddbafa7d7423d9b1b182f6843760f6cb0dfd630ac70615462f0e01f5
+final main                    fee254c81e899bc77c4671eda472071c390621a9
+fresh main Site Build         34179976055 success
+main Artifact                 10038587455
+main Artifact SHA-256         bb1ce4aaddbafa7d7423d9b1b182f6843760f6cb0dfd630ac70615462f0e01f5
+Production run                34191412383 success
+Production head_sha           fee254c81e899bc77c4671eda472071c390621a9
+Pages Artifact                10042373095
+Pages Artifact SHA-256        e0bed6d0c91b1fe095d42a807a73f1a8967a9d127c3babdcddc534d7412b45c9
+Production URL                https://xiaodaojiang.github.io/Orbis/
 ```
 
-已进入 main 的能力：
+Production Build、Deploy 与 workflow 内置 public smoke 全部成功；latest structured Daily path 为 `/2026/09/07/`。
+
+Exact deployed artifact 进一步验证：
 
 ```text
+2026-09-07 claims             16
+canonical references           6
+corrections                    1
+Reading correction notice      present
+claim/ref anchors              present
+claim → evidence links         present
+correction → claim links       present
+stable date alias              → slides/2026-09-07/
+Reading canonical              /briefs/2026-09-07/
+archive latest                 2026-09-07
+RSS / sitemap                  healthy
+slides                         11
+```
+
+完整 closeout：[`2026-09-08 · Milestone H Evidence Integrity Closeout`](./2026-09-08-milestone-h-evidence-integrity-closeout.md)。
+
+## 当前产品基线
+
+```text
+Structured Content + Registry
+          ↓
+Referential Integrity
+          ↓
+Reading / Presentation / RSS / Discovery
+          ↓
+SEO / Structured Data
+          ↓
+Knowledge Lifecycle
+          ↓
+Scheduled Content Automation
+          ↓
 Evidence V1 Daily
-    ↓
-stable fact identity
-    ↓
-claim → canonical evidence edges
-    ↓
-reader-visible claim/ref anchors
-    ↓
-content-level correction provenance
-    ↓
+          ↓
+claim → evidence integrity
+          ↓
+reader-visible correction provenance
+          ↓
 append-only published correction guard
 ```
 
-其中 2026-09-07 已完成真实重新核验并迁移为：
-
-```text
-sections                5
-factual claims         16
-canonical references    6
-corrections             1
-slides                  11
-```
-
-## Authority isolation
+Authority 继续严格隔离：
 
 ```text
 feature/*
-    -> Generic Path Guard
+    → Generic Path Guard
 
 automation/daily/*
-    -> Generic Path Guard + Scheduled Daily guard
+    → Generic Path Guard + Scheduled Daily guard
 
 correction/daily/*
-    -> Generic Path Guard + Published Daily correction guard
+    → Generic Path Guard + Published Daily correction guard
 ```
 
-Scheduled Daily 永不自动进入 correction mode。Correction workflow 也不获得 direct-main、auto-merge、Registry mutation 或 Production Pages authority。
-
-## 当前 Gate
-
-```text
-80A / 80B / 80C implementation   Done
-            ↓
-PR #36 Human merge               Done
-            ↓
-fresh final main Build           Done
-            ↓
-correction guard on exact main   Verified
-            ↓
-Orbis Pages Production
-workflow_dispatch on main
-inputs.deploy=true               ← current
-            ↓
-public HTTP smoke
-            ↓
-Plan 80 / Milestone H Done
-```
-
-Production workflow 保持显式人工/受控 authority；不会因为 merge、Scheduled Daily 或 correction producer 自动触发。
-
-## Production closeout checklist
-
-- [x] PR #36 human merge
-- [x] final `main` exact SHA confirmed
-- [x] fresh main Build success
-- [x] final main artifact captured
-- [x] correction guard verified on exact main
-- [ ] `Orbis Pages Production` dispatch on `main` with `deploy=true`
-- [ ] Production run `head_sha == fee254c81e899bc77c4671eda472071c390621a9`
-- [ ] `/briefs/2026-09-07/` correction/evidence UI smoke
-- [ ] `/2026/09/07/` stable Slides redirect smoke
-- [ ] archive/latest/RSS/sitemap public smoke
-- [ ] Plan 80 / Roadmap closeout to Done
+Scheduled Daily 永不自动进入 correction mode；merge、Registry mutation 与 Production Pages 仍不属于 Agent authority。
 
 ## Roadmap / Plans
 
@@ -122,6 +105,7 @@ Production workflow 保持显式人工/受控 authority；不会因为 merge、S
 - [80A · Evidence Integrity Contract Implementation Plan](../superpowers/plans/2026-09-07-evidence-integrity-contract.md)
 - [80B · Evidence Correction Provenance Implementation Plan](../superpowers/plans/2026-09-07-evidence-correction-provenance.md)
 - [80C · Correction Guard + Production Closeout Implementation Plan](../superpowers/plans/2026-09-07-evidence-correction-guard.md)
+- [2026-09-08 · Milestone H Closeout](./2026-09-08-milestone-h-evidence-integrity-closeout.md)
 - [10 · Archive & Discovery Experience](./10-archive-discovery-experience.md)
 - [20 · Presentation Platform](./20-presentation-platform.md)
 - [30 · Weekly Brief](./30-weekly-brief.md)
@@ -129,6 +113,22 @@ Production workflow 保持显式人工/受控 authority；不会因为 merge、S
 - [50 · SEO & Sharing](./50-seo-sharing.md)
 - [60 · Knowledge Lifecycle](./60-knowledge-lifecycle.md)
 - [70 · Scheduled Content Automation](./70-scheduled-content-automation.md)
+
+## 下一步 Gate
+
+```text
+Milestone H · Done
+      ↓
+Post-H Product Capability Roadmap Refresh   ← current
+      ↓
+re-check real usage evidence / friction
+      ↓
+select next milestone only if evidence justifies it
+      ↓
+Design → Plan → isolated implementation PRs
+```
+
+不要因为编号自然递增而直接创建 Plan 90。之前 Deferred 的 Static Full-text Search、Weekly Scheduled Automation、Source / Author Directory 仍只是候选，下一轮要重新基于 Milestone H 之后的真实使用证据排序。
 
 ## Plan 状态约定
 
