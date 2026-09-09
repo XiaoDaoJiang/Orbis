@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { runPnpm } from '../shared/process.ts'
 import { access, mkdir, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '../..')
-const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
 const files = {
   missingSource: resolve(root, 'content/presentations/zz-orbis-missing-source-check.yaml'),
@@ -28,19 +27,8 @@ async function assertMissing(path: string) {
   }
 }
 
-async function runContentValidation(): Promise<{ code: number | null; output: string }> {
-  return await new Promise((resolvePromise, reject) => {
-    const child = spawn(pnpm, ['content:validate'], {
-      cwd: root,
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk) => { output += chunk.toString() })
-    child.stderr?.on('data', (chunk) => { output += chunk.toString() })
-    child.once('error', reject)
-    child.once('exit', (code) => resolvePromise({ code, output }))
-  })
+async function runContentValidation(): Promise<{ code: number; output: string }> {
+  return await runPnpm(['content:validate'], { cwd: root, capture: true, expectedExit: 'nonzero' })
 }
 
 for (const path of Object.values(files)) await assertMissing(path)

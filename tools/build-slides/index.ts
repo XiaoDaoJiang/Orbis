@@ -1,6 +1,6 @@
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { spawn } from 'node:child_process'
+import { runPnpm } from '../shared/process.ts'
 import { loadSiteConfig, joinBasePath, runtimeSiteBase } from '../shared/site-config.ts'
 import type { PresentationSeoManifest } from '../generate-slides/presentation-seo.ts'
 
@@ -10,7 +10,6 @@ const slidesRoot = resolve(root, 'apps/slides')
 const generatedRoot = resolve(root, config.presentation.generatedDir)
 const outputRoot = resolve(root, config.presentation.outputDir)
 const siteBase = runtimeSiteBase(config)
-const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
 function escapeHtmlAttribute(value: string): string {
   return value
@@ -21,11 +20,7 @@ function escapeHtmlAttribute(value: string): string {
 }
 
 async function run(args: string[]) {
-  await new Promise<void>((resolvePromise, reject) => {
-    const child = spawn(pnpm, args, { cwd: slidesRoot, stdio: 'inherit' })
-    child.once('error', reject)
-    child.once('exit', (code) => code === 0 ? resolvePromise() : reject(new Error(`Command failed with exit code ${code}: pnpm ${args.join(' ')}`)))
-  })
+  await runPnpm(args, { cwd: slidesRoot })
 }
 
 async function injectSeo(slug: string, out: string) {

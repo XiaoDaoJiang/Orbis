@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { access, readFile, rm, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
-import { spawn } from 'node:child_process'
+import { runPnpm } from '../shared/process.ts'
 import { stringify } from 'yaml'
 import { dailyBriefSchema, presentationContentSchema, weeklyBriefSchema } from '@orbis/content-schema'
 import { listFiles, readYaml } from '../shared/content.ts'
@@ -20,33 +20,13 @@ const nonPublicBriefSlug = 'zz-orbis-non-public-relation-check'
 const nonPublicBriefPath = resolve(briefSourceDir, `${nonPublicBriefSlug}.yaml`)
 const nonPublicPresentationSlug = 'zz-orbis-non-public-presentation-check'
 const nonPublicPresentationPath = resolve(presentationSourceDir, `${nonPublicPresentationSlug}.yaml`)
-const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
 async function run(script: string) {
-  await new Promise<void>((resolvePromise, reject) => {
-    const child = spawn(pnpm, [script], { cwd: root, stdio: 'inherit', env: process.env })
-    child.once('error', reject)
-    child.once('exit', (code) => code === 0
-      ? resolvePromise()
-      : reject(new Error(`Command failed with exit code ${code}: pnpm ${script}`)))
-  })
+  await runPnpm([script], { cwd: root })
 }
 
 async function runExpectFailure(script: string): Promise<string> {
-  return await new Promise<string>((resolvePromise, reject) => {
-    const child = spawn(pnpm, [script], {
-      cwd: root,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: process.env,
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk) => { output += chunk.toString() })
-    child.stderr?.on('data', (chunk) => { output += chunk.toString() })
-    child.once('error', reject)
-    child.once('exit', (code) => code === 0
-      ? reject(new Error(`Expected command to fail: pnpm ${script}`))
-      : resolvePromise(output))
-  })
+  return (await runPnpm([script], { cwd: root, capture: true, expectedExit: 'nonzero' })).output
 }
 
 async function assertMissing(path: string, message: string) {
