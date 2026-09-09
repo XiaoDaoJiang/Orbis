@@ -3,9 +3,9 @@
 > 状态：Active planning
 > 当前实现基线：`main@e639758d993dfdb60791f300c78a6319f1dfe54a`
 > 阶段：Product Capability Phase
-> 当前目标：**Milestone I · Merge-Gated Production Promotion — Design Review**
+> 当前目标：**Milestone I · Merge-Gated Production Promotion → Plan 90A In Progress**
 
-`docs/plan/` 保存 Orbis 稳态架构之上的产品能力 Roadmap 与实施状态。详细设计、TDD、PR、Artifact 与 Production 证据保留在对应 Plan / Design / Closeout 文档中；本 README 只维护当前入口和统一 Gate。
+`docs/plan/` 保存 Orbis 稳态架构之上的产品能力 Roadmap 与实施状态。详细 Design、TDD、PR、Artifact 与 Production 证据保留在对应文档中；本 README 只维护当前入口与统一 Gate。
 
 ## 已完成能力阶段
 
@@ -22,38 +22,34 @@ Milestone H closeout：[`2026-09-08 · Milestone H Evidence Integrity Closeout`]
 
 ## Post-H real usage evidence
 
-Two consecutive Daily cycles exposed repeated Production friction after human merge.
-
-### 2026-09-08 · PR #37
+Two consecutive Daily cycles proved that the second manual Production click is repeated operational friction rather than a distinct review decision.
 
 ```text
+2026-09-08 · PR #37
 Human merge                 Done
 main                        0eeb0648c889c8184e8a4dc90282a9f0c51f92fd
 fresh Site Build            34208091062 success
-Production                  still required separate manual action
-```
+manual Production           separately required
 
-### 2026-09-09 · PR #38
-
-```text
+2026-09-09 · PR #38
 Human merge                 Done
 main                        e639758d993dfdb60791f300c78a6319f1dfe54a
 fresh Site Build            34298769971 success
-manual Production run       34299051576 success
+manual Production           34299051576 success
 Production latest           /2026/09/09/
 ```
 
-The second manual Production approval no longer adds meaningful review information after a human has already merged a fully validated PR and the exact main SHA has passed a fresh Site Build.
+## Milestone I · Merge-Gated Production Promotion
 
-## Milestone I selection
+Post-H Roadmap Refresh：**Done / Selected**  
+Design：**Approved**  
+Plan 90：**In Progress**  
+90A implementation branch：`feat/merge-gated-production-promotion`
 
-Post-H Roadmap Refresh selected:
-
-**Milestone I — Merge-Gated Production Promotion**
-
-Decision record：[`2026-09-09 · Product Capability Roadmap Refresh`](./2026-09-09-product-capability-roadmap-refresh.md)。
-
-Design under review：[`Milestone I · Merge-Gated Production Promotion Design`](../superpowers/specs/2026-09-09-merge-gated-production-design.md)。
+Decision record：[`2026-09-09 · Product Capability Roadmap Refresh`](./2026-09-09-product-capability-roadmap-refresh.md)  
+Approved design：[`Milestone I · Merge-Gated Production Promotion`](../superpowers/specs/2026-09-09-merge-gated-production-design.md)  
+Plan：[`90 · Merge-Gated Production Promotion`](./90-merge-gated-production-promotion.md)  
+Implementation：[`Plan 90A implementation`](../superpowers/plans/2026-09-09-merge-gated-production-promotion.md)
 
 Target normal flow:
 
@@ -75,7 +71,8 @@ trusted workflow_run eligibility
   event = push
   branch = main
   source SHA = current main
-  source SHA proven from merged PR
+  exactly one associated merged PR → main
+  merge_commit_sha = source SHA
         ↓
 exact artifact promotion
         ↓
@@ -86,7 +83,7 @@ public smoke
 
 ## Authority boundary
 
-Milestone I does **not** give Scheduled Agents Production authority.
+Milestone I does **not** grant Scheduled Agents Production authority.
 
 ```text
 feature/*
@@ -101,53 +98,57 @@ correction/daily/*
 
 Scheduled Daily remains PR-only. It cannot merge, write main, mutate Registry identities, or access Pages/OIDC credentials.
 
-The new trust boundary is:
+The Production trust boundary becomes:
 
 ```text
 Human merge
   ∧ fresh successful exact-main Build
-  ∧ merged-PR provenance
+  ∧ exactly-one merged-PR provenance
   ∧ SHA still current main
       ↓
 trusted Production promotion
 ```
 
-The existing manual `Orbis Pages Production` workflow remains the initial break-glass / recovery path.
+Manual `Orbis Pages Production` remains the initial break-glass / recovery path.
 
 ## Current Gate
 
 ```text
 Milestone H · Done
       ↓
-Post-H Product Capability Roadmap Refresh · Done
+Post-H Roadmap Refresh · Done
       ↓
 Milestone I selected
       ↓
-Merge-Gated Production Design Review        ← current
+Design Approved
       ↓
-Design approval
+Plan 90A RED contracts             ← current
       ↓
-implementation plan
+GREEN promotion implementation
       ↓
-isolated implementation PR
+PR Build + Trusted Preview
       ↓
-real merge → automatic exact-SHA promotion proof
+Human Review
+      ↓
+Human merge
+      ↓
+90B automatic exact-SHA promotion proof
       ↓
 real Daily no-second-click proof
+      ↓
+Milestone I Done
 ```
-
-Do not create Plan 90 or an implementation branch before the detailed Milestone I design is accepted.
 
 ## Deferred candidates
 
 These remain candidates, not authorized work:
 
-- Static Full-text Search;
-- Weekly Scheduled Automation;
-- Source / Author Directory;
-- remaining legacy Evidence migration as maintenance debt.
+- Static Full-text Search；
+- Weekly Scheduled Automation；
+- Source / Author Directory；
+- remaining legacy Evidence migration as maintenance debt。
 
-Automatic Registry mutation and multi-provider orchestration remain rejected for now because they add authority/complexity without stronger current evidence.
+Automatic Registry mutation and multi-provider orchestration remain rejected for now.
 
 ## Plan 状态约定
 
