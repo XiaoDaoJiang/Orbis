@@ -1,13 +1,13 @@
 # Orbis Product Capability Plans
 
 > 状态：Active planning
-> 当前实现基线：`main@fee254c81e899bc77c4671eda472071c390621a9`
+> 当前实现基线：`main@e639758d993dfdb60791f300c78a6319f1dfe54a`
 > 阶段：Product Capability Phase
-> 当前目标：**Milestone H · Evidence Integrity — Done → Post-H Product Capability Roadmap Refresh**
+> 当前目标：**Milestone I · Merge-Gated Production Promotion — Design Review**
 
 `docs/plan/` 保存 Orbis 稳态架构之上的产品能力 Roadmap 与实施状态。详细设计、TDD、PR、Artifact 与 Production 证据保留在对应 Plan / Design / Closeout 文档中；本 README 只维护当前入口和统一 Gate。
 
-## 当前推进状态
+## 已完成能力阶段
 
 - Plan 10 · Archive & Discovery Experience：**Done** — PR #8 / #9 / #10
 - Plan 20 · Presentation Platform：**Done** — PR #11 / #12
@@ -16,72 +16,77 @@
 - Plan 50 · SEO & Sharing：**Done** — PR #21 / #22
 - Plan 60 · Knowledge Lifecycle：**Done** — PR #23 / #24
 - Plan 70 · Scheduled Content Automation：**Done** — PR #25 / #26 + stable cycles / drills
-- Product Capability Roadmap Refresh · 2026-09-07：**Done**
-- Plan 80 · Evidence Integrity：**Done**
-  - 80A Evidence Contract：Done — PR #34
-  - 80B Real Correction Provenance + Reading UI：Done — PR #35
-  - 80C Correction Guard + Production Closeout：Done — PR #36 + Production run `34191412383`
+- Plan 80 · Evidence Integrity：**Done** — PR #34 / #35 / #36 + exact-SHA Production closeout
 
-## Milestone H final evidence
+Milestone H closeout：[`2026-09-08 · Milestone H Evidence Integrity Closeout`](./2026-09-08-milestone-h-evidence-integrity-closeout.md)。
 
-```text
-final main                    fee254c81e899bc77c4671eda472071c390621a9
-fresh main Site Build         34179976055 success
-main Artifact                 10038587455
-main Artifact SHA-256         bb1ce4aaddbafa7d7423d9b1b182f6843760f6cb0dfd630ac70615462f0e01f5
-Production run                34191412383 success
-Production head_sha           fee254c81e899bc77c4671eda472071c390621a9
-Pages Artifact                10042373095
-Pages Artifact SHA-256        e0bed6d0c91b1fe095d42a807a73f1a8967a9d127c3babdcddc534d7412b45c9
-Production URL                https://xiaodaojiang.github.io/Orbis/
-```
+## Post-H real usage evidence
 
-Production Build、Deploy 与 workflow 内置 public smoke 全部成功；latest structured Daily path 为 `/2026/09/07/`。
+Two consecutive Daily cycles exposed repeated Production friction after human merge.
 
-Exact deployed artifact 进一步验证：
+### 2026-09-08 · PR #37
 
 ```text
-2026-09-07 claims             16
-canonical references           6
-corrections                    1
-Reading correction notice      present
-claim/ref anchors              present
-claim → evidence links         present
-correction → claim links       present
-stable date alias              → slides/2026-09-07/
-Reading canonical              /briefs/2026-09-07/
-archive latest                 2026-09-07
-RSS / sitemap                  healthy
-slides                         11
+Human merge                 Done
+main                        0eeb0648c889c8184e8a4dc90282a9f0c51f92fd
+fresh Site Build            34208091062 success
+Production                  still required separate manual action
 ```
 
-完整 closeout：[`2026-09-08 · Milestone H Evidence Integrity Closeout`](./2026-09-08-milestone-h-evidence-integrity-closeout.md)。
-
-## 当前产品基线
+### 2026-09-09 · PR #38
 
 ```text
-Structured Content + Registry
-          ↓
-Referential Integrity
-          ↓
-Reading / Presentation / RSS / Discovery
-          ↓
-SEO / Structured Data
-          ↓
-Knowledge Lifecycle
-          ↓
-Scheduled Content Automation
-          ↓
-Evidence V1 Daily
-          ↓
-claim → evidence integrity
-          ↓
-reader-visible correction provenance
-          ↓
-append-only published correction guard
+Human merge                 Done
+main                        e639758d993dfdb60791f300c78a6319f1dfe54a
+fresh Site Build            34298769971 success
+manual Production run       34299051576 success
+Production latest           /2026/09/09/
 ```
 
-Authority 继续严格隔离：
+The second manual Production approval no longer adds meaningful review information after a human has already merged a fully validated PR and the exact main SHA has passed a fresh Site Build.
+
+## Milestone I selection
+
+Post-H Roadmap Refresh selected:
+
+**Milestone I — Merge-Gated Production Promotion**
+
+Decision record：[`2026-09-09 · Product Capability Roadmap Refresh`](./2026-09-09-product-capability-roadmap-refresh.md)。
+
+Design under review：[`Milestone I · Merge-Gated Production Promotion Design`](../superpowers/specs/2026-09-09-merge-gated-production-design.md)。
+
+Target normal flow:
+
+```text
+Scheduled / Human contribution
+        ↓
+read-only PR Build
+        ↓
+Trusted Preview
+        ↓
+Human merge                         ← only normal Production approval
+        ↓
+push-triggered Orbis Site Build
+        ↓
+exact main artifact
+        ↓
+trusted workflow_run eligibility
+  source run success
+  event = push
+  branch = main
+  source SHA = current main
+  source SHA proven from merged PR
+        ↓
+exact artifact promotion
+        ↓
+GitHub Pages deploy
+        ↓
+public smoke
+```
+
+## Authority boundary
+
+Milestone I does **not** give Scheduled Agents Production authority.
 
 ```text
 feature/*
@@ -94,41 +99,55 @@ correction/daily/*
     → Generic Path Guard + Published Daily correction guard
 ```
 
-Scheduled Daily 永不自动进入 correction mode；merge、Registry mutation 与 Production Pages 仍不属于 Agent authority。
+Scheduled Daily remains PR-only. It cannot merge, write main, mutate Registry identities, or access Pages/OIDC credentials.
 
-## Roadmap / Plans
+The new trust boundary is:
 
-- [00 · Product Capability Roadmap](./00-product-capability-roadmap.md)
-- [2026-09-07 · Product Capability Roadmap Refresh](./2026-09-07-product-capability-roadmap-refresh.md)
-- [Milestone H · Evidence Integrity Design](../superpowers/specs/2026-09-07-evidence-integrity-design.md)
-- [80 · Evidence Integrity](./80-evidence-integrity.md)
-- [80A · Evidence Integrity Contract Implementation Plan](../superpowers/plans/2026-09-07-evidence-integrity-contract.md)
-- [80B · Evidence Correction Provenance Implementation Plan](../superpowers/plans/2026-09-07-evidence-correction-provenance.md)
-- [80C · Correction Guard + Production Closeout Implementation Plan](../superpowers/plans/2026-09-07-evidence-correction-guard.md)
-- [2026-09-08 · Milestone H Closeout](./2026-09-08-milestone-h-evidence-integrity-closeout.md)
-- [10 · Archive & Discovery Experience](./10-archive-discovery-experience.md)
-- [20 · Presentation Platform](./20-presentation-platform.md)
-- [30 · Weekly Brief](./30-weekly-brief.md)
-- [40 · Source & Author Registry](./40-source-author-registry.md)
-- [50 · SEO & Sharing](./50-seo-sharing.md)
-- [60 · Knowledge Lifecycle](./60-knowledge-lifecycle.md)
-- [70 · Scheduled Content Automation](./70-scheduled-content-automation.md)
+```text
+Human merge
+  ∧ fresh successful exact-main Build
+  ∧ merged-PR provenance
+  ∧ SHA still current main
+      ↓
+trusted Production promotion
+```
 
-## 下一步 Gate
+The existing manual `Orbis Pages Production` workflow remains the initial break-glass / recovery path.
+
+## Current Gate
 
 ```text
 Milestone H · Done
       ↓
-Post-H Product Capability Roadmap Refresh   ← current
+Post-H Product Capability Roadmap Refresh · Done
       ↓
-re-check real usage evidence / friction
+Milestone I selected
       ↓
-select next milestone only if evidence justifies it
+Merge-Gated Production Design Review        ← current
       ↓
-Design → Plan → isolated implementation PRs
+Design approval
+      ↓
+implementation plan
+      ↓
+isolated implementation PR
+      ↓
+real merge → automatic exact-SHA promotion proof
+      ↓
+real Daily no-second-click proof
 ```
 
-不要因为编号自然递增而直接创建 Plan 90。之前 Deferred 的 Static Full-text Search、Weekly Scheduled Automation、Source / Author Directory 仍只是候选，下一轮要重新基于 Milestone H 之后的真实使用证据排序。
+Do not create Plan 90 or an implementation branch before the detailed Milestone I design is accepted.
+
+## Deferred candidates
+
+These remain candidates, not authorized work:
+
+- Static Full-text Search;
+- Weekly Scheduled Automation;
+- Source / Author Directory;
+- remaining legacy Evidence migration as maintenance debt.
+
+Automatic Registry mutation and multi-provider orchestration remain rejected for now because they add authority/complexity without stronger current evidence.
 
 ## Plan 状态约定
 
