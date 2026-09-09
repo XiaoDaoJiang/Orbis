@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { access, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { spawn } from 'node:child_process'
+import { runPnpm } from '../shared/process.ts'
 import { stringify } from 'yaml'
 import { loadSiteConfig } from '../shared/site-config.ts'
 
@@ -10,7 +10,6 @@ const config = await loadSiteConfig()
 const sourceDir = resolve(root, config.content.presentationsDir)
 const slug = 'zz-orbis-invalid-presentation-check'
 const path = resolve(sourceDir, `${slug}.yaml`)
-const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
 async function assertMissing(target: string) {
   try {
@@ -22,20 +21,7 @@ async function assertMissing(target: string) {
 }
 
 async function runExpectFailure(script: string): Promise<string> {
-  return await new Promise<string>((resolvePromise, reject) => {
-    const child = spawn(pnpm, [script], {
-      cwd: root,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: process.env,
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk) => { output += chunk.toString() })
-    child.stderr?.on('data', (chunk) => { output += chunk.toString() })
-    child.once('error', reject)
-    child.once('exit', (code) => code === 0
-      ? reject(new Error(`Expected command to fail: pnpm ${script}`))
-      : resolvePromise(output))
-  })
+  return (await runPnpm([script], { cwd: root, capture: true, expectedExit: 'nonzero' })).output
 }
 
 const invalid = {
