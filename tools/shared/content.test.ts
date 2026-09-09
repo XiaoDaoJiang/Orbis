@@ -33,9 +33,9 @@ try {
   }
 
   assert.deepEqual(await readFixture('--- \t\r\ntitle: whitespace\r\n---\t \r\nbody'), { data: { title: 'whitespace' }, body: 'body' })
-  assert.deepEqual(await readFixture('---\n---\nbody'), { data: null, body: 'body' })
+  assert.deepEqual(await readFixture('---\n---\nbody\n---\nmore'), { data: null, body: 'body\n---\nmore' })
   assert.deepEqual(await readFixture('\uFEFF---\r\n---'), { data: null, body: '' })
-  const block = '---\nsummary: |\n  first\n  second\n---\n'
+  const block = '---\nsummary: |\n  first\n  ---\n  second\n---\n'
   assert.deepEqual((await readFixture(block.replaceAll('\n', '\r\n'))).data, (await readFixture(block)).data)
 
   for (const invalid of [
