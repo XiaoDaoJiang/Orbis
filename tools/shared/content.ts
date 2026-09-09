@@ -24,7 +24,14 @@ export async function readMarkdownFrontmatter(path: string): Promise<{ data: unk
   // Existing worktrees/editors may retain CRLF despite .gitattributes. Accept a
   // leading UTF-8 BOM and LF/CRLF delimiters, without trimming or rewriting the body.
   // Closing fences must occupy a whole line (or end at EOF), never a ---prefix.
-  const match = source.match(/^\uFEFF?---[ \t]*\r?\n(?:([\s\S]*?)\r?\n)?---[ \t]*(?:\r?\n|$)([\s\S]*)$/)
-  if (!match) throw new Error(`Missing YAML frontmatter: ${path}`)
-  return { data: parse(match[1] ?? ''), body: match[2] }
+  const opening = /^\uFEFF?---[ \t]*\r?\n/.exec(source)
+  if (!opening) throw new Error(`Missing YAML frontmatter: ${path}`)
+  const remaining = source.slice(opening[0].length)
+  // Find the first complete closing line, including an immediately empty header.
+  const closing = /(?:^|\r?\n)---[ \t]*(?:\r?\n|$)/.exec(remaining)
+  if (!closing) throw new Error(`Missing YAML frontmatter: ${path}`)
+  return {
+    data: parse(remaining.slice(0, closing.index)),
+    body: remaining.slice(closing.index + closing[0].length),
+  }
 }
