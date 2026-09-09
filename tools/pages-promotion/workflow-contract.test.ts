@@ -20,19 +20,23 @@ assert.match(workflow, /commits\/\$SHA\/pulls/)
 assert.match(workflow, /merge_commit_sha/)
 assert.match(workflow, /merged_at/)
 assert.match(workflow, /base\.ref/)
+assert.match(workflow, /ambiguous-merged-pr/)
+assert.match(workflow, /stale-main/)
 
 assert.match(workflow, /uses:\s*actions\/download-artifact@v7/)
-assert.match(workflow, /name:\s*orbis-site/)
-assert.match(workflow, /run-id:\s*\$\{\{\s*github\.event\.workflow_run\.id\s*\}\}/)
-assert.match(workflow, /github-token:\s*\$\{\{\s*secrets\.GITHUB_TOKEN\s*\}\}/)
-assert.doesNotMatch(
-  workflow,
-  /download-artifact@[\s\S]*?(?:latest|workflow_conclusion|branch:)/,
-  'Promotion must never discover a moving latest artifact',
-)
+const downloadBlock =
+  workflow.match(/- name:\s*Download exact Site Build artifact[\s\S]*?(?=\n\s*- name:)/)?.[0] ?? ''
+assert.ok(downloadBlock, 'Exact Site Build artifact download step must exist')
+assert.match(downloadBlock, /name:\s*orbis-site/)
+assert.match(downloadBlock, /run-id:\s*\$\{\{\s*github\.event\.workflow_run\.id\s*\}\}/)
+assert.match(downloadBlock, /github-token:\s*\$\{\{\s*secrets\.GITHUB_TOKEN\s*\}\}/)
+assert.doesNotMatch(downloadBlock, /\bbranch\s*:/)
+assert.doesNotMatch(downloadBlock, /workflow[_-]conclusion\s*:/)
 
 assert.match(workflow, /uses:\s*actions\/upload-pages-artifact@v4/)
 assert.match(workflow, /uses:\s*actions\/deploy-pages@v4/)
+assert.doesNotMatch(workflow, /actions\/checkout/)
+assert.doesNotMatch(workflow, /pnpm\s+(?:install|build)/)
 
 const pagesWriteMatches = workflow.match(/pages:\s*write/g) ?? []
 const idTokenWriteMatches = workflow.match(/id-token:\s*write/g) ?? []
@@ -44,6 +48,9 @@ assert.match(deployJob, /pages:\s*write/)
 assert.match(deployJob, /id-token:\s*write/)
 assert.doesNotMatch(deployJob, /actions\/checkout/)
 assert.doesNotMatch(deployJob, /pnpm\s+(?:install|build)/)
+
+assert.match(workflow, /Recheck current main before deploy/)
+assert.match(workflow, /needs\.predeploy-freshness\.outputs\.current == 'true'/)
 
 assert.match(workflow, /Smoke test deployed routes/)
 assert.match(workflow, /'\/latest\/'/)
