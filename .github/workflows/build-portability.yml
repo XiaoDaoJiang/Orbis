@@ -1,0 +1,63 @@
+name: Orbis Build Portability
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orbis-build-portability-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }}, Node ${{ matrix.node }}, standalone=${{ matrix.standalone }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node: '22.13.0'
+            standalone: false
+          - os: windows-latest
+            node: '22'
+            standalone: false
+          - os: windows-latest
+            node: '24'
+            standalone: false
+          - os: windows-latest
+            node: '24'
+            standalone: true
+          - os: macos-latest
+            node: '24'
+            standalone: false
+    defaults:
+      run:
+        working-directory: workspace/Orbis build 中文
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: workspace/Orbis build 中文
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: workspace/Orbis build 中文/package.json
+          standalone: ${{ matrix.standalone }}
+          run_install: false
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build and verify all contracts and artifacts
+        run: pnpm build
+      - name: Verify fixtures did not modify tracked sources
+        run: git diff --exit-code
