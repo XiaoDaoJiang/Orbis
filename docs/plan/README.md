@@ -3,7 +3,7 @@
 > 状态：Active planning
 > 当前实现基线：`main@e639758d993dfdb60791f300c78a6319f1dfe54a`
 > 阶段：Product Capability Phase
-> 当前目标：**Milestone I · Merge-Gated Production Promotion → Plan 90A In Progress**
+> 当前目标：**Milestone I · Merge-Gated Production Promotion → Plan 90A Review Gate**
 
 `docs/plan/` 保存 Orbis 稳态架构之上的产品能力 Roadmap 与实施状态。详细 Design、TDD、PR、Artifact 与 Production 证据保留在对应文档中；本 README 只维护当前入口与统一 Gate。
 
@@ -43,13 +43,27 @@ Production latest           /2026/09/09/
 
 Post-H Roadmap Refresh：**Done / Selected**  
 Design：**Approved**  
-Plan 90：**In Progress**  
-90A implementation branch：`feat/merge-gated-production-promotion`
+Plan 90：**Review Gate**  
+90A PR：**#39**  
+Final 90A head：`e47ba81663dc56be166657390a1c90ebcda83a6c`
 
 Decision record：[`2026-09-09 · Product Capability Roadmap Refresh`](./2026-09-09-product-capability-roadmap-refresh.md)  
 Approved design：[`Milestone I · Merge-Gated Production Promotion`](../superpowers/specs/2026-09-09-merge-gated-production-design.md)  
 Plan：[`90 · Merge-Gated Production Promotion`](./90-merge-gated-production-promotion.md)  
 Implementation：[`Plan 90A implementation`](../superpowers/plans/2026-09-09-merge-gated-production-promotion.md)
+
+### 90A validation
+
+```text
+RED PR Build                 34301462494 failure · expected missing eligibility capability
+Final PR Build               34301641815 success
+Preview Artifact             10085185214
+Preview Artifact SHA-256     35682907ce8f0ee6cf834840f646704763c875ef29ae7af49c347d2cc5356010
+Trusted Preview Publish      34301843125 success
+Preview                      https://raw.githack.com/XiaoDaoJiang/Orbis/preview-pr-39/index.html
+```
+
+Exactly five implementation paths are changed; no content, Registry, Astro/Slidev, existing manual Production workflow, or Scheduled authority changes exist.
 
 Target normal flow:
 
@@ -75,6 +89,8 @@ trusted workflow_run eligibility
   merge_commit_sha = source SHA
         ↓
 exact artifact promotion
+        ↓
+pre-deploy current-main recheck
         ↓
 GitHub Pages deploy
         ↓
@@ -122,13 +138,11 @@ Milestone I selected
       ↓
 Design Approved
       ↓
-Plan 90A RED contracts             ← current
+90A RED / GREEN                    Done
       ↓
-GREEN promotion implementation
+PR Build + Trusted Preview         Done
       ↓
-PR Build + Trusted Preview
-      ↓
-Human Review
+Human Review                       ← current
       ↓
 Human merge
       ↓
@@ -138,6 +152,8 @@ real Daily no-second-click proof
       ↓
 Milestone I Done
 ```
+
+**PR #39 合并后的第一条证明中不要手动触发 `Orbis Pages Production`。** 需要让新 `Orbis Pages Promote` 自己消费 fresh main Site Build artifact，才能证明第二次人工点击真正被移除。
 
 ## Deferred candidates
 
