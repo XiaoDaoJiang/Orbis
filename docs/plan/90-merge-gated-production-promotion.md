@@ -1,10 +1,12 @@
 # 90 · Merge-Gated Production Promotion
 
-> 状态：In Progress
+> 状态：Review Gate
 > Roadmap Milestone：I — Merge-Gated Production Promotion
 > Design：[`2026-09-09-merge-gated-production-design.md`](../superpowers/specs/2026-09-09-merge-gated-production-design.md) · Approved
 > Implementation base：`main@e639758d993dfdb60791f300c78a6319f1dfe54a`
 > Implementation branch：`feat/merge-gated-production-promotion`
+> PR：#39
+> Final 90A head：`e47ba81663dc56be166657390a1c90ebcda83a6c`
 
 ## 1. 目标
 
@@ -41,46 +43,98 @@ Milestone I 不授权：
 
 正常 Production authority 仍来自 Human PR merge。
 
-## 3. 90A — Promotion Contract · In Progress
+## 3. 90A — Promotion Contract · Review Gate
 
-实现内容：
+PR #39 已实现：
 
 - pure promotion eligibility policy；
 - workflow contract tests；
-- `.github/workflows/pages-promote.yml`；
-- trusted `workflow_run` from `Orbis Site Build`；
-- exact `workflow_run.id` artifact download；
+- trusted `.github/workflows/pages-promote.yml`；
+- `workflow_run` from `Orbis Site Build` only；
+- exact `workflow_run.id` + `orbis-site` artifact download；
 - current-main SHA equality gate；
 - exactly-one merged PR → main provenance gate；
+- source `merge_commit_sha == source SHA`；
 - stale-main successful no-deploy；
+- packaging 后、deploy 前再次检查 current main；
 - deploy-job-only Pages/OIDC；
-- existing public smoke contract；
-- manual `Orbis Pages Production` retained as break-glass。
+- no checkout / no rebuild in promotion workflow；
+- existing dynamic public smoke contract；
+- manual `Orbis Pages Production` retained unchanged as break-glass。
+
+### RED evidence
+
+```text
+Run       34301462494
+Head      1bf4e8fbf9e16d4af5fa33cabc7b00a9cedfa307
+Result    failure
+Failure   ERR_MODULE_NOT_FOUND · tools/pages-promotion/eligibility.ts
+```
+
+Frozen install、Path Guard 与全部既有 Scheduled Daily / correction contracts 先通过，新 focused suite 才因尚未存在的 eligibility implementation 失败，因此这是有效 RED。
+
+### Final GREEN evidence
+
+```text
+PR                        #39
+Base                      main@e639758d993dfdb60791f300c78a6319f1dfe54a
+Head                      e47ba81663dc56be166657390a1c90ebcda83a6c
+PR Build                  34301641815 success
+Preview Artifact          10085185214
+Artifact SHA-256          35682907ce8f0ee6cf834840f646704763c875ef29ae7af49c347d2cc5356010
+Trusted Preview Publish   34301843125 success
+Preview                   https://raw.githack.com/XiaoDaoJiang/Orbis/preview-pr-39/index.html
+```
+
+Focused GREEN contracts：
+
+```text
+Merge-gated Production eligibility policy contract passed
+Merge-gated Production promotion workflow contract passed
+```
+
+Trusted publisher 从 exact source run `34301641815` 下载 artifact `10085185214`，验证相同 SHA-256 后发布 `preview-pr-39`，并在评论 Preview URL 前完成公网 RSS / favicon availability smoke。
 
 ### 90A acceptance
 
-- [ ] RED contract observed in read-only PR Build before implementation exists；
-- [ ] eligibility policy tests green；
-- [ ] workflow contract tests green；
-- [ ] full `pnpm build` green；
-- [ ] Trusted Preview green；
-- [ ] Human Review Gate reached；
-- [ ] no Production deployment from implementation PR。
+- [x] RED contract observed before implementation exists；
+- [x] eligibility policy tests green；
+- [x] workflow contract tests green；
+- [x] full `pnpm build` green；
+- [x] Trusted Preview green；
+- [x] Human Review Gate reached；
+- [x] no Production deployment from implementation PR；
+- [ ] Human merge。
 
-## 4. 90B — Real-cycle Closeout · Blocked by 90A Human merge
+## 4. Changed-file scope
 
-90A merge 后验证：
+Exactly five files：
 
-- fresh main Site Build automatically triggers `Orbis Pages Promote`；
-- source run SHA == deployed Pages source SHA；
-- source artifact is the exact `orbis-site` artifact from the triggering run；
-- no manual `Orbis Pages Production` dispatch is needed；
+```text
+.github/workflows/pages-promote.yml
+package.json
+tools/pages-promotion/eligibility.ts
+tools/pages-promotion/eligibility.test.ts
+tools/pages-promotion/workflow-contract.test.ts
+```
+
+No `content/**`、Registry、Astro、Slidev、generated output、Scheduled producer 或 existing manual Production workflow changes。
+
+## 5. 90B — Real-cycle Closeout · Blocked by 90A Human merge
+
+PR #39 Human merge 后，**不要手动 dispatch `Orbis Pages Production`**，以保留真实 automatic-promotion proof。
+
+必须验证：
+
+- fresh main Site Build 自动触发 `Orbis Pages Promote`；
+- source run SHA == current main == deployed Pages source SHA；
+- promoted artifact 正是 triggering Site Build 的 `orbis-site`；
 - public smoke passes；
-- one later real Scheduled Daily Human merge repeats the same flow；
-- stale/failure cases remain no-deploy；
-- then Milestone I Done。
+- no manual Production click is needed；
+- 一个之后的真实 Scheduled Daily Human merge 再次重复同一路径；
+- 然后才能 Milestone I Done。
 
-## 5. Failure semantics
+## 6. Failure semantics
 
 ```text
 failed source Build                 deny
@@ -89,30 +143,27 @@ non-main source                     deny
 stale source SHA                    stale-main / successful no-deploy
 no merged PR provenance             deny
 ambiguous merged PR provenance      deny
+merge SHA mismatch                  deny
 artifact missing                    fail closed
 Pages deployment/smoke failure      fail
 ```
-
-## 6. Manual recovery
-
-`Orbis Pages Production` remains available during the initial rollout as the explicit break-glass path. It is not the normal Daily publication path after Milestone I is proven.
 
 ## 7. Current Gate
 
 ```text
 Design Approved
       ↓
-90A RED contracts                 ← current
+90A RED / GREEN                    Done
       ↓
-GREEN promotion implementation
+PR Build                           Done
       ↓
-PR Build + Trusted Preview
+Trusted Preview                    Done
       ↓
-Human Review
+Human Review                       ← current
       ↓
 Human merge
       ↓
-90B automatic promotion proof
+90B automatic exact-SHA promotion proof
       ↓
 real Daily no-second-click proof
       ↓
