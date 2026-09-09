@@ -1,0 +1,240 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: 2026-09-09
+status: published
+title: Agent 开始进入闭环执行，控制与证据必须前移
+summary: 从量子实验的自动测量闭环，到数学结果的形式化证明，再到 Coding Agent 的 Memory、用户验证和无人值守运维，Agent 正把更多现实副作用纳入执行链；下一阶段的核心不是单纯扩大自治，而是让每一步都有可检查的状态、证据和人工接管边界。
+topics:
+  - agent-harness
+  - coding-agent
+  - verification
+  - agent-runtime
+signals:
+  - title: 物理实验正在成为 Agent 的可操作环境
+    summary: GPT-5.6 Sol 已被连接到量子实验室软件，能够运行测量、分析结果并决定下一步，Agent 的执行边界开始从代码扩展到真实设备。
+    impact: high
+  - title: 科学产出正在要求机器可检查的证据层
+    summary: OpenAI 在 Navier–Stokes 结果中同时发布自然语言写作与 Lean 形式化证明，说明高价值推理结果需要把结论和可验证工件一起交付。
+    impact: high
+  - title: Memory 与身份确认正在进入 Runtime API
+    summary: Codex alpha.8 把 Memory readiness、版本选择和用户验证暴露为显式协议，长期 Agent 的上下文与高风险操作开始拥有独立控制面。
+    impact: high
+  - title: 无人值守 Agent 的正确结果也可以是 No-op
+    summary: GitHub Agentic Workflows 的版本检查 Agent 只在真实变化时开 PR，并把安静退出、缓存优先、并行读取与失败监控都当成运行契约的一部分。
+    impact: high
+sections:
+  - id: physical-closed-loop
+    layout: architecture
+    title: Agent 已经可以闭环操作真实量子实验
+    conclusion: 当 Agent 能直接驱动实验软件并根据测量结果调整下一步时，工具调用不再只是数字副作用，物理系统的安全包络、停止条件和人工接管必须进入 Harness 设计。
+    facts:
+      - id: quantum-lab-software-loop
+        text: GPT-5.6 Sol 通过 Codex 连接到 MIT EQuS 的实验室软件后，可以运行量子芯片测量、分析结果，并决定下一步尝试什么。
+        evidence:
+          - openai-quantum-lab
+      - id: six-qubit-autonomous-calibration
+        text: 在一块未校准的六量子比特芯片上，研究者提供 measurement-specific skills 后，GPT-5.6 Sol 会选择测量参数、操作硬件、分析数据，并决定继续细化还是保存结果供下一项测量使用。
+        evidence:
+          - openai-quantum-lab
+      - id: clear-signal-low-intervention
+        text: 当实验信号清晰时，Codex 能以很少的研究人员干预完成标准测量序列，包括识别跃迁频率、校准控制与读出脉冲，以及测定量子信息保持时间。
+        evidence:
+          - openai-quantum-lab
+      - id: noisy-signal-human-guidance
+        text: 当信号较弱或噪声较大时，Agent 寻找合适测量参数需要更长时间，并且有时需要有经验的研究人员指导。
+        evidence:
+          - openai-quantum-lab
+    limitations:
+      - 这是特定量子实验室和标准芯片表征流程的案例，不能直接外推到任意物理实验系统。
+      - 弱信号与异常物理行为仍需要专家判断，闭环执行能力不等于对实验含义的可靠自主解释。
+  - id: formal-evidence-layer
+    layout: comparison
+    title: 研究结论开始与形式化证据一起交付
+    conclusion: 当模型进入开放科学问题，最有价值的输出不再只是一个有说服力的答案，而是能够被专家和机器工具独立检查的证据工件。
+    facts:
+      - id: navier-stokes-proposal-announced
+        text: OpenAI 在 2026-09-08 宣布分享一个由 AI 生成的 Navier–Stokes Millennium Prize Problem 解法提案。
+        evidence:
+          - openai-navier-stokes
+      - id: writeup-and-lean-proof
+        text: OpenAI 对该结果的官方说明明确表示同时提供一份 writeup 和一份 Lean 形式化证明。
+        evidence:
+          - openai-navier-stokes
+    limitations:
+      - 官方用词是“proposes a solution”，不能把发布行为本身等同于数学界已经独立确认该千禧年难题被解决。
+      - Lean 工件提高了可检查性，但最终结论仍依赖形式化陈述是否准确表达目标命题，以及外部专家对整体论证的复核。
+  - id: memory-runtime-contract
+    layout: system-map
+    title: Memory 正从隐式上下文变成可查询的 Runtime 状态
+    conclusion: 长期 Agent 的 Memory 不应只是后台魔法；版本、就绪条件和实际注入边界需要成为客户端可理解、可测试的运行时契约。
+    facts:
+      - id: memory-status-protocol
+        text: Codex rust-v0.154.0-alpha.8 新增 MemoryStatusParams 与 MemoryStatusResponse，客户端可以指定最少 consolidated thread 数量，并读取 v2_consolidated_threads 与 v2_ready。
+        evidence:
+          - codex-alpha8-release
+          - codex-memory-protocol
+      - id: memory-readiness-validation
+        text: Codex 的 memory_status 实现默认要求 20 个 consolidated threads，并同时校验 memories_v2 中的 memory_summary.md 是否满足 V2 summary 格式后才将 v2_ready 设为 true。
+        evidence:
+          - codex-memory-status
+      - id: memory-version-isolation-test
+        text: Codex alpha.8 的 app-server 测试显式验证 memories.version 选择 v1 或 v2 时，模型请求只包含对应版本的 Memory context，并排除另一版本的 marker。
+        evidence:
+          - codex-memory-read-test
+    limitations:
+      - alpha.8 是 prerelease，这些接口和默认阈值仍可能变化。
+      - readiness 只说明 Memory 构建状态满足实现约束，不代表 Memory 内容本身正确、最新或适合当前任务。
+  - id: verification-and-update-boundary
+    layout: architecture
+    title: 高风险操作正在获得独立的验证与更新边界
+    conclusion: Agent Runtime 越接近长期驻留服务，身份确认、取消语义、安装更新和进程重启就越不能依赖 Prompt 约定，而需要独立协议和明确的失败状态。
+    facts:
+      - id: user-verification-api
+        text: Codex alpha.8 的实验性 User Verification 协议为 trusted UI clients 定义 status、enroll、delete、verify 与 cancel 等 RPC，并将 credential、biometrics 和 provider 不可用等原因结构化为封闭错误类别。
+        evidence:
+          - codex-user-verification
+      - id: exact-challenge-signature
+        text: UserVerificationProof 对精确解码后的 challenge 进行签名，协议指定 P-256 与 SHA-256 的 ECDSA 签名，并将 credential_id 与 signature 作为证明返回。
+        evidence:
+          - codex-user-verification
+      - id: cancellation-does-not-rollback
+        text: User Verification 的 cancel RPC 只确认取消信号，协议明确指出 native work 可能仍在结束，未知或已完成请求为 no-op，已完成的效果不会被回滚。
+        evidence:
+          - codex-user-verification
+      - id: managed-manual-update-contract
+        text: Codex app-server daemon 的 manual update 路径会向 updater 转发请求并报告安装与重启结果；当安装不由 CLI-managed daemon 与 stable standalone release 管理时会返回 Unsupported，而成功更新会区分 Restarted、AlreadyCurrent 与 NotRunning 等结果。
+        evidence:
+          - codex-manual-update
+    limitations:
+      - User Verification 仍明确标记为 experimental，不应把当前协议形态视为稳定公共标准。
+      - Runtime 能暴露精确状态并不能消除更新中断风险；源码明确提示重启可能中断 active 或 queued work。
+  - id: quiet-autonomous-operations
+    layout: timeline
+    title: 无人值守 Agent 的成熟标志之一是知道什么时候什么都不做
+    conclusion: Scheduled Agent 进入生产后，成功标准应包含安全 No-op、廉价预检、并行读取、受控写入和可观察失败，而不是每次运行都制造一个产物。
+    facts:
+      - id: cli-version-checker-scope
+        text: GitHub Agentic Workflows 的 CLI Version Checker 每天检查 8 个工具以及一组 Docker image 的版本或 digest，只有检测到真实变化时才打开 Pull Request。
+        evidence:
+          - github-aw-cli-version-checker
+      - id: september-eight-clean-noop
+        text: 2026-09-08 的 Run #552 用 7.6 分钟检查全部目标，经 npm view 与 GitHub Releases API 确认没有新版本后干净退出，没有创建无意义更新。
+        evidence:
+          - github-aw-cli-version-checker
+      - id: cache-and-parallel-discipline
+        text: 该 workflow 被要求在网络调用前先检查本地 cache，包元数据优先使用 npm view，并并行获取多个工具版本而不是串行执行。
+        evidence:
+          - github-aw-cli-version-checker
+      - id: failed-runs-remain-observable
+        text: 官方回顾的最近五次 scheduled runs 中，9 月 4 日和 5 日有两次直接失败，GitHub 将此作为即使 read-mostly Agent 也需要监控的例子。
+        evidence:
+          - github-aw-cli-version-checker
+    limitations:
+      - 版本检查属于边界清晰、写入低频的自动化，不能直接代表复杂代码修改或业务事务 Agent 的可靠性。
+      - No-op 只有在检查覆盖完整且失败可观察时才有意义，否则安静退出也可能掩盖漏检。
+projects:
+  - action: TEST
+    name: openai/codex
+    summary: 验证 Memory readiness、版本隔离、User Verification 与 managed update 是否能成为长期本地 Agent 的显式控制面。
+    maturity: growing
+    url: https://github.com/openai/codex
+  - action: TEST
+    name: github/gh-aw
+    summary: 复刻 CLI Version Checker 的 cache-first、parallel-read、safe no-op 与 change-only PR 模式，验证 scheduled Agent 的运行纪律。
+    maturity: early
+    url: https://github.com/github/gh-aw
+radar:
+  - label: Physical closed-loop agents
+    impact: 97
+    horizon: 18
+    note: Agent 一旦能影响真实设备，停止条件、操作范围和人工接管就成为上线前基础能力。
+  - label: Formal evidence artifacts
+    impact: 94
+    horizon: 24
+    note: 科学与高风险推理输出越复杂，机器可检查证明与 provenance 越有价值。
+  - label: Memory readiness contract
+    impact: 91
+    horizon: 16
+    note: 长期 Agent 使用持久 Memory 后，需要明确版本、就绪状态和注入边界。
+  - label: User verification boundary
+    impact: 93
+    horizon: 20
+    note: 高风险操作需要把身份确认从模型判断中剥离成独立可取消协议。
+  - label: Safe no-op automation
+    impact: 88
+    horizon: 10
+    note: 高频 scheduled Agent 必须把无变化时不写入作为正常且可审计的结果。
+actions:
+  - title: 为物理或高副作用 Tool 定义闭环安全包络
+    description: 对每个可影响真实系统的动作声明允许参数、停止条件、超时、回滚或人工接管点，并把这些限制放到 Harness 而不是 Prompt。
+  - title: 让高价值结论同时产出可验证工件
+    description: 对研究、迁移和架构决策保留结构化 evidence、测试、形式化检查或可重放实验，让 Reviewer 能独立验证关键结论。
+  - title: 把 Memory 与身份确认做成 Runtime API
+    description: 显式暴露 Memory version、readiness 与 reset 状态，并把高风险操作的用户验证、取消与失败原因放到独立协议层。
+  - title: 把 No-op 纳入 Scheduled Agent 成功合同
+    description: 先做缓存与廉价预检，只在真实变化时写入；同时记录失败、被防火墙阻断和检查覆盖，避免为了产出而制造噪声。
+references:
+  - id: openai-quantum-lab
+    title: How GPT-5.6 Sol helps run quantum computing experiments
+    url: https://openai.com/index/codex-quantum-computing-experiments/
+    supports: GPT-5.6 Sol 连接量子实验软件后的测量闭环、六量子比特校准流程、清晰与噪声信号下的人机分工。
+    accessedAt: 2026-09-09
+  - id: openai-navier-stokes
+    title: An OpenAI model proposes a solution to the Navier-Stokes problem
+    url: https://openai.com/research/index/
+    supports: 2026-09-08 的 Navier-Stokes 解法提案公告，以及同时提供 writeup 与 Lean 形式化证明。
+    accessedAt: 2026-09-09
+  - id: codex-alpha8-release
+    title: OpenAI Codex rust-v0.154.0-alpha.8
+    url: https://github.com/openai/codex/releases/tag/rust-v0.154.0-alpha.8
+    source: github
+    supports: alpha.8 prerelease 的发布日期与该 tagged source 的版本身份。
+    accessedAt: 2026-09-09
+  - id: codex-memory-protocol
+    title: Codex alpha.8 memory v2 protocol
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server-protocol/src/protocol/v2/memory.rs
+    source: github
+    supports: MemoryStatusParams、最少 consolidated thread 参数以及 v2_consolidated_threads 和 v2_ready 响应字段。
+    accessedAt: 2026-09-09
+  - id: codex-memory-status
+    title: Codex alpha.8 memory status processor
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server/src/request_processors/memory_status.rs
+    source: github
+    supports: Memory V2 readiness 的默认阈值、SQLite progress 与 memory_summary 格式联合校验。
+    accessedAt: 2026-09-09
+  - id: codex-memory-read-test
+    title: Codex alpha.8 memory version isolation test
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server/tests/suite/v2/memory_read.rs
+    source: github
+    supports: v1 与 v2 Memory context 根据配置选择且互相排除的 app-server 测试行为。
+    accessedAt: 2026-09-09
+  - id: codex-user-verification
+    title: Codex alpha.8 experimental user verification protocol
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server-protocol/src/protocol/v2/user_verification.rs
+    source: github
+    supports: User Verification status、enroll、verify、cancel、签名格式与封闭错误分类。
+    accessedAt: 2026-09-09
+  - id: codex-manual-update
+    title: Codex alpha.8 app-server daemon manual update
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server-daemon/src/manual_update.rs
+    source: github
+    supports: manual update 的 updater handoff、managed-install 限制、更新结果和 daemon restart 语义。
+    accessedAt: 2026-09-09
+  - id: github-aw-cli-version-checker
+    title: Agent of the Day - September 8, 2026
+    url: https://github.com/github/gh-aw/blob/main/docs/src/content/docs/blog/2026-09-08-agent-of-the-day.md
+    source: github
+    supports: CLI Version Checker 的 daily scope、change-only PR、clean no-op、cache-first、parallel fetch 与失败监控模式。
+    accessedAt: 2026-09-09
+archivePicks:
+  - title: Agent 的瓶颈正在从模型能力转向 Harness 吞吐与运行契约
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-08.yaml
+    source: github
+    supports: 本期继续向 Memory、验证、物理执行和无人值守运行边界推进的前置判断。
+    accessedAt: 2026-09-09
+    publishedAt: 2026-09-08
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
