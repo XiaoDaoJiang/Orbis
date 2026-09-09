@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { runPnpm } from '../shared/process.ts'
 import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '../..')
-const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 const slug = 'zz-orbis-archived-registry-ui-check'
 const sourceId = 'zz-orbis-archived-ui-source'
 const authorId = 'zz-orbis-archived-ui-author'
@@ -60,26 +59,11 @@ async function assertMissing(path: string) {
 }
 
 async function runBuildWeb(expectSuccess: boolean): Promise<string> {
-  return await new Promise((resolvePromise, reject) => {
-    const child = spawn(pnpm, ['build:web'], {
-      cwd: root,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: process.env,
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk) => { output += chunk.toString() })
-    child.stderr?.on('data', (chunk) => { output += chunk.toString() })
-    child.once('error', reject)
-    child.once('exit', (code) => {
-      if (expectSuccess && code !== 0) {
-        reject(new Error(`Expected build:web success, received ${code}\n${output}`))
-      } else if (!expectSuccess && code === 0) {
-        reject(new Error(`Expected build:web failure\n${output}`))
-      } else {
-        resolvePromise(output)
-      }
-    })
-  })
+  return (await runPnpm(['build:web'], {
+    cwd: root,
+    capture: true,
+    expectedExit: expectSuccess ? 'zero' : 'nonzero',
+  })).output
 }
 
 for (const path of [sourcePath, authorPath, essayPath]) await assertMissing(path)
