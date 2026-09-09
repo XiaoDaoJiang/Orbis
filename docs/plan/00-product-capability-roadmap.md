@@ -1,38 +1,33 @@
 # 00 · Orbis Product Capability Roadmap
 
 > 状态：Active
-> 当前实现基线：`main@fee254c81e899bc77c4671eda472071c390621a9`
-> 当前阶段：**Milestone H — Evidence Integrity · Done**
-> 当前 Gate：**Post-H Product Capability Roadmap Refresh**
+> 当前实现基线：`main@e639758d993dfdb60791f300c78a6319f1dfe54a`
+> 已完成阶段：**Milestone H — Evidence Integrity · Done**
+> 当前阶段：**Milestone I — Merge-Gated Production Promotion · Design Review**
 
-## 1. 当前阶段判断
+## 1. 当前产品判断
 
-Orbis 已完成从基础发布架构到受控自动化、Evidence Integrity 与 published correction provenance 的完整稳态闭环。
+Orbis 已完成从结构化静态发布、Presentation、Discovery、Registry、SEO、Knowledge Lifecycle、Scheduled Daily 到 Evidence Integrity 的完整稳态能力。
 
-已完成能力包括：
+当前真实使用暴露的最高优先级缺口已经从“内容可信度”转移到“发布操作重复审批”：
 
-- Astro + Slidev pnpm Monorepo Foundation；
-- Structured Content + Zod Schema；
-- Daily / Weekly / standalone Presentation；
-- Archive / Slides / cadence / Homepage discovery；
-- stable Daily date / latest / archive.json；
-- Path Guard + CODEOWNERS + agent governance；
-- read-only PR Build → Trusted Preview → Public Smoke；
-- governed GitHub Pages Production；
-- Source / Author Registry + Referential Integrity；
-- canonical / OG / Twitter / Sitemap / RSS / JSON-LD；
-- Knowledge lifecycle contract + UI；
-- least-privilege Scheduled Daily automation；
-- deterministic same-day rerun / published no-write；
-- explicit published correction workflow；
-- Evidence V1 Daily claim → evidence integrity；
-- reader-visible correction provenance；
-- append-only published Daily correction guard；
-- exact-main Production closeout for Milestone H。
+```text
+PR Build + Trusted Preview
+        ↓
+Human merge
+        ↓
+fresh main Site Build
+        ↓
+manual Production dispatch   ← repeated post-merge friction
+```
 
-Orbis 当前产品定义保持：
+PR #37（2026-09-08）与 PR #38（2026-09-09）连续证明：Human merge 已经是实际的内容发布批准点，但当前仍需要在 green exact-main Build 后再次手工点击 Production。
 
-> 一个面向长期积累的 Git-native、Agent-native 结构化技术知识发布系统。Agent 负责发现、研究和生产受 Schema 约束的内容，Astro、Slidev 与 GitHub Actions 将同一知识源转化为阅读、演示、订阅、聚合与长期归档；所有自动化 authority 通过 repository contracts、PR、Build、Preview 与 Human Review 明确收敛。
+因此 Post-H Roadmap Refresh 选择 **Milestone I — Merge-Gated Production Promotion**。
+
+Decision record：[`2026-09-09 · Product Capability Roadmap Refresh`](./2026-09-09-product-capability-roadmap-refresh.md)。
+
+Design：[`Milestone I · Merge-Gated Production Promotion Design`](../superpowers/specs/2026-09-09-merge-gated-production-design.md) · **Design Review**。
 
 ## 2. 已完成 Milestones
 
@@ -57,228 +52,190 @@ Plan 60，PR #23 / #24。
 ### Milestone G — Sustainable Automation · Done
 Plan 70。
 
-主要真实链路：
-
-```text
-Repository Contract
-    ↓
-ChatGPT Scheduled Daily Adapter
-    ↓
-3 consecutive stable cycles
-    ↓
-same-day rerun / idempotency
-    ↓
-published already-published / zero write
-    ↓
-explicit published correction
-    ↓
-Human merge
-    ↓
-fresh corrected main Build
-```
-
-最终 G 基线：
-
-```text
-main                         b3e793d0c5c7d55358933d4d25c4d77dafd8cd03
-fresh Site Build             34090549723 success
-Artifact                     10006713925
-Artifact SHA-256             8c56125aea23914874a908550d98675f9d8218c820a7545ead9d2d13929b10af
-```
-
 ### Milestone H — Evidence Integrity · Done
 Plan 80，PR #34 / #35 / #36。
 
-真实触发证据来自 published correction PR #33：现有 Source / Reference 存在，但具体 claim 与 evidence 没有机器可检查的精确 edge，correction 也只存在于 Git/PR 历史。
-
-Milestone H 完成：
+Milestone H final production baseline：
 
 ```text
-80A Evidence Contract
-    ↓
-Evidence V1 Daily Schema
-stable fact identity
-claim → canonical reference edge
-frozen legacy migration boundary
-Scheduled Daily Evidence V1 enforcement
-    ↓
-80B Real Correction Provenance
-2026-09-07 full re-verification
-16 claims / 6 references / 1 correction
-reader-visible evidence + correction UI
-11-slide contract preserved
-    ↓
-80C Published Correction Guard
-append-only correction history
-factual mutation → correction provenance
-legacy correction fail closed
-branch-specific authority routing
-    ↓
-final main Build
-    ↓
-exact-main Production Pages
-    ↓
+main                         fee254c81e899bc77c4671eda472071c390621a9
+fresh Site Build             34179976055 success
+Production                   34191412383 success
+```
+
+Milestone H 完成 Evidence V1 claim → evidence relation、reader-visible correction provenance 与 append-only published correction guard。
+
+## 3. Post-H real evidence
+
+### 2026-09-08 · PR #37
+
+```text
+merge commit                 0eeb0648c889c8184e8a4dc90282a9f0c51f92fd
+fresh main Site Build        34208091062 success
+```
+
+该 artifact 已包含 2026-09-08 Daily，但 merge + green Build 并不会自动推进 Production；线上仍需要另一次人工 Production action。
+
+### 2026-09-09 · PR #38
+
+```text
+merge commit                 e639758d993dfdb60791f300c78a6319f1dfe54a
+fresh main Site Build        34298769971 success
+manual Production run        34299051576 success
+Production latest            /2026/09/09/
+```
+
+这是第二个连续 Daily 周期，需要在 Human merge 之后再次进行 Production approval。
+
+结论：这是新的、重复、可测量的真实操作摩擦，证据强度高于当前 Search / Weekly Automation / Directory 候选。
+
+## 4. Milestone I — Merge-Gated Production Promotion
+
+目标：
+
+> **Human merge 成为正常发布流程的唯一人工 Production approval。**
+
+只有在 Human merge 之后产生的 exact-main Site Build 成功时，trusted promotion 才可以自动部署该 exact artifact。
+
+目标链路：
+
+```text
+Scheduled / Human contribution
+        ↓
+read-only PR Build
+        ↓
+Trusted Preview
+        ↓
+Human merge                         ← sole normal human approval
+        ↓
+Orbis Site Build · push/main
+contents: read
+        ↓
+exact `orbis-site` artifact
+        ↓
+trusted workflow_run promotion
+        ↓
+prove all:
+  build conclusion = success
+  source event = push
+  source branch = main
+  source SHA = current main SHA
+  source SHA associated with merged PR → main
+        ↓
+download exact source-run artifact
+        ↓
+Pages artifact + deploy
+        ↓
 public smoke
 ```
 
-最终 H 生产证据：
+## 5. Milestone I authority boundary
+
+Milestone I 不是“Agent 自动发布”。
+
+Scheduled Daily 仍然：
 
 ```text
-final main                    fee254c81e899bc77c4671eda472071c390621a9
-fresh main Site Build         34179976055 success
-main Artifact                 10038587455
-main Artifact SHA-256         bb1ce4aaddbafa7d7423d9b1b182f6843760f6cb0dfd630ac70615462f0e01f5
-Production run                34191412383 success
-Production head_sha           fee254c81e899bc77c4671eda472071c390621a9
-Pages Artifact                10042373095
-Pages Artifact SHA-256        e0bed6d0c91b1fe095d42a807a73f1a8967a9d127c3babdcddc534d7412b45c9
-Production URL                https://xiaodaojiang.github.io/Orbis/
-```
-
-Production workflow 内置 smoke 通过 `/`、`/latest/`、`/archive.json`、`/rss.xml`、`/favicon.svg`、`/2026/09/07/`。
-
-Exact deployed artifact 进一步证明：
-
-- 2026-09-07 Reading correction notice 存在；
-- stable claim/ref anchors 存在；
-- claim → evidence 与 correction → claim 链接存在；
-- exactly 16 claim markers / 1 correction event；
-- stable date alias 继续指向 11-page Slides；
-- Reading canonical 保持 `/briefs/2026-09-07/`；
-- archive latest = 2026-09-07；
-- RSS / sitemap healthy。
-
-完整记录：[`2026-09-08 · Milestone H Evidence Integrity Closeout`](./2026-09-08-milestone-h-evidence-integrity-closeout.md)。
-
-## 3. 当前稳态架构
-
-```text
-RSS / Web / Primary Sources
-             ↓
-       Research Agent
-             ↓
-        content/**
-             ↓
- @orbis/content-schema
-             ↓
- Referential Integrity
-             ↓
- Evidence Integrity (Daily)
-             ↓
- Astro Web + Presentation Platform
-             ↓
- Canonical / SEO / RSS / JSON-LD
-             ↓
- Knowledge Lifecycle
-             ↓
-           dist/site
-             ↓
- PR Preview / governed GitHub Pages
-```
-
-Published corrections use a separate repository authority path:
-
-```text
-correction/daily/YYYY-MM-DD/<slug>
-        ↓
-exact one published Evidence V1 Daily
-        ↓
-append-only correction provenance
-        ↓
-Generic Path Guard + correction guard
-        ↓
-Build + Trusted Preview + Human merge
-```
-
-Scheduled Daily remains isolated and never enters correction mode automatically.
-
-## 4. Capability status
-
-| 能力 | 当前状态 | 当前说明 |
-|---|---|---|
-| Monorepo / Build Foundation | Done | Astro + Slidev + pnpm Workspace |
-| Structured Content | Done | Brief / Essay / Knowledge / Topic / Presentation / Source / Author |
-| Daily Brief | Done / Mature | Reading / 11 Slides / RSS / Date / Latest / Archive |
-| Weekly Brief | Done / First Release | Weekly Schema / Reading / Slides / RSS / Archive / Topic |
-| Presentation Platform | Done | Descriptor / Template Registry / mixed build |
-| Archive / Discovery | Done | Homepage / Archive / Slides / cadence / Related |
-| Source / Author Identity | Done | canonical IDs / Registry / Referential Integrity |
-| SEO / Structured Data | Done | canonical / OG / Twitter / Sitemap / RSS / JSON-LD |
-| Knowledge Lifecycle | Done | evaluator / supersession / review report / UI |
-| Scheduled Automation | Done | least privilege / deterministic identity / stable cycles / no-write / explicit correction |
-| Claim → Evidence Integrity | Done | Evidence V1 / validator / report / Scheduled enforcement |
-| Correction Provenance | Done | real 2026-09-07 migration + Reading UI |
-| Published Correction Guard | Done | append-only repository contract + Production closeout |
-| Static Full-text Search | Candidate / Deferred | 尚未重新评估 post-H 真实检索摩擦 |
-| Weekly Scheduled Automation | Candidate / Deferred | 尚未重新评估 post-H 重复人工负担 |
-| Source / Author Directory | Candidate / Deferred | 尚未重新评估真实浏览需求 |
-
-## 5. Authority model
-
-当前明确隔离：
-
-```text
-feature/*
-    → Generic Path Guard
-
 automation/daily/*
-    → Generic Path Guard + Scheduled Daily guard
-
-correction/daily/*
-    → Generic Path Guard + Published Daily correction guard
+    → exact Daily candidate
+    → PR only
+    → no merge
+    → no Pages/OIDC
 ```
 
-仍不授权：
+Correction workflow 也仍然需要 Human merge。
 
-- direct `main` write；
-- Scheduled Agent auto-merge；
-- automatic Production Pages deployment；
-- automatic Source / Author / Topic Registry mutation；
-- automatic correction generation；
-- automatic historical rewrite；
-- LLM automatic fact judge / truth score。
+新的 Pages authority 只存在于 default-branch trusted promotion workflow 的 deploy job；PR code、Scheduled code 和 ordinary Site Build 都不获得 Production credentials。
 
-## 6. Post-H candidate set
+Human merge provenance 必须可机器检查。普通 direct push 到 main 不能仅因为 Build green 就自动 Production；如果无法证明 SHA 来自 merged PR，则 fail closed 并使用 manual recovery path。
 
-Milestone H 完成后，不按编号惯性直接创建 Plan 90。下一轮首先重新做 Product Capability Roadmap Refresh。
+## 6. Stale build protection
 
-保留候选：
+Milestone I 必须阻止旧 main artifact 在较新 merge 后被部署：
 
-| 候选 | 上一轮状态 | Post-H 需要的新证据 |
+```text
+merge A → Build A
+merge B → main advances → Build B
+Build A finishes later
+```
+
+Promotion 必须比较：
+
+```text
+source workflow_run.head_sha
+==
+current refs/heads/main SHA
+```
+
+不相等时 Build A 只记录 `stale-main`，不得部署。
+
+## 7. Manual recovery
+
+当前 `.github/workflows/pages-production.yml` 在 Milestone I first release 继续保留，定位调整为：
+
+```text
+break-glass / explicit recovery
+```
+
+而不是正常 Daily merge 后的第二个人工批准点。
+
+Manual recovery 继续保持：
+
+- `workflow_dispatch`；
+- main-only deployment；
+- full build + validation；
+- public smoke；
+- Scheduled Agent 不可触发。
+
+## 8. Candidate status after refresh
+
+| 能力 | 状态 | 判断 |
 |---|---|---|
-| Static Full-text Search | Deferred | 用户是否已经真实遇到“知道内容存在但找不到”的检索失败 |
-| Weekly Scheduled Automation | Deferred | Weekly 是否已经形成稳定、重复、可自动化的人工作业负担 |
-| Source / Author Directory | Deferred | Source/Author registry 是否已有足够规模与真实浏览需求 |
-| Legacy Evidence migration | Migration debt | 旧 Daily 是否因为 correction / reuse / discovery 需要逐份重新核验 |
-| Evidence V2 for synthesis fields | Deferred | `signals/conclusion` 是否出现独立 claim provenance 的真实需求 |
+| Merge-Gated Production Promotion | **Selected / Design Review** | 连续 #37 / #38 真实摩擦 |
+| Static Full-text Search | Deferred | 尚无更强真实检索失败证据 |
+| Weekly Scheduled Automation | Deferred | 尚无稳定重复人工负担证据 |
+| Source / Author Directory | Deferred | Registry 规模与浏览需求仍不足 |
+| Legacy Evidence migration | Maintenance debt | 按真实 correction/reuse 需求推进 |
+| Automatic Registry mutation | Reject for now | authority 增量过高 |
+| Multi-provider orchestration | Reject for now | 当前无真实需求 |
 
-继续 Reject for now：
+## 9. Milestone I acceptance direction
 
-- automatic Registry mutation；
-- multi-provider orchestration platform；
-- citation graph database；
-- vector / embedding database；
-- visual Slide editor；
-- server-side review runtime。
+最终至少要证明：
 
-## 7. 当前下一步 Gate
+- merged PR → fresh main Build → automatic Production promotion；
+- exact Build artifact 被直接 promotion，不从“最新成功 run”模糊选择；
+- stale successful Build 不会部署；
+- failed / cancelled Build 不会部署；
+- manual Site Build dispatch 不会部署；
+- direct-push / no-merged-PR provenance fail closed；
+- Pages/OIDC 权限只在 trusted deploy job；
+- public smoke 成功；
+- 一个真实 Scheduled Daily merge 不再需要第二次人工 Production 点击；
+- manual recovery path 继续可用。
+
+## 10. 当前 Gate
 
 ```text
 Milestone H · Done
       ↓
-Post-H Product Capability Roadmap Refresh   ← current
+Post-H Roadmap Refresh · Done
       ↓
-inspect real usage after Evidence Integrity
+Milestone I selected
       ↓
-collect concrete friction / repeated manual work
+Merge-Gated Production Design Review      ← current
       ↓
-re-rank candidate capabilities
+Design approval
       ↓
-select next milestone only with evidence
+implementation plan
       ↓
-Design Review
+isolated PR
       ↓
-Plan / isolated PR slices
+implementation merge automatic promotion proof
+      ↓
+real Daily no-second-click proof
+      ↓
+Milestone I Done
 ```
 
-下一阶段先做 roadmap refresh，不直接编码，也不预设下一项一定是 Search 或 Weekly Automation。
+**当前不创建 Plan 90，也不改 main workflow。先完成 Milestone I Design Review。**
