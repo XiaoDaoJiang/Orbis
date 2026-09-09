@@ -54,6 +54,15 @@ try {
   assert.deepEqual(JSON.parse(viaPnpm.stdout), args)
   const native = await runPnpm(['-e', 'process.stdout.write("native transport")'], { ...capture, env: { ...env, npm_execpath: process.execPath } })
   assert.equal(native.stdout, 'native transport')
+  const oldValue = process.env.ORBIS_DELETE_TEST
+  try {
+    process.env.ORBIS_DELETE_TEST = 'parent value'
+    const removed = await runPnpm(['-e', 'process.stdout.write(process.env.ORBIS_DELETE_TEST ?? "absent")'], { ...capture, env: { ...env, npm_execpath: process.execPath, ORBIS_DELETE_TEST: undefined } })
+    assert.equal(removed.stdout, 'absent')
+  } finally {
+    if (oldValue === undefined) delete process.env.ORBIS_DELETE_TEST
+    else process.env.ORBIS_DELETE_TEST = oldValue
+  }
   await assert.rejects(pnpmInvocation({}), /pnpm package script/)
   await assert.rejects(pnpmInvocation({ ...env, npm_config_user_agent: 'npm/10.0.0' }), /pnpm package script/)
   const shim = join(directory, 'pnpm.cmd')
