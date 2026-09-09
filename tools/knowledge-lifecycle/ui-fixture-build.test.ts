@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
 import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-import { spawn } from 'node:child_process'
+import { runPnpm } from '../shared/process.ts'
 
 const root = resolve(import.meta.dirname, '../..')
-const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 const today = '2026-09-02'
 const ids = {
   overdue: 'zz-orbis-lifecycle-overdue',
@@ -46,20 +45,10 @@ async function assertMissing(path: string) {
 }
 
 async function runBuildWeb(): Promise<void> {
-  await new Promise<void>((resolvePromise, reject) => {
-    const child = spawn(pnpm, ['build:web'], {
-      cwd: root,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, KNOWLEDGE_EVALUATION_DATE: today },
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk) => { output += chunk.toString() })
-    child.stderr?.on('data', (chunk) => { output += chunk.toString() })
-    child.once('error', reject)
-    child.once('exit', (code) => {
-      if (code !== 0) reject(new Error(`Expected build:web success, received ${code}\n${output}`))
-      else resolvePromise()
-    })
+  await runPnpm(['build:web'], {
+    cwd: root,
+    capture: true,
+    env: { KNOWLEDGE_EVALUATION_DATE: today },
   })
 }
 
