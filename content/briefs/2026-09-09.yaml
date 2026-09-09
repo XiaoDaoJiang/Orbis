@@ -1,0 +1,252 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: 2026-09-09
+status: published
+title: Agent 进入高副作用闭环，控制平面开始脱离模型
+summary: 从量子实验的自动测量闭环，到万级 Agent 群体推动数学证明，再到 Codex 的 Memory 与用户验证协议、Muse 的隔离 Runtime 与 Sentinel，Agent 正把更多现实副作用纳入执行链；下一阶段的核心不是单纯扩大自治，而是把权限、身份、证据和人工接管前移到模型之外的控制平面。
+topics:
+  - agent-harness
+  - coding-agent
+signals:
+  - title: 物理实验正在成为 Agent 的可操作环境
+    summary: GPT-5.6 Sol 已被连接到量子实验室软件，能够运行测量、分析结果并决定下一步，Agent 的执行边界开始从代码扩展到真实设备。
+    impact: high
+  - title: Agent 并发规模开始跨越万级，验证必须同步扩张
+    summary: OpenAI 的 Navier-Stokes 工作使用约万级并发 Agent，并在结果后追加 Lean 形式化验证，说明大规模推理系统需要把编排与机器可检查证据一起设计。
+    impact: high
+  - title: Memory 与身份确认正在进入 Runtime API
+    summary: Codex alpha.8 把 Memory readiness、版本选择和用户验证暴露为显式协议，长期 Agent 的上下文与高风险操作开始拥有独立控制面。
+    impact: high
+  - title: 安全 Runtime 正把权限与凭据移出 Agent 主进程
+    summary: Meta Muse 用隔离 Runtime、独立 Sentinel、凭据代理和严格 approval capability 管理网络与外部动作，说明高权限 Agent 的安全边界正在系统化。
+    impact: high
+sections:
+  - id: physical-closed-loop
+    layout: architecture
+    title: Agent 已经可以闭环操作真实量子实验
+    conclusion: 当 Agent 能直接驱动实验软件并根据测量结果调整下一步时，工具调用不再只是数字副作用，物理系统的安全包络、停止条件和人工接管必须进入 Harness 设计。
+    facts:
+      - id: quantum-lab-software-loop
+        text: GPT-5.6 Sol 通过 Codex 连接到 MIT EQuS 的实验室软件后，可以运行量子芯片测量、分析结果，并决定下一步尝试什么。
+        evidence:
+          - openai-quantum-lab
+      - id: six-qubit-autonomous-calibration
+        text: 在一块未校准的六量子比特芯片上，研究者提供 measurement-specific skills 后，GPT-5.6 Sol 会选择测量参数、操作硬件、分析数据，并决定继续细化还是保存结果供下一项测量使用。
+        evidence:
+          - openai-quantum-lab
+      - id: clear-signal-low-intervention
+        text: 当实验信号清晰时，Codex 能以很少的研究人员干预完成标准测量序列，包括识别跃迁频率、校准控制与读出脉冲，以及测定量子信息保持时间。
+        evidence:
+          - openai-quantum-lab
+      - id: noisy-signal-human-guidance
+        text: 当信号较弱或噪声较大时，Agent 寻找合适测量参数需要更长时间，并且有时需要有经验的研究人员指导。
+        evidence:
+          - openai-quantum-lab
+    limitations:
+      - 这是特定量子实验室和标准芯片表征流程的案例，不能直接外推到任意物理实验系统。
+      - 弱信号与异常物理行为仍需要专家判断，闭环执行能力不等于对实验含义的可靠自主解释。
+  - id: swarm-verification-scale
+    layout: metrics
+    title: 万级 Agent 群体正在把编排规模与验证成本一起推高
+    conclusion: 当推理系统扩展到成千上万并发 Agent 和数百亿级输出 token 时，真正可复用的能力不只是“多开 Agent”，而是让调度、资源预算、结果汇聚和独立验证形成同一条生产链。
+    facts:
+      - id: ten-thousand-agent-group
+        text: OpenAI 表示产生 Navier-Stokes 结果的协调 Agent 群组规模约为 10,000 个并发 Agent，并使用一个仍在训练、能力显著高于 GPT-6 Astra 的内部模型。
+        evidence:
+          - openai-navier-stokes
+      - id: eighty-eight-plus-seventeen-hours
+        text: 该 Agent 群组在首次启动约 88 小时后得到 Navier-Stokes 结果，随后又使用 GPT-6 Astra 花费约 17 小时完成 Lean 形式化与验证。
+        evidence:
+          - openai-navier-stokes
+      - id: navier-token-message-scale
+        text: OpenAI 报告 Navier-Stokes 工作本身发送约 270 万条 Agent 消息并使用约 1300 亿输出 token；全部尝试的问题合计约 490 万条消息和 3000 亿输出 token。
+        evidence:
+          - openai-navier-stokes
+      - id: lean-certificate-published
+        text: OpenAI 同时公开了自然语言证明与 Lean 4 formalization 仓库，仓库包含 Navier-Stokes 和 Euler 的 Lean certificates，并提供独立 proof checking 的构建入口。
+        evidence:
+          - openai-navier-stokes
+          - openai-navier-lean
+    limitations:
+      - 并发规模、token 使用量与结果均来自 OpenAI 官方自报，不能把资源投入直接等同于普遍可复制的科研效率。
+      - 形式化证明提高了机器可检查性，但外部专家仍需要确认形式化命题、假设和整体数学结论是否准确对应目标问题。
+  - id: memory-runtime-contract
+    layout: system-map
+    title: Memory 正从隐式上下文变成可查询的 Runtime 状态
+    conclusion: 长期 Agent 的 Memory 不应只是后台魔法；版本、就绪条件和实际注入边界需要成为客户端可理解、可测试的运行时契约。
+    facts:
+      - id: memory-status-protocol
+        text: Codex rust-v0.154.0-alpha.8 新增 MemoryStatusParams 与 MemoryStatusResponse，客户端可以指定最少 consolidated thread 数量，并读取 v2_consolidated_threads 与 v2_ready。
+        evidence:
+          - codex-alpha8-release
+          - codex-memory-protocol
+      - id: memory-readiness-validation
+        text: Codex 的 memory_status 实现默认要求 20 个 consolidated threads，并同时校验 memories_v2 中的 memory_summary.md 是否满足 V2 summary 格式后才将 v2_ready 设为 true。
+        evidence:
+          - codex-memory-status
+      - id: memory-version-isolation-test
+        text: Codex alpha.8 的 app-server 测试显式验证 memories.version 选择 v1 或 v2 时，模型请求只包含对应版本的 Memory context，并排除另一版本的 marker。
+        evidence:
+          - codex-memory-read-test
+    limitations:
+      - alpha.8 是 prerelease，这些接口和默认阈值仍可能变化。
+      - readiness 只说明 Memory 构建状态满足实现约束，不代表 Memory 内容本身正确、最新或适合当前任务。
+  - id: verification-and-update-boundary
+    layout: architecture
+    title: 高风险操作正在获得独立的验证与更新边界
+    conclusion: Agent Runtime 越接近长期驻留服务，身份确认、取消语义、安装更新和进程重启就越不能依赖 Prompt 约定，而需要独立协议和明确的失败状态。
+    facts:
+      - id: user-verification-api
+        text: Codex alpha.8 的实验性 User Verification 协议为 trusted UI clients 定义 status、enroll、delete、verify 与 cancel 等 RPC，并将 credential、biometrics 和 provider 不可用等原因结构化为封闭错误类别。
+        evidence:
+          - codex-user-verification
+      - id: exact-challenge-signature
+        text: UserVerificationProof 对精确解码后的 challenge 进行签名，协议指定 P-256 与 SHA-256 的 ECDSA 签名，并将 credential_id 与 signature 作为证明返回。
+        evidence:
+          - codex-user-verification
+      - id: cancellation-does-not-rollback
+        text: User Verification 的 cancel RPC 只确认取消信号，协议明确指出 native work 可能仍在结束，未知或已完成请求为 no-op，已完成的效果不会被回滚。
+        evidence:
+          - codex-user-verification
+      - id: managed-manual-update-contract
+        text: Codex app-server daemon 的 manual update 路径会向 updater 转发请求并报告安装与重启结果；当安装不由 CLI-managed daemon 与 stable standalone release 管理时会返回 Unsupported，而成功更新会区分 Restarted、AlreadyCurrent 与 NotRunning 等结果。
+        evidence:
+          - codex-manual-update
+    limitations:
+      - User Verification 仍明确标记为 experimental，不应把当前协议形态视为稳定公共标准。
+      - Runtime 能暴露精确状态并不能消除更新中断风险；源码明确提示重启可能中断 active 或 queued work。
+  - id: isolated-permission-runtime
+    layout: system-map
+    title: 高权限 Agent 的安全控制正在被拆到独立 Runtime 服务
+    conclusion: 当 Agent 能长期运行、浏览网页并调用用户账户时，最稳健的边界不是让模型“记住别越权”，而是用隔离域、外部权限裁决、凭据代理和严格 capability 把不可接受的副作用挡在模型之外。
+    facts:
+      - id: muse-runtime-cell-isolation
+        text: Meta Muse 的核心 Agent harness 与工作区运行在 systemd-nspawn runtime cell 中，cell 内 root 映射为 host 非特权用户，并限制网络、系统调用和 Linux capabilities。
+        evidence:
+          - meta-muse-security
+      - id: sentinel-sole-permission-authority
+        text: Muse 将 Sentinel 作为 connector actions 与全部 network egress 的唯一 permission authority；Agent 提出动作，但只有 Sentinel 能批准执行。
+        evidence:
+          - meta-muse-security
+      - id: credential-surrogation-boundary
+        text: Muse 的 authd 将真实凭据保存在 runtime cell 外，Agent 只看到 surrogate token；在具体网络请求获批后，Sentinel 才在网络边界把 surrogate 替换为真实凭据。
+        evidence:
+          - meta-muse-security
+      - id: approvals-are-scoped-capabilities
+        text: Muse 的 human-in-the-loop approval 直接在客户端与 Sentinel 之间完成，批准结果是绑定 connector、destination 与 use case 的严格 capability，可按 one-time、session、task、time-bounded 或 perpetual scope 授权。
+        evidence:
+          - meta-muse-security
+    limitations:
+      - Muse 是单一厂商的产品架构，不能视为 Agent Runtime 的行业标准实现。
+      - Meta 明确承认 prompt injection 仍是开放问题；隔离与 Sentinel 的目标是限制失败影响，而不是证明 Agent 不会犯错或被攻击。
+projects:
+  - action: TEST
+    name: openai/codex
+    summary: 验证 Memory readiness、版本隔离、User Verification 与 managed update 是否能成为长期本地 Agent 的显式控制面。
+    maturity: growing
+    url: https://github.com/openai/codex
+  - action: READ
+    name: openai/NavierStokesAndEuler
+    summary: 阅读 Lean 4 certificates、formalization 配置与 independent proof checking 入口，理解大规模 Agent 结果如何转成机器可检查工件。
+    maturity: early
+    url: https://github.com/openai/NavierStokesAndEuler
+radar:
+  - label: Physical closed-loop agents
+    impact: 97
+    horizon: 18
+    note: Agent 一旦能影响真实设备，停止条件、操作范围和人工接管就成为上线前基础能力。
+  - label: Massive agent orchestration
+    impact: 98
+    horizon: 22
+    note: 万级并发将调度、预算、汇聚与故障隔离从实现细节升级为核心系统问题。
+  - label: Formal verification artifacts
+    impact: 95
+    horizon: 20
+    note: 高价值推理结果规模越大，机器可检查 proof 与 provenance 越需要同步进入交付链。
+  - label: Memory and identity runtime APIs
+    impact: 93
+    horizon: 16
+    note: 长期 Agent 使用持久 Memory 和高风险操作后，需要显式 readiness、版本和身份确认边界。
+  - label: Isolated permission runtime
+    impact: 97
+    horizon: 14
+    note: 浏览器、凭据和外部写入进入 Agent 后，应优先把权限裁决和秘密材料移到模型进程之外。
+actions:
+  - title: 为物理或高副作用 Tool 定义闭环安全包络
+    description: 对每个可影响真实系统的动作声明允许参数、停止条件、超时、回滚或人工接管点，并把这些限制放到 Harness 而不是 Prompt。
+  - title: 给多 Agent 编排增加预算与证据流水线
+    description: 同时记录并发规模、token 与工具预算、失败隔离、结果汇聚和验证工件，让扩大 Agent 数量不会脱离可审计成本与质量边界。
+  - title: 把 Memory 与身份确认做成 Runtime API
+    description: 显式暴露 Memory version、readiness 与 reset 状态，并把高风险操作的用户验证、取消与失败原因放到独立协议层。
+  - title: 把凭据与外部权限移出 Agent 主进程
+    description: 让 Agent 只提交意图，由独立 policy service 决定 connector、egress 和敏感动作；真实凭据通过代理按需注入，并把批准绑定到精确作用域。
+references:
+  - id: openai-quantum-lab
+    title: How GPT-5.6 Sol helps run quantum computing experiments
+    url: https://openai.com/index/codex-quantum-computing-experiments/
+    supports: GPT-5.6 Sol 连接量子实验软件后的测量闭环、六量子比特校准流程、清晰与噪声信号下的人机分工。
+    accessedAt: 2026-09-09
+  - id: openai-navier-stokes
+    title: On the Navier-Stokes Millennium Prize Problem
+    url: https://openai.com/index/navier-stokes-solution/
+    supports: 万级协调 Agent、运行时长、消息与输出 token 规模、结果说明以及 Lean formalization 的官方披露。
+    accessedAt: 2026-09-09
+  - id: openai-navier-lean
+    title: openai/NavierStokesAndEuler
+    url: https://github.com/openai/NavierStokesAndEuler
+    source: github
+    supports: Navier-Stokes 与 Euler 结果的 Lean 4 certificates、构建方法和 independent proof checking 入口。
+    accessedAt: 2026-09-09
+  - id: codex-alpha8-release
+    title: OpenAI Codex rust-v0.154.0-alpha.8
+    url: https://github.com/openai/codex/releases/tag/rust-v0.154.0-alpha.8
+    source: github
+    supports: alpha.8 prerelease 的版本身份与 2026-09-08 发布状态。
+    accessedAt: 2026-09-09
+  - id: codex-memory-protocol
+    title: Codex alpha.8 memory v2 protocol
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server-protocol/src/protocol/v2/memory.rs
+    source: github
+    supports: MemoryStatusParams、最少 consolidated thread 参数以及 v2_consolidated_threads 和 v2_ready 响应字段。
+    accessedAt: 2026-09-09
+  - id: codex-memory-status
+    title: Codex alpha.8 memory status processor
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server/src/request_processors/memory_status.rs
+    source: github
+    supports: Memory V2 readiness 的默认阈值、SQLite progress 与 memory_summary 格式联合校验。
+    accessedAt: 2026-09-09
+  - id: codex-memory-read-test
+    title: Codex alpha.8 memory version isolation test
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server/tests/suite/v2/memory_read.rs
+    source: github
+    supports: v1 与 v2 Memory context 根据配置选择且互相排除的 app-server 测试行为。
+    accessedAt: 2026-09-09
+  - id: codex-user-verification
+    title: Codex alpha.8 experimental user verification protocol
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server-protocol/src/protocol/v2/user_verification.rs
+    source: github
+    supports: User Verification status、enroll、verify、cancel、签名格式与封闭错误分类。
+    accessedAt: 2026-09-09
+  - id: codex-manual-update
+    title: Codex alpha.8 app-server daemon manual update
+    url: https://github.com/openai/codex/blob/rust-v0.154.0-alpha.8/codex-rs/app-server-daemon/src/manual_update.rs
+    source: github
+    supports: manual update 的 updater handoff、managed-install 限制、更新结果和 daemon restart 语义。
+    accessedAt: 2026-09-09
+  - id: meta-muse-security
+    title: How We Built Safety Into Muse
+    url: https://research.meta.ai/blog/security-and-safety-for-ai-agents-our-approach-with-muse
+    supports: Muse Secure VM、runtime cell、Sentinel、credential surrogation、egress policy 与 scoped human approval 的安全架构。
+    accessedAt: 2026-09-09
+archivePicks:
+  - title: Agent 的瓶颈正在从模型能力转向 Harness 吞吐与运行契约
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-08.yaml
+    source: github
+    supports: 本期继续向多 Agent 扩张、Memory、验证和高副作用执行边界推进的前置判断。
+    accessedAt: 2026-09-09
+    publishedAt: 2026-09-08
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
