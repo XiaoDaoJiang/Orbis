@@ -8,8 +8,6 @@ summary: 从量子实验的自动测量闭环，到万级 Agent 群体推动数�
 topics:
   - agent-harness
   - coding-agent
-  - verification
-  - agent-runtime
 signals:
   - title: 物理实验正在成为 Agent 的可操作环境
     summary: GPT-5.6 Sol 已被连接到量子实验室软件，能够运行测量、分析结果并决定下一步，Agent 的执行边界开始从代码扩展到真实设备。
