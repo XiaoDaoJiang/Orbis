@@ -1,0 +1,185 @@
+name: Orbis Pages Promote
+
+on:
+  workflow_run:
+    workflows: ['Orbis Site Build']
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: orbis-pages-production
+  cancel-in-progress: false
+
+jobs:
+  eligibility:
+    name: Verify merged-main eligibility
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      eligible: ${{ steps.gate.outputs.eligible }}
+      reason: ${{ steps.gate.outputs.reason }}
+      source_sha: ${{ steps.gate.outputs.source_sha }}
+      source_run_id: ${{ steps.gate.outputs.source_run_id }}
+    steps:
+      - name: Verify current main and merged PR provenance
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+
+          finish() {
+            local eligible="$1"
+            local reason="$2"
+            echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
+            echo "reason=$reason" >> "$GITHUB_OUTPUT"
+            echo "source_sha=$SHA" >> "$GITHUB_OUTPUT"
+            echo "source_run_id=$SOURCE_RUN_ID" >> "$GITHUB_OUTPUT"
+            echo "Pages promotion eligibility: eligible=$eligible reason=$reason source_sha=$SHA source_run_id=$SOURCE_RUN_ID"
+          }
+
+          current_main="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')"
+          if [ "$current_main" != "$SHA" ]; then
+            finish false stale-main
+            exit 0
+          fi
+
+          prs_json="$(gh api \
+            -H 'Accept: application/vnd.github+json' \
+            "repos/${GITHUB_REPOSITORY}/commits/$SHA/pulls")"
+
+          qualifying="$(jq '[.[] | select(.base.ref == "main" and .merged_at != null)]' <<< "$prs_json")"
+          count="$(jq 'length' <<< "$qualifying")"
+
+          if [ "$count" -eq 0 ]; then
+            finish false missing-merged-pr
+            exit 0
+          fi
+
+          if [ "$count" -ne 1 ]; then
+            finish false ambiguous-merged-pr
+            exit 0
+          fi
+
+          merge_sha="$(jq -r '.[0].merge_commit_sha // ""' <<< "$qualifying")"
+          if [ "$merge_sha" != "$SHA" ]; then
+            finish false merge-sha-mismatch
+            exit 0
+          fi
+
+          finish true eligible
+
+  package-pages:
+    name: Package exact Site Build artifact
+    needs: eligibility
+    if: ${{ needs.eligibility.outputs.eligible == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Download exact Site Build artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: orbis-site
+          path: site
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: Verify downloaded artifact
+        run: |
+          set -euo pipefail
+          test -f site/index.html
+          test -f site/archive.json
+          test -f site/rss.xml
+          echo "Exact Site Build artifact ready: run=${{ github.event.workflow_run.id }} sha=${{ github.event.workflow_run.head_sha }}"
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  predeploy-freshness:
+    name: Recheck current main before deploy
+    needs: [eligibility, package-pages]
+    if: ${{ needs.eligibility.outputs.eligible == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      current: ${{ steps.fresh.outputs.current }}
+    steps:
+      - name: Recheck source SHA
+        id: fresh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_SHA: ${{ needs.eligibility.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          current_main="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')"
+          if [ "$current_main" != "$SOURCE_SHA" ]; then
+            echo 'current=false' >> "$GITHUB_OUTPUT"
+            echo "Pages promotion skipped as stale before deploy: source=$SOURCE_SHA current=$current_main"
+            exit 0
+          fi
+          echo 'current=true' >> "$GITHUB_OUTPUT"
+          echo "Pages promotion source remains current main: $SOURCE_SHA"
+
+  deploy:
+    name: Deploy promoted artifact to GitHub Pages
+    needs: [eligibility, package-pages, predeploy-freshness]
+    if: ${{ needs.eligibility.outputs.eligible == 'true' && needs.predeploy-freshness.outputs.current == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Deploy exact validated artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Smoke test deployed routes
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          SOURCE_SHA: ${{ needs.eligibility.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          base="${PAGE_URL%/}"
+
+          fetch() {
+            route="$1"
+            for attempt in {1..12}; do
+              if curl --fail --silent --show-error --location --max-time 30 "${base}${route}" -o /tmp/orbis-smoke-body; then
+                echo "PASS ${route}"
+                return 0
+              fi
+              echo "Retry ${attempt}/12 ${route}"
+              sleep 5
+            done
+            echo "FAIL ${route}"
+            return 1
+          }
+
+          for route in '/' '/latest/' '/archive.json' '/rss.xml' '/favicon.svg'; do fetch "$route"; done
+
+          curl --fail --silent --show-error --location "${base}/archive.json" -o /tmp/orbis-archive.json
+          jq -e '.latest and (.issues | length > 0)' /tmp/orbis-archive.json >/dev/null
+          latest_path="$(jq -r '.issues[0].path' /tmp/orbis-archive.json)"
+          test -n "$latest_path" && test "$latest_path" != 'null'
+          fetch "/${latest_path#/}"
+
+          curl --fail --silent --show-error --location "${base}/rss.xml" | grep -q '<rss'
+          echo "Production Pages promotion smoke checks passed; source_sha=$SOURCE_SHA latest structured Daily path=/${latest_path#/}"
