@@ -123,5 +123,6 @@ export async function pnpmInvocation(env: NodeJS.ProcessEnv = process.env): Prom
 export async function runPnpm(args: readonly string[], options: ProcessOptions): Promise<ProcessResult> {
   const env = mergeEnvironment(process.env, options.env)
   const invocation = await pnpmInvocation(env)
-  return await runProcess(invocation.command, [...invocation.prefix, ...args], { ...options, env })
+  // Pass the original overrides so an explicit undefined remains a deletion.
+  return await runProcess(invocation.command, [...invocation.prefix, ...args], options)
 }
