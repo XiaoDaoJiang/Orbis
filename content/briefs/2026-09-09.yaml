@@ -3,8 +3,8 @@ cadence: daily
 evidenceVersion: 1
 publishedAt: 2026-09-09
 status: published
-title: Agent 开始进入闭环执行，控制与证据必须前移
-summary: 从量子实验的自动测量闭环，到数学结果的形式化证明，再到 Coding Agent 的 Memory、用户验证和无人值守运维，Agent 正把更多现实副作用纳入执行链；下一阶段的核心不是单纯扩大自治，而是让每一步都有可检查的状态、证据和人工接管边界。
+title: Agent 进入高副作用闭环，控制平面开始脱离模型
+summary: 从量子实验的自动测量闭环，到万级 Agent 群体推动数学证明，再到 Codex 的 Memory 与用户验证协议、Muse 的隔离 Runtime 与 Sentinel，Agent 正把更多现实副作用纳入执行链；下一阶段的核心不是单纯扩大自治，而是把权限、身份、证据和人工接管前移到模型之外的控制平面。
 topics:
   - agent-harness
   - coding-agent
@@ -14,14 +14,14 @@ signals:
   - title: 物理实验正在成为 Agent 的可操作环境
     summary: GPT-5.6 Sol 已被连接到量子实验室软件，能够运行测量、分析结果并决定下一步，Agent 的执行边界开始从代码扩展到真实设备。
     impact: high
-  - title: 科学产出正在要求机器可检查的证据层
-    summary: OpenAI 在 Navier–Stokes 结果中同时发布自然语言写作与 Lean 形式化证明，说明高价值推理结果需要把结论和可验证工件一起交付。
+  - title: Agent 并发规模开始跨越万级，验证必须同步扩张
+    summary: OpenAI 的 Navier-Stokes 工作使用约万级并发 Agent，并在结果后追加 Lean 形式化验证，说明大规模推理系统需要把编排与机器可检查证据一起设计。
     impact: high
   - title: Memory 与身份确认正在进入 Runtime API
     summary: Codex alpha.8 把 Memory readiness、版本选择和用户验证暴露为显式协议，长期 Agent 的上下文与高风险操作开始拥有独立控制面。
     impact: high
-  - title: 无人值守 Agent 的正确结果也可以是 No-op
-    summary: GitHub Agentic Workflows 的版本检查 Agent 只在真实变化时开 PR，并把安静退出、缓存优先、并行读取与失败监控都当成运行契约的一部分。
+  - title: 安全 Runtime 正把权限与凭据移出 Agent 主进程
+    summary: Meta Muse 用隔离 Runtime、独立 Sentinel、凭据代理和严格 approval capability 管理网络与外部动作，说明高权限 Agent 的安全边界正在系统化。
     impact: high
 sections:
   - id: physical-closed-loop
@@ -48,22 +48,31 @@ sections:
     limitations:
       - 这是特定量子实验室和标准芯片表征流程的案例，不能直接外推到任意物理实验系统。
       - 弱信号与异常物理行为仍需要专家判断，闭环执行能力不等于对实验含义的可靠自主解释。
-  - id: formal-evidence-layer
-    layout: comparison
-    title: 研究结论开始与形式化证据一起交付
-    conclusion: 当模型进入开放科学问题，最有价值的输出不再只是一个有说服力的答案，而是能够被专家和机器工具独立检查的证据工件。
+  - id: swarm-verification-scale
+    layout: metrics
+    title: 万级 Agent 群体正在把编排规模与验证成本一起推高
+    conclusion: 当推理系统扩展到成千上万并发 Agent 和数百亿级输出 token 时，真正可复用的能力不只是“多开 Agent”，而是让调度、资源预算、结果汇聚和独立验证形成同一条生产链。
     facts:
-      - id: navier-stokes-proposal-announced
-        text: OpenAI 在 2026-09-08 宣布分享一个由 AI 生成的 Navier–Stokes Millennium Prize Problem 解法提案。
+      - id: ten-thousand-agent-group
+        text: OpenAI 表示产生 Navier-Stokes 结果的协调 Agent 群组规模约为 10,000 个并发 Agent，并使用一个仍在训练、能力显著高于 GPT-6 Astra 的内部模型。
         evidence:
           - openai-navier-stokes
-      - id: writeup-and-lean-proof
-        text: OpenAI 对该结果的官方说明明确表示同时提供一份 writeup 和一份 Lean 形式化证明。
+      - id: eighty-eight-plus-seventeen-hours
+        text: 该 Agent 群组在首次启动约 88 小时后得到 Navier-Stokes 结果，随后又使用 GPT-6 Astra 花费约 17 小时完成 Lean 形式化与验证。
         evidence:
           - openai-navier-stokes
+      - id: navier-token-message-scale
+        text: OpenAI 报告 Navier-Stokes 工作本身发送约 270 万条 Agent 消息并使用约 1300 亿输出 token；全部尝试的问题合计约 490 万条消息和 3000 亿输出 token。
+        evidence:
+          - openai-navier-stokes
+      - id: lean-certificate-published
+        text: OpenAI 同时公开了自然语言证明与 Lean 4 formalization 仓库，仓库包含 Navier-Stokes 和 Euler 的 Lean certificates，并提供独立 proof checking 的构建入口。
+        evidence:
+          - openai-navier-stokes
+          - openai-navier-lean
     limitations:
-      - 官方用词是“proposes a solution”，不能把发布行为本身等同于数学界已经独立确认该千禧年难题被解决。
-      - Lean 工件提高了可检查性，但最终结论仍依赖形式化陈述是否准确表达目标命题，以及外部专家对整体论证的复核。
+      - 并发规模、token 使用量与结果均来自 OpenAI 官方自报，不能把资源投入直接等同于普遍可复制的科研效率。
+      - 形式化证明提高了机器可检查性，但外部专家仍需要确认形式化命题、假设和整体数学结论是否准确对应目标问题。
   - id: memory-runtime-contract
     layout: system-map
     title: Memory 正从隐式上下文变成可查询的 Runtime 状态
@@ -109,71 +118,71 @@ sections:
     limitations:
       - User Verification 仍明确标记为 experimental，不应把当前协议形态视为稳定公共标准。
       - Runtime 能暴露精确状态并不能消除更新中断风险；源码明确提示重启可能中断 active 或 queued work。
-  - id: quiet-autonomous-operations
-    layout: timeline
-    title: 无人值守 Agent 的成熟标志之一是知道什么时候什么都不做
-    conclusion: Scheduled Agent 进入生产后，成功标准应包含安全 No-op、廉价预检、并行读取、受控写入和可观察失败，而不是每次运行都制造一个产物。
+  - id: isolated-permission-runtime
+    layout: system-map
+    title: 高权限 Agent 的安全控制正在被拆到独立 Runtime 服务
+    conclusion: 当 Agent 能长期运行、浏览网页并调用用户账户时，最稳健的边界不是让模型“记住别越权”，而是用隔离域、外部权限裁决、凭据代理和严格 capability 把不可接受的副作用挡在模型之外。
     facts:
-      - id: cli-version-checker-scope
-        text: GitHub Agentic Workflows 的 CLI Version Checker 每天检查 8 个工具以及一组 Docker image 的版本或 digest，只有检测到真实变化时才打开 Pull Request。
+      - id: muse-runtime-cell-isolation
+        text: Meta Muse 的核心 Agent harness 与工作区运行在 systemd-nspawn runtime cell 中，cell 内 root 映射为 host 非特权用户，并限制网络、系统调用和 Linux capabilities。
         evidence:
-          - github-aw-cli-version-checker
-      - id: september-eight-clean-noop
-        text: 2026-09-08 的 Run #552 用 7.6 分钟检查全部目标，经 npm view 与 GitHub Releases API 确认没有新版本后干净退出，没有创建无意义更新。
+          - meta-muse-security
+      - id: sentinel-sole-permission-authority
+        text: Muse 将 Sentinel 作为 connector actions 与全部 network egress 的唯一 permission authority；Agent 提出动作，但只有 Sentinel 能批准执行。
         evidence:
-          - github-aw-cli-version-checker
-      - id: cache-and-parallel-discipline
-        text: 该 workflow 被要求在网络调用前先检查本地 cache，包元数据优先使用 npm view，并并行获取多个工具版本而不是串行执行。
+          - meta-muse-security
+      - id: credential-surrogation-boundary
+        text: Muse 的 authd 将真实凭据保存在 runtime cell 外，Agent 只看到 surrogate token；在具体网络请求获批后，Sentinel 才在网络边界把 surrogate 替换为真实凭据。
         evidence:
-          - github-aw-cli-version-checker
-      - id: failed-runs-remain-observable
-        text: 官方回顾的最近五次 scheduled runs 中，9 月 4 日和 5 日有两次直接失败，GitHub 将此作为即使 read-mostly Agent 也需要监控的例子。
+          - meta-muse-security
+      - id: approvals-are-scoped-capabilities
+        text: Muse 的 human-in-the-loop approval 直接在客户端与 Sentinel 之间完成，批准结果是绑定 connector、destination 与 use case 的严格 capability，可按 one-time、session、task、time-bounded 或 perpetual scope 授权。
         evidence:
-          - github-aw-cli-version-checker
+          - meta-muse-security
     limitations:
-      - 版本检查属于边界清晰、写入低频的自动化，不能直接代表复杂代码修改或业务事务 Agent 的可靠性。
-      - No-op 只有在检查覆盖完整且失败可观察时才有意义，否则安静退出也可能掩盖漏检。
+      - Muse 是单一厂商的产品架构，不能视为 Agent Runtime 的行业标准实现。
+      - Meta 明确承认 prompt injection 仍是开放问题；隔离与 Sentinel 的目标是限制失败影响，而不是证明 Agent 不会犯错或被攻击。
 projects:
   - action: TEST
     name: openai/codex
     summary: 验证 Memory readiness、版本隔离、User Verification 与 managed update 是否能成为长期本地 Agent 的显式控制面。
     maturity: growing
     url: https://github.com/openai/codex
-  - action: TEST
-    name: github/gh-aw
-    summary: 复刻 CLI Version Checker 的 cache-first、parallel-read、safe no-op 与 change-only PR 模式，验证 scheduled Agent 的运行纪律。
+  - action: READ
+    name: openai/NavierStokesAndEuler
+    summary: 阅读 Lean 4 certificates、formalization 配置与 independent proof checking 入口，理解大规模 Agent 结果如何转成机器可检查工件。
     maturity: early
-    url: https://github.com/github/gh-aw
+    url: https://github.com/openai/NavierStokesAndEuler
 radar:
   - label: Physical closed-loop agents
     impact: 97
     horizon: 18
     note: Agent 一旦能影响真实设备，停止条件、操作范围和人工接管就成为上线前基础能力。
-  - label: Formal evidence artifacts
-    impact: 94
-    horizon: 24
-    note: 科学与高风险推理输出越复杂，机器可检查证明与 provenance 越有价值。
-  - label: Memory readiness contract
-    impact: 91
-    horizon: 16
-    note: 长期 Agent 使用持久 Memory 后，需要明确版本、就绪状态和注入边界。
-  - label: User verification boundary
-    impact: 93
+  - label: Massive agent orchestration
+    impact: 98
+    horizon: 22
+    note: 万级并发将调度、预算、汇聚与故障隔离从实现细节升级为核心系统问题。
+  - label: Formal verification artifacts
+    impact: 95
     horizon: 20
-    note: 高风险操作需要把身份确认从模型判断中剥离成独立可取消协议。
-  - label: Safe no-op automation
-    impact: 88
-    horizon: 10
-    note: 高频 scheduled Agent 必须把无变化时不写入作为正常且可审计的结果。
+    note: 高价值推理结果规模越大，机器可检查 proof 与 provenance 越需要同步进入交付链。
+  - label: Memory and identity runtime APIs
+    impact: 93
+    horizon: 16
+    note: 长期 Agent 使用持久 Memory 和高风险操作后，需要显式 readiness、版本和身份确认边界。
+  - label: Isolated permission runtime
+    impact: 97
+    horizon: 14
+    note: 浏览器、凭据和外部写入进入 Agent 后，应优先把权限裁决和秘密材料移到模型进程之外。
 actions:
   - title: 为物理或高副作用 Tool 定义闭环安全包络
     description: 对每个可影响真实系统的动作声明允许参数、停止条件、超时、回滚或人工接管点，并把这些限制放到 Harness 而不是 Prompt。
-  - title: 让高价值结论同时产出可验证工件
-    description: 对研究、迁移和架构决策保留结构化 evidence、测试、形式化检查或可重放实验，让 Reviewer 能独立验证关键结论。
+  - title: 给多 Agent 编排增加预算与证据流水线
+    description: 同时记录并发规模、token 与工具预算、失败隔离、结果汇聚和验证工件，让扩大 Agent 数量不会脱离可审计成本与质量边界。
   - title: 把 Memory 与身份确认做成 Runtime API
     description: 显式暴露 Memory version、readiness 与 reset 状态，并把高风险操作的用户验证、取消与失败原因放到独立协议层。
-  - title: 把 No-op 纳入 Scheduled Agent 成功合同
-    description: 先做缓存与廉价预检，只在真实变化时写入；同时记录失败、被防火墙阻断和检查覆盖，避免为了产出而制造噪声。
+  - title: 把凭据与外部权限移出 Agent 主进程
+    description: 让 Agent 只提交意图，由独立 policy service 决定 connector、egress 和敏感动作；真实凭据通过代理按需注入，并把批准绑定到精确作用域。
 references:
   - id: openai-quantum-lab
     title: How GPT-5.6 Sol helps run quantum computing experiments
@@ -181,15 +190,21 @@ references:
     supports: GPT-5.6 Sol 连接量子实验软件后的测量闭环、六量子比特校准流程、清晰与噪声信号下的人机分工。
     accessedAt: 2026-09-09
   - id: openai-navier-stokes
-    title: An OpenAI model proposes a solution to the Navier-Stokes problem
-    url: https://openai.com/research/index/
-    supports: 2026-09-08 的 Navier-Stokes 解法提案公告，以及同时提供 writeup 与 Lean 形式化证明。
+    title: On the Navier-Stokes Millennium Prize Problem
+    url: https://openai.com/index/navier-stokes-solution/
+    supports: 万级协调 Agent、运行时长、消息与输出 token 规模、结果说明以及 Lean formalization 的官方披露。
+    accessedAt: 2026-09-09
+  - id: openai-navier-lean
+    title: openai/NavierStokesAndEuler
+    url: https://github.com/openai/NavierStokesAndEuler
+    source: github
+    supports: Navier-Stokes 与 Euler 结果的 Lean 4 certificates、构建方法和 independent proof checking 入口。
     accessedAt: 2026-09-09
   - id: codex-alpha8-release
     title: OpenAI Codex rust-v0.154.0-alpha.8
     url: https://github.com/openai/codex/releases/tag/rust-v0.154.0-alpha.8
     source: github
-    supports: alpha.8 prerelease 的发布日期与该 tagged source 的版本身份。
+    supports: alpha.8 prerelease 的版本身份与 2026-09-08 发布状态。
     accessedAt: 2026-09-09
   - id: codex-memory-protocol
     title: Codex alpha.8 memory v2 protocol
@@ -221,17 +236,16 @@ references:
     source: github
     supports: manual update 的 updater handoff、managed-install 限制、更新结果和 daemon restart 语义。
     accessedAt: 2026-09-09
-  - id: github-aw-cli-version-checker
-    title: Agent of the Day - September 8, 2026
-    url: https://github.com/github/gh-aw/blob/main/docs/src/content/docs/blog/2026-09-08-agent-of-the-day.md
-    source: github
-    supports: CLI Version Checker 的 daily scope、change-only PR、clean no-op、cache-first、parallel fetch 与失败监控模式。
+  - id: meta-muse-security
+    title: How We Built Safety Into Muse
+    url: https://research.meta.ai/blog/security-and-safety-for-ai-agents-our-approach-with-muse
+    supports: Muse Secure VM、runtime cell、Sentinel、credential surrogation、egress policy 与 scoped human approval 的安全架构。
     accessedAt: 2026-09-09
 archivePicks:
   - title: Agent 的瓶颈正在从模型能力转向 Harness 吞吐与运行契约
     url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-08.yaml
     source: github
-    supports: 本期继续向 Memory、验证、物理执行和无人值守运行边界推进的前置判断。
+    supports: 本期继续向多 Agent 扩张、Memory、验证和高副作用执行边界推进的前置判断。
     accessedAt: 2026-09-09
     publishedAt: 2026-09-08
 corrections: []
