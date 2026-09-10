@@ -1,5 +1,5 @@
 version: 2
-updated_at: 2026-08-27
+updated_at: 2026-09-10
 timezone: Asia/Shanghai
 
 policy:
@@ -15,8 +15,6 @@ feeds:
     name: 橘鸦 AI 早报
     url: https://daily.juya.uk/rss.xml
     homepage: https://daily.juya.uk/
-    fallback_urls:
-      - https://imjuya.github.io/juya-ai-daily/rss.xml
     language: zh-CN
     source_type: curated_aggregator
     role: discovery
@@ -29,6 +27,16 @@ feeds:
       max_feed_items: 2
       parse_full_content: true
       extract_external_links: true
+
+    discovery_fallback:
+      mode: same-source-html
+      index_url: https://daily.juya.uk/
+      follow_recent_item_links: true
+      counts_as_rss_success: false
+      notes: >-
+        当执行环境只能读取 text/html、无法消费 application/rss+xml 时，仍先尝试 RSS URL，
+        随后仅使用同一来源的首页及其最近条目做 discovery。该路径不能被报告为 RSS 抓取成功，
+        但可避免因为 provider transport 限制而完全丢失已订阅来源。
 
     selection:
       focus_topics:
