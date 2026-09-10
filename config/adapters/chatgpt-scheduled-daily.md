@@ -64,6 +64,29 @@ Only after preflight says the normal candidate flow is eligible, follow `config/
 
 The first external information reads must follow the repository feed contract. This adapter does not duplicate the editorial/source-selection rules.
 
+## RSS transport compatibility
+
+The RSS-first rule is a source-order contract. It must not be weakened merely because a provider-native web reader cannot render `application/rss+xml`.
+
+For every `enabled: true` feed, apply this order:
+
+1. the first external read attempt is the configured RSS `url`;
+2. if the RSS request fails at the source/network/HTTP layer, try configured RSS `fallback_urls` in order when present;
+3. if the provider transport rejects an otherwise reachable RSS endpoint only because it cannot consume XML / `application/rss+xml`, record `rssTransport=unsupported` rather than pretending that the subscribed source itself failed;
+4. when that feed defines `discovery_fallback.mode: same-source-html`, read only the configured same-source HTML index and its recent item links, respecting the same lookback and item limits;
+5. a same-source HTML fallback may count as successful **feed discovery**, but it must never be reported as successful raw RSS retrieval when `counts_as_rss_success: false`;
+6. any RSS or fallback endpoint whose newest usable item is older than the configured lookback window is stale for that run and must not satisfy `minimum_successful_feeds`;
+7. only after enabled feeds cannot provide recent discovery items through their configured RSS/fallback paths may the repository-wide high-signal web fallback be used.
+
+When same-source HTML fallback is used, the `DailyAutomationReport` must distinguish at least:
+
+```text
+RSS retrieval: transport-unsupported
+feed discovery: same-source-html
+```
+
+Do not collapse those states into a generic “RSS failed” or falsely claim that RSS XML was parsed.
+
 ## Connected GitHub transport
 
 Use the connected GitHub transport for repository mutations.
