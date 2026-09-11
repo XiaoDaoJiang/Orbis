@@ -10,13 +10,15 @@ assert.deepEqual(
   classifyPresentationImpact([
     { status: 'M', path: 'content/briefs/2026-09-11.yaml' },
     { status: 'A', path: 'content/presentations/platform-talk.yml' },
+    { status: 'M', path: 'content/presentations/native-talk/slides.md' },
   ]),
   {
     mode: 'ids',
-    ids: ['2026-09-11', 'platform-talk'],
+    ids: ['2026-09-11', 'native-talk', 'platform-talk'],
     reasons: [
       'M content/briefs/2026-09-11.yaml -> 2026-09-11',
       'A content/presentations/platform-talk.yml -> platform-talk',
+      'M content/presentations/native-talk/slides.md -> native-talk',
     ],
   },
 )
@@ -45,6 +47,7 @@ for (const path of [
   'packages/content-schema/index.ts',
   'config/site.yaml',
   'content/topics/coding-agent.yaml',
+  'content/presentations/native-talk/local-asset.png',
   'pnpm-lock.yaml',
 ]) {
   const impact = classifyPresentationImpact([{ status: 'M', path }])

@@ -4,16 +4,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import { buildPublicPresentations } from '../../lib/presentation-discovery'
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
-const [briefs, presentations] = await Promise.all([
+const [briefs, presentations, nativePresentations] = await Promise.all([
   getCollection('briefs'),
   getCollection('presentations'),
+  getCollection('nativePresentations'),
 ])
-const entries = buildPublicPresentations(briefs, presentations, base)
+const entries = buildPublicPresentations(briefs, presentations, nativePresentations, base)
 ---
-<BaseLayout title="Presentations" description="Published Orbis presentations from structured Briefs and standalone Talks">
+<BaseLayout title="Presentations" description="Published Orbis presentations from structured Briefs, standalone templates, and native Slidev talks">
   <div class="eyebrow">Presentation discovery</div>
   <h1>Presentations</h1>
-  <p class="lead">统一浏览由结构化 Brief 派生的演示，以及直接发布自独立 Presentation 内容源的技术分享。</p>
+  <p class="lead">统一浏览结构化 Brief 派生演示、模板化独立 Presentation，以及直接以原生 Slidev Markdown 编写的技术分享。</p>
   {entries.length > 0 ? (
     <div class="grid">
       {entries.map((entry) => (
@@ -21,7 +22,9 @@ const entries = buildPublicPresentations(briefs, presentations, base)
           <small>
             {entry.sourceKind === 'brief'
               ? `Brief presentation · ${entry.cadence} · ${entry.publishedAt}`
-              : `Standalone presentation · ${entry.publishedAt}`}
+              : entry.sourceKind === 'native'
+                ? `Native Slidev · ${entry.publishedAt}`
+                : `Standalone presentation · ${entry.publishedAt}`}
           </small>
           <h3>{entry.title}</h3>
           <p>{entry.summary}</p>

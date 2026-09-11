@@ -5,6 +5,7 @@ for (const path of [
   'content/briefs/2026-09-11.yaml',
   'content/briefs/weekly/example.yml',
   'content/presentations/platform.yaml',
+  'content/presentations/native-talk/slides.md',
   'content/essays/agent.md',
   'content/knowledge/runtime/note.md',
 ]) {
@@ -14,6 +15,7 @@ for (const path of [
 for (const path of [
   'content/topics/agent.yaml',
   'content/sources/openai.yaml',
+  'content/presentations/native-talk/local-asset.png',
   'apps/web/src/pages/index.astro',
   'tools/build-slides/index.ts',
   'config/site.yaml',
@@ -34,6 +36,9 @@ assert.equal(classifyBuildScope([
     oldPath: 'content/presentations/old.yaml',
     path: 'content/presentations/new.yaml',
   },
+]), 'content')
+assert.equal(classifyBuildScope([
+  { status: 'M', path: 'content/presentations/native-talk/slides.md' },
 ]), 'content')
 assert.equal(classifyBuildScope([
   { status: 'M', path: 'content/briefs/2026-09-11.yaml' },

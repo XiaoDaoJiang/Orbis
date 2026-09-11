@@ -1,6 +1,6 @@
 import type { CollectionEntry } from 'astro:content'
 
-export type PresentationSourceKind = 'brief' | 'presentation'
+export type PresentationSourceKind = 'brief' | 'presentation' | 'native'
 export type PresentationCadence = CollectionEntry<'briefs'>['data']['cadence']
 
 export type PresentationDiscoveryItem = {
@@ -21,6 +21,11 @@ function publicHref(base: string, ...segments: string[]): string {
   return `${normalizedBase}/${path}/`
 }
 
+export function nativePresentationSlug(id: string): string {
+  if (!id.endsWith('/slides')) throw new Error(`Unexpected native Presentation collection ID: ${id}`)
+  return id.slice(0, -'/slides'.length)
+}
+
 export function sortPresentationsNewestFirst<T extends Pick<PresentationDiscoveryItem, 'publishedAt' | 'title' | 'id'>>(
   items: T[],
 ): T[] {
@@ -33,6 +38,7 @@ export function sortPresentationsNewestFirst<T extends Pick<PresentationDiscover
 export function buildPublicPresentations(
   briefs: CollectionEntry<'briefs'>[],
   presentations: CollectionEntry<'presentations'>[],
+  nativePresentations: CollectionEntry<'nativePresentations'>[],
   base: string,
 ): PresentationDiscoveryItem[] {
   const briefItems: PresentationDiscoveryItem[] = briefs
@@ -61,5 +67,20 @@ export function buildPublicPresentations(
       presentationHref: publicHref(base, 'slides', entry.id),
     }))
 
-  return sortPresentationsNewestFirst([...briefItems, ...standaloneItems])
+  const nativeItems: PresentationDiscoveryItem[] = nativePresentations
+    .filter((entry) => entry.data.orbis.status === 'published')
+    .map((entry) => {
+      const id = nativePresentationSlug(entry.id)
+      return {
+        id,
+        title: entry.data.title,
+        summary: entry.data.orbis.summary,
+        publishedAt: entry.data.orbis.publishedAt,
+        topics: entry.data.orbis.topics,
+        sourceKind: 'native',
+        presentationHref: publicHref(base, 'slides', id),
+      }
+    })
+
+  return sortPresentationsNewestFirst([...briefItems, ...standaloneItems, ...nativeItems])
 }

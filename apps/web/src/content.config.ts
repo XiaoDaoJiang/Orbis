@@ -9,6 +9,7 @@ import {
   sourceSchema,
   topicSchema,
 } from '@orbis/content-schema'
+import { nativePresentationSchema } from '@orbis/content-schema/native-presentation'
 
 const essays = defineCollection({
   loader: glob({ pattern: '**/*.md', base: '../../content/essays' }),
@@ -23,6 +24,11 @@ const briefs = defineCollection({
 const presentations = defineCollection({
   loader: glob({ pattern: '**/*.{yaml,yml}', base: '../../content/presentations' }),
   schema: presentationContentSchema,
+})
+
+const nativePresentations = defineCollection({
+  loader: glob({ pattern: '*/slides.md', base: '../../content/presentations' }),
+  schema: nativePresentationSchema,
 })
 
 const topics = defineCollection({
@@ -49,6 +55,7 @@ export const collections = {
   essays,
   briefs,
   presentations,
+  nativePresentations,
   topics,
   knowledge,
   sources,
