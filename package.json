@@ -10,7 +10,7 @@
   "scripts": {
     "validate": "pnpm build:preflight && pnpm test:build-tools && pnpm test:feed-discovery && pnpm test:path-guard && pnpm test:content-automation && pnpm test:pages-promotion && pnpm --filter @orbis/content-schema test && pnpm test:evidence-integrity && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm test:knowledge-lifecycle-ui && pnpm test:knowledge-lifecycle-ui-fixtures && pnpm content:validate && pnpm knowledge:review && pnpm test:registry-ui-fixtures",
     "build:preflight": "tsx tools/build/preflight.ts",
-    "test:build-tools": "tsx tools/shared/content.test.ts && tsx tools/shared/process.test.ts && tsx tools/shared/site-config.test.ts && tsx tools/shared/toolchain.test.ts && tsx tools/shared/presentation-scope.test.ts",
+    "test:build-tools": "tsx tools/shared/content.test.ts && tsx tools/shared/process.test.ts && tsx tools/shared/site-config.test.ts && tsx tools/shared/toolchain.test.ts && tsx tools/shared/presentation-scope.test.ts && tsx tools/incremental-build/presentation-impact-policy.test.ts",
     "discovery:feeds": "tsx tools/feed-discovery/index.ts",
     "test:feed-discovery": "tsx tools/feed-discovery/feed-discovery.test.ts && tsx tools/feed-discovery/snapshot-workflow.test.ts",
     "content:validate": "tsx tools/validate-content/index.ts",
@@ -23,6 +23,7 @@
     "slides:dev": "pnpm generate:slides && tsx tools/build-slides/index.ts --dev",
     "build:web": "pnpm --filter @orbis/web build",
     "build:slides": "tsx tools/build-slides/index.ts",
+    "build:presentation-impact": "tsx tools/incremental-build/presentation-impact.ts",
     "assemble": "tsx tools/assemble-site/index.ts",
     "test:site": "tsx tools/site-check/index.ts",
     "test:presentation-scope": "tsx tools/presentation-scope-check/index.ts",
@@ -48,7 +49,10 @@
     "test:knowledge-lifecycle-ui-fixtures": "tsx tools/knowledge-lifecycle/ui-fixture-build.test.ts",
     "test:knowledge-lifecycle-ui-artifact": "tsx tools/knowledge-lifecycle/ui-artifact-check.ts",
     "test:weekly-artifact": "tsx tools/weekly-brief/weekly-artifact-check.ts",
-    "build": "pnpm validate && pnpm test:multi-presentation && pnpm generate:slides && pnpm build:web && pnpm test:seo-web && pnpm build:slides && pnpm assemble && pnpm test:site && pnpm test:evidence-ui-artifact && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact && pnpm test:knowledge-lifecycle-ui-artifact"
+    "build:prepare": "pnpm validate && pnpm test:multi-presentation",
+    "build:web-artifacts": "pnpm build:web && pnpm test:seo-web",
+    "build:site-artifacts": "pnpm assemble && pnpm test:site && pnpm test:evidence-ui-artifact && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact && pnpm test:knowledge-lifecycle-ui-artifact",
+    "build": "pnpm build:prepare && pnpm generate:slides && pnpm build:web-artifacts && pnpm build:slides && pnpm build:site-artifacts"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",
