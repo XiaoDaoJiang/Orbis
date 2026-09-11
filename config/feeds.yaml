@@ -1,5 +1,5 @@
-version: 2
-updated_at: 2026-09-10
+version: 3
+updated_at: 2026-09-11
 timezone: Asia/Shanghai
 
 policy:
@@ -34,9 +34,9 @@ feeds:
       follow_recent_item_links: true
       counts_as_rss_success: false
       notes: >-
-        当执行环境只能读取 text/html、无法消费 application/rss+xml 时，仍先尝试 RSS URL，
-        随后仅使用同一来源的首页及其最近条目做 discovery。该路径不能被报告为 RSS 抓取成功，
-        但可避免因为 provider transport 限制而完全丢失已订阅来源。
+        当配置的 RSS URL 与 RSS fallback 都无法提供可解析且仍在 lookback 窗口内的条目时，
+        Native Feed Discovery 可使用同一来源的 HTML 首页及其最近条目继续 discovery。
+        该路径属于 source fallback，不得报告为 raw RSS retrieval 成功。
 
     selection:
       focus_topics:

@@ -8,9 +8,11 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "validate": "pnpm build:preflight && pnpm test:build-tools && pnpm test:path-guard && pnpm test:content-automation && pnpm test:pages-promotion && pnpm --filter @orbis/content-schema test && pnpm test:evidence-integrity && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm test:knowledge-lifecycle-ui && pnpm test:knowledge-lifecycle-ui-fixtures && pnpm content:validate && pnpm knowledge:review && pnpm test:registry-ui-fixtures",
+    "validate": "pnpm build:preflight && pnpm test:build-tools && pnpm test:feed-discovery && pnpm test:path-guard && pnpm test:content-automation && pnpm test:pages-promotion && pnpm --filter @orbis/content-schema test && pnpm test:evidence-integrity && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm test:knowledge-lifecycle-ui && pnpm test:knowledge-lifecycle-ui-fixtures && pnpm content:validate && pnpm knowledge:review && pnpm test:registry-ui-fixtures",
     "build:preflight": "tsx tools/build/preflight.ts",
     "test:build-tools": "tsx tools/shared/content.test.ts && tsx tools/shared/process.test.ts && tsx tools/shared/site-config.test.ts && tsx tools/shared/toolchain.test.ts",
+    "discovery:feeds": "tsx tools/feed-discovery/index.ts",
+    "test:feed-discovery": "tsx tools/feed-discovery/feed-discovery.test.ts",
     "content:validate": "tsx tools/validate-content/index.ts",
     "evidence:daily:report": "tsx tools/evidence-integrity/report.ts",
     "evidence:daily:correction:guard": "tsx tools/evidence-integrity/correction-guard.ts",

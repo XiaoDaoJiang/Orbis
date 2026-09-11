@@ -64,9 +64,23 @@ Only after preflight says the normal candidate flow is eligible, follow `config/
 
 The first external information reads must follow the repository feed contract. This adapter does not duplicate the editorial/source-selection rules.
 
-## RSS transport compatibility
+## Native Feed Discovery
 
-The RSS-first rule is a source-order contract. It must not be weakened merely because a provider-native web reader cannot render `application/rss+xml`.
+Orbis owns the provider-neutral feed ingestion contract. When the execution environment has a repository checkout and may execute repository tools, prefer:
+
+```bash
+pnpm discovery:feeds -- --pretty
+```
+
+The command reads `config/feeds.yaml`, performs the external RSS/Atom requests itself, applies configured RSS fallbacks, enforces lookback/item limits, extracts external links, deduplicates normalized items, and returns a machine-readable discovery report. It does not persist feed data and its summaries are discovery input only, never final evidence.
+
+Running `pnpm discovery:feeds` satisfies RSS-first ordering because the command structurally attempts every enabled feed's primary RSS URL before any fallback transport. Scheduled producers must inspect `meetsMinimumFeeds`, per-feed `status`, `transport`, `rawRssRetrieved`, and errors rather than inferring feed health from an empty item list.
+
+Do not reimplement RSS/Atom parsing in provider prompts when Native Feed Discovery is executable.
+
+## RSS transport compatibility fallback
+
+Some ChatGPT Scheduled Task environments can read repository files but cannot execute repository-owned tools or cannot perform arbitrary byte-level HTTP fetches. In that case only, use this compatibility path. The RSS-first rule remains a source-order contract and must not be weakened merely because a provider-native web reader cannot render `application/rss+xml`.
 
 For every `enabled: true` feed, apply this order:
 
