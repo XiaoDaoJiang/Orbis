@@ -1,0 +1,83 @@
+{
+  "latest": "2026-09-11",
+  "issues": [
+    {
+      "date": "2026-09-11",
+      "title": "Agent 进入分层运行栈，Harness 与协调器正在成为独立产品层",
+      "path": "2026/09/11/",
+      "topics": [
+        "agent-harness",
+        "coding-agent"
+      ]
+    },
+    {
+      "date": "2026-09-09",
+      "title": "Agent 进入高副作用闭环，控制平面开始脱离模型",
+      "path": "2026/09/09/",
+      "topics": [
+        "agent-harness",
+        "coding-agent"
+      ]
+    },
+    {
+      "date": "2026-09-08",
+      "title": "Agent 的瓶颈正在从模型能力转向 Harness 吞吐与运行契约",
+      "path": "2026/09/08/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    },
+    {
+      "date": "2026-09-07",
+      "title": "Agent 的新边界正在变成显式策略层",
+      "path": "2026/09/07/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    },
+    {
+      "date": "2026-09-06",
+      "title": "Agent 进入生产后，Memory、执行与协议生命周期都必须被显式治理",
+      "path": "2026/09/06/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    },
+    {
+      "date": "2026-09-05",
+      "title": "Agent 正在进入生命周期治理阶段：Memory、控制面与确定性执行成为新的可靠性边界",
+      "path": "2026/09/05/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    },
+    {
+      "date": "2026-09-04",
+      "title": "Agent 能力上升后，运行时边界正在从调用工具转向治理与可中断执行",
+      "path": "2026/09/04/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "title": "Harness 正在成为模型之外的能力层",
+      "path": "2026/08/28/",
+      "topics": [
+        "agent-harness",
+        "coding-agent",
+        "mcp"
+      ]
+    }
+  ]
+}
