@@ -5,6 +5,7 @@ import { runPnpm } from '../shared/process.ts'
 
 const root = resolve(import.meta.dirname, '../..')
 const today = '2026-09-02'
+const fixtureCacheDir = resolve(root, 'node_modules/.astro-fixtures/knowledge-lifecycle')
 const ids = {
   overdue: 'zz-orbis-lifecycle-overdue',
   needsReview: 'zz-orbis-lifecycle-needs-review',
@@ -48,7 +49,10 @@ async function runBuildWeb(): Promise<void> {
   await runPnpm(['build:web'], {
     cwd: root,
     capture: true,
-    env: { KNOWLEDGE_EVALUATION_DATE: today },
+    env: {
+      KNOWLEDGE_EVALUATION_DATE: today,
+      ASTRO_CACHE_DIR: fixtureCacheDir,
+    },
   })
 }
 
@@ -98,4 +102,5 @@ try {
 } finally {
   for (const path of fixturePaths) await rm(path, { force: true })
   await rm(resolve(root, 'dist/web'), { recursive: true, force: true })
+  await rm(fixtureCacheDir, { recursive: true, force: true })
 }

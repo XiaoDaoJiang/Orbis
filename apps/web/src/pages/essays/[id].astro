@@ -11,10 +11,14 @@ import {
 } from '../../lib/content-registry'
 import {
   buildPublicDiscoveryItems,
-  getRelatedContent,
+  getRelatedContentSnapshot,
   isPublicEssay,
   toEssayDiscoveryItem,
 } from '../../lib/content-discovery'
+import {
+  buildContentPageCacheKey,
+  selectEntriesById,
+} from '../../lib/incremental-cache'
 import { buildEssayJsonLd } from '../../lib/json-ld'
 import { webSiteConfig } from '../../lib/site-config'
 
@@ -31,14 +35,31 @@ export async function getStaticPaths() {
 
   return essayEntries.filter(isPublicEssay).map((entry) => {
     const current = toEssayDiscoveryItem(entry, base)
+    const related = getRelatedContentSnapshot(current, candidates)
+    const scopedAuthorEntries = selectEntriesById(authorEntries, entry.data.authors, 'author')
+    const scopedSourceEntries = selectEntriesById(
+      sourceEntries,
+      entry.data.references.map((reference) => reference.source),
+      'source',
+    )
+
     return {
       params: { id: entry.id },
       props: {
         entry,
-        authorEntries,
-        sourceEntries,
-        related: getRelatedContent(current, candidates),
+        authorEntries: scopedAuthorEntries,
+        sourceEntries: scopedSourceEntries,
+        related,
       },
+      cacheKey: buildContentPageCacheKey({
+        scope: 'essay',
+        entry,
+        dependencyGroups: [
+          { name: 'authors', entries: scopedAuthorEntries },
+          { name: 'sources', entries: scopedSourceEntries },
+        ],
+        related,
+      }),
     }
   })
 }

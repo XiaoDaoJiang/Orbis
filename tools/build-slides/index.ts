@@ -1,7 +1,12 @@
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { runPnpm } from '../shared/process.ts'
 import { loadSiteConfig, joinBasePath, runtimeSiteBase } from '../shared/site-config.ts'
+import {
+  parsePresentationScope,
+  preparePresentationOutput,
+  selectPresentationIds,
+} from '../shared/presentation-scope.ts'
 import type { PresentationSeoManifest } from '../generate-slides/presentation-seo.ts'
 
 const root = resolve(import.meta.dirname, '../..')
@@ -53,12 +58,15 @@ if (process.argv.includes('--dev')) {
   process.exit(0)
 }
 
-await rm(outputRoot, { recursive: true, force: true })
+const scope = parsePresentationScope(process.argv.slice(2))
+const selected = selectPresentationIds(entries, scope)
+await preparePresentationOutput(outputRoot, selected, scope)
 await mkdir(outputRoot, { recursive: true })
 
-for (const slug of entries) {
+for (const slug of selected) {
   const base = `${joinBasePath(siteBase, config.presentation.publicPath, slug)}/`
   const out = resolve(outputRoot, slug)
+  await mkdir(out, { recursive: true })
   await run([
     'exec',
     'slidev',
@@ -74,4 +82,4 @@ for (const slug of entries) {
   console.log(`Built Slidev deck: ${slug} -> ${base}`)
 }
 
-console.log(`Built ${entries.length} presentation(s)`)
+console.log(`Built ${selected.length} presentation(s) [scope=${scope.mode}]`)

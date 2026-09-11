@@ -12,6 +12,7 @@ const config = await loadSiteConfig()
 const briefSourceDir = resolve(root, config.content.briefsDir)
 const presentationSourceDir = resolve(root, config.content.presentationsDir)
 const generatedRoot = resolve(root, config.presentation.generatedDir)
+const fixtureCacheDir = resolve(root, 'node_modules/.astro-fixtures/multi-presentation')
 const futureDailySlug = 'zz-orbis-multi-presentation-check'
 const futureDailyPath = resolve(briefSourceDir, `${futureDailySlug}.yaml`)
 const futureDailyDate = '2099-12-31'
@@ -22,7 +23,10 @@ const nonPublicPresentationSlug = 'zz-orbis-non-public-presentation-check'
 const nonPublicPresentationPath = resolve(presentationSourceDir, `${nonPublicPresentationSlug}.yaml`)
 
 async function run(script: string) {
-  await runPnpm([script], { cwd: root })
+  await runPnpm([script], {
+    cwd: root,
+    env: script === 'build:web' ? { ASTRO_CACHE_DIR: fixtureCacheDir } : undefined,
+  })
 }
 
 async function runExpectFailure(script: string): Promise<string> {
@@ -236,5 +240,6 @@ try {
   await rm(nonPublicPresentationPath, { force: true })
   await rm(generatedRoot, { recursive: true, force: true })
   await rm(resolve(root, 'dist'), { recursive: true, force: true })
+  await rm(fixtureCacheDir, { recursive: true, force: true })
   console.log('Cleaned ephemeral mixed-source fixtures and artifacts')
 }

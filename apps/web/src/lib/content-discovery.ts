@@ -136,6 +136,24 @@ export function getRelatedContent(
     .map(({ candidate }) => candidate)
 }
 
+/**
+ * Detail pages use a publication-time discovery snapshot so future content does
+ * not retroactively invalidate durable historical output. Same-day candidates
+ * are intentionally excluded because Orbis content currently has day-level
+ * publication identity and cannot establish which same-day item existed first.
+ */
+export function getRelatedContentSnapshot(
+  current: DiscoveryItem,
+  candidates: DiscoveryItem[],
+  limit = 3,
+): DiscoveryItem[] {
+  return getRelatedContent(
+    current,
+    candidates.filter((candidate) => candidate.publishedAt < current.publishedAt),
+    limit,
+  )
+}
+
 export function getDailyAdjacency(
   entries: CollectionEntry<'briefs'>[],
   currentId: string,

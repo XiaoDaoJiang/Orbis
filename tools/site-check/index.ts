@@ -94,6 +94,7 @@ function sharedTopicCount(left: PublicDiscovery, right: PublicDiscovery): number
 
 function expectedRelated(current: PublicDiscovery, candidates: PublicDiscovery[], limit = 3): PublicDiscovery[] {
   return candidates
+    .filter((candidate) => candidate.publishedAt < current.publishedAt)
     .filter((candidate) => relatedIdentity(candidate) !== relatedIdentity(current))
     .map((candidate) => ({ candidate, shared: sharedTopicCount(current, candidate) }))
     .filter(({ shared }) => shared > 0)
@@ -359,6 +360,13 @@ for (const current of publicDiscovery) {
   const related = expectedRelated(current, publicDiscovery)
   const selfMarker = `data-related-id="${relatedIdentity(current)}"`
   assert.ok(!html.includes(selfMarker), `${relatedIdentity(current)} must not list itself as Related Content`)
+  for (const future of publicDiscovery.filter((candidate) => candidate.publishedAt >= current.publishedAt)) {
+    if (relatedIdentity(future) === relatedIdentity(current)) continue
+    assert.ok(
+      !html.includes(`data-related-id="${relatedIdentity(future)}"`),
+      `${relatedIdentity(current)} must not relate forward to ${relatedIdentity(future)}`,
+    )
+  }
   if (related.length === 0) {
     assert.doesNotMatch(html, /<h2[^>]*>Related Content<\/h2>/i)
     continue

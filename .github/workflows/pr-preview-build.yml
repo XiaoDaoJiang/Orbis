@@ -28,6 +28,9 @@ jobs:
           base_sha="$(git rev-parse HEAD^1)"
           echo "ORBIS_PR_BASE_SHA=$base_sha" >> "$GITHUB_ENV"
           echo "PR integration base: $base_sha"
+      - name: Resolve build scope
+        id: build-scope
+        run: node tools/incremental-build/build-scope.mjs --base "$ORBIS_PR_BASE_SHA"
       - uses: actions/setup-node@v6
         with:
           node-version: '22.16.0'
@@ -37,6 +40,13 @@ jobs:
           corepack prepare pnpm@11.24.0 --activate
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
+      - name: Restore Astro incremental build cache
+        uses: actions/cache@v6
+        with:
+          path: apps/web/node_modules/.astro
+          key: orbis-astro-pr-${{ github.event.pull_request.number }}-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-${{ github.sha }}
+          restore-keys: |
+            orbis-astro-pr-${{ github.event.pull_request.number }}-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-
       - name: Guard generated paths
         run: pnpm path:guard --mode pr --base "$ORBIS_PR_BASE_SHA"
       - name: Guard scheduled Daily
@@ -52,8 +62,49 @@ jobs:
         env:
           HEAD_REF: ${{ github.head_ref }}
         run: pnpm evidence:daily:correction:guard --base "$ORBIS_PR_BASE_SHA" --branch "$HEAD_REF"
-      - name: Build preview
+      - name: Full build and regression
+        if: ${{ steps.build-scope.outputs.mode == 'full' }}
         run: pnpm build
+      - name: Validate content-only change
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        run: pnpm validate
+      - name: Restore Slidev deck cache
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        id: slidev-cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            apps/slides/generated
+            dist/slides
+          key: orbis-slidev-pr-${{ github.event.pull_request.number }}-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'config/site.yaml', 'apps/slides/package.json', 'apps/slides/presentation.ts', 'apps/slides/style.css', 'apps/slides/layouts/**', 'apps/slides/templates/**', 'packages/content-schema/package.json', 'packages/content-schema/src/**', 'tools/generate-slides/**', 'tools/build-slides/**', 'tools/shared/content.ts', 'tools/shared/process.ts', 'tools/shared/site-config.ts', 'tools/shared/presentation-scope.ts') }}-${{ github.sha }}
+          restore-keys: |
+            orbis-slidev-pr-${{ github.event.pull_request.number }}-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'config/site.yaml', 'apps/slides/package.json', 'apps/slides/presentation.ts', 'apps/slides/style.css', 'apps/slides/layouts/**', 'apps/slides/templates/**', 'packages/content-schema/package.json', 'packages/content-schema/src/**', 'tools/generate-slides/**', 'tools/build-slides/**', 'tools/shared/content.ts', 'tools/shared/process.ts', 'tools/shared/site-config.ts', 'tools/shared/presentation-scope.ts') }}-
+      - name: Resolve Slidev impact
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        id: slidev-impact
+        run: pnpm build:presentation-impact --base "$ORBIS_PR_BASE_SHA"
+      - name: Generate all Slidev sources
+        if: ${{ steps.build-scope.outputs.mode == 'content' && steps.slidev-impact.outputs.mode == 'all' }}
+        run: pnpm generate:slides
+      - name: Generate affected Slidev sources
+        if: ${{ steps.build-scope.outputs.mode == 'content' && steps.slidev-impact.outputs.mode == 'ids' && steps.slidev-impact.outputs.ids != '' }}
+        env:
+          SLIDES_IDS: ${{ steps.slidev-impact.outputs.ids }}
+        run: pnpm generate:slides
+      - name: Build web artifacts
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        run: pnpm build:web-artifacts
+      - name: Build all Slidev decks
+        if: ${{ steps.build-scope.outputs.mode == 'content' && steps.slidev-impact.outputs.mode == 'all' }}
+        run: pnpm build:slides
+      - name: Build affected Slidev decks
+        if: ${{ steps.build-scope.outputs.mode == 'content' && steps.slidev-impact.outputs.mode == 'ids' && steps.slidev-impact.outputs.ids != '' }}
+        env:
+          SLIDES_IDS: ${{ steps.slidev-impact.outputs.ids }}
+        run: pnpm build:slides
+      - name: Assemble and verify content-only artifact
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        run: pnpm build:site-artifacts
       - name: Upload public-preview artifact
         uses: actions/upload-artifact@v7
         with:

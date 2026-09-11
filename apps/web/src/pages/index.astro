@@ -14,12 +14,13 @@ import { buildWebSiteJsonLd } from '../lib/json-ld'
 import { buildPublicPresentations } from '../lib/presentation-discovery'
 import { webSiteConfig } from '../lib/site-config'
 
-const [briefEntries, essayEntries, knowledgeEntries, topicEntries, presentationEntries] = await Promise.all([
+const [briefEntries, essayEntries, knowledgeEntries, topicEntries, presentationEntries, nativePresentationEntries] = await Promise.all([
   getCollection('briefs'),
   getCollection('essays'),
   getCollection('knowledge'),
   getCollection('topics'),
   getCollection('presentations'),
+  getCollection('nativePresentations'),
 ])
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -29,7 +30,7 @@ const briefs = sortDiscoveryNewestFirst(
 const essays = sortDiscoveryNewestFirst(
   essayEntries.filter(isPublicEssay).map((entry) => toEssayDiscoveryItem(entry, base)),
 )
-const presentations = buildPublicPresentations(briefEntries, presentationEntries, base)
+const presentations = buildPublicPresentations(briefEntries, presentationEntries, nativePresentationEntries, base)
 const knowledgeUpdates = knowledgeEntries
   .filter(isPublicKnowledge)
   .sort((left, right) =>
@@ -103,7 +104,9 @@ const jsonLd = buildWebSiteJsonLd(webSiteConfig)
           <small>
             {latestPresentation.sourceKind === 'brief'
               ? `Brief presentation · ${latestPresentation.cadence} · ${latestPresentation.publishedAt}`
-              : `Standalone presentation · ${latestPresentation.publishedAt}`}
+              : latestPresentation.sourceKind === 'native'
+                ? `Native Slidev · ${latestPresentation.publishedAt}`
+                : `Standalone presentation · ${latestPresentation.publishedAt}`}
           </small>
           <h3><a href={latestPresentation.presentationHref}>{latestPresentation.title}</a></h3>
           <p>{latestPresentation.summary}</p>
