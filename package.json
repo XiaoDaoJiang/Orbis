@@ -33,7 +33,7 @@
     "test:pages-promotion": "tsx tools/pages-promotion/eligibility.test.ts && tsx tools/pages-promotion/workflow-contract.test.ts",
     "test:evidence-integrity": "tsx tools/evidence-integrity/daily-evidence.test.ts && tsx tools/evidence-integrity/renderer-contract.test.ts && tsx tools/evidence-integrity/ui-contract.test.ts && tsx tools/evidence-integrity/correction-policy.test.ts && tsx tools/evidence-integrity/correction-legacy.test.ts && tsx tools/evidence-integrity/correction-guard.integration.test.ts",
     "test:evidence-ui-artifact": "tsx tools/evidence-integrity/ui-artifact-check.ts",
-    "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts && tsx tools/generate-slides/weekly-v1.test.ts",
+    "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts && tsx tools/generate-slides/weekly-v1.test.ts && tsx tools/incremental-build/scoped-presentation-build.test.ts",
     "test:weekly-brief": "tsx tools/weekly-brief/weekly-schema.test.ts && tsx tools/weekly-brief/weekly-source-validation.test.ts && tsx tools/weekly-brief/weekly-artifact-date-order.test.ts",
     "test:content-registry": "tsx tools/validate-content/registry-contract.test.ts && tsx tools/validate-content/referential-integrity-unit.test.ts && tsx tools/validate-content/referential-integrity.test.ts",
     "test:registry-ui-contract": "tsx tools/registry-ui-check/content-registry.test.ts",
