@@ -1,4 +1,4 @@
-import type { DiscoveryItem } from './content-discovery'
+import type { AdjacentContent, DiscoveryItem } from './content-discovery'
 
 type DigestEntry = {
   id: string
@@ -55,6 +55,22 @@ function relatedContentIdentity(items: readonly DiscoveryItem[]) {
     publishedAt: item.publishedAt,
     href: item.href,
   }))
+}
+
+function adjacentItemIdentity(item: DiscoveryItem | undefined) {
+  if (!item) return null
+  return {
+    title: item.title,
+    publishedAt: item.publishedAt,
+    href: item.href,
+  }
+}
+
+export function adjacentContentCacheIdentity(adjacent: AdjacentContent) {
+  return {
+    previous: adjacentItemIdentity(adjacent.previous),
+    next: adjacentItemIdentity(adjacent.next),
+  }
 }
 
 export function buildContentPageCacheKey({
