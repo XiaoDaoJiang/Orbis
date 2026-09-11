@@ -1,93 +1,91 @@
 kind: brief
 cadence: daily
+evidenceVersion: 1
 publishedAt: 2026-09-12
 status: published
 title: Incremental adjacency validation Daily
-summary: Synthetic published Daily used only to validate bounded route invalidation.
+summary: Synthetic published Daily used only to validate bounded route invalidation and complete artifact reuse.
 topics:
   - agent-harness
 signals:
-  - title: Signal one
-    summary: Synthetic signal summary for incremental validation.
+  - title: Local invalidation
+    summary: A new Daily should invalidate only its local adjacency boundary and aggregate discovery output.
     impact: high
-  - title: Signal two
-    summary: Synthetic signal summary for local adjacency verification.
+  - title: Historical reuse
+    summary: Older durable detail pages should restore when their rendered dependencies remain unchanged.
+    impact: high
+  - title: Scoped presentation build
+    summary: Slidev should regenerate and build only the new Daily deck when the historical cache is complete.
     impact: medium
-  - title: Signal three
-    summary: Synthetic signal summary for historical cache reuse.
-    impact: medium
-  - title: Signal four
-    summary: Synthetic signal summary for artifact completeness checking.
+  - title: Complete artifact
+    summary: The final assembled site must still contain and verify all historical routes and presentation artifacts.
     impact: watch
 sections:
-  - id: section-1
+  - id: local-invalidation
     layout: architecture
-    title: Local invalidation
-    conclusion: The synthetic Daily exists only to test bounded detail-page invalidation.
+    title: Local invalidation boundary
+    conclusion: A newly published Daily should change only the new page, its prior Daily neighbor, and aggregate discovery surfaces.
     facts:
-      - Only local Daily adjacency should change.
-    limitations: []
-    references:
-      - title: Orbis validation source
-        url: https://example.com/orbis-validation/1
-        supports: Supports the synthetic incremental validation section.
-  - id: section-2
+      - id: local-adjacency-fact
+        text: The prior latest Daily gains a new next-navigation target when the synthetic Daily is published.
+        evidence:
+          - validation-source
+    limitations:
+      - This synthetic Daily exists only for CI validation and will never be merged.
+  - id: historical-reuse
     layout: comparison
-    title: Historical reuse
-    conclusion: Older detail pages should remain reusable when their rendered dependencies are unchanged.
+    title: Historical detail reuse
+    conclusion: Detail pages outside the local adjacency boundary should remain reusable because future content is excluded from their related-content snapshot.
     facts:
-      - Future related content must not invalidate history.
+      - id: historical-snapshot-fact
+        text: Publication-time related-content snapshots exclude same-day and future candidates from historical detail dependencies.
+        evidence:
+          - validation-source
     limitations: []
-    references:
-      - title: Orbis validation source
-        url: https://example.com/orbis-validation/2
-        supports: Supports the synthetic incremental validation section.
-  - id: section-3
+  - id: scoped-slidev
     layout: timeline
-    title: Neighbor update
-    conclusion: The prior latest Daily should rerender because its next navigation target changes.
+    title: Scoped Slidev rebuild
+    conclusion: A complete restored deck cache allows the presentation impact resolver to rebuild only the newly added Daily deck.
     facts:
-      - The adjacency dependency is intentionally local.
+      - id: scoped-slidev-fact
+        text: The synthetic change set adds exactly one presentation-producing Brief while leaving shared Slidev code unchanged.
+        evidence:
+          - validation-source
     limitations: []
-    references:
-      - title: Orbis validation source
-        url: https://example.com/orbis-validation/3
-        supports: Supports the synthetic incremental validation section.
-  - id: section-4
+  - id: astro-cache
     layout: metrics
-    title: Cache reuse
-    conclusion: Historical Daily pages outside the local adjacency boundary should restore from cache.
+    title: Astro route cache
+    conclusion: Astro should restore historical detail routes whose cache keys remain stable and render only routes whose actual output dependencies changed.
     facts:
-      - Cache reuse remains an optional acceleration layer.
+      - id: astro-cache-fact
+        text: Brief cache identity includes the current entry, directly referenced sources, historical related snapshot, and rendered Daily adjacency fields.
+        evidence:
+          - validation-source
     limitations: []
-    references:
-      - title: Orbis validation source
-        url: https://example.com/orbis-validation/4
-        supports: Supports the synthetic incremental validation section.
-  - id: section-5
-    layout: architecture
-    title: Complete artifact
-    conclusion: Final site checks must still validate every historical route and presentation artifact.
+  - id: artifact-boundary
+    layout: system-map
+    title: Complete artifact remains authoritative
+    conclusion: Incremental execution is only an acceleration layer; publication still depends on a complete assembled site passing every artifact contract.
     facts:
-      - Artifact completeness remains the publication boundary.
+      - id: artifact-boundary-fact
+        text: Final site verification checks all published Briefs, presentations, discovery routes, SEO, structured data, Registry UI, and lifecycle output.
+        evidence:
+          - validation-source
     limitations: []
-    references:
-      - title: Orbis validation source
-        url: https://example.com/orbis-validation/5
-        supports: Supports the synthetic incremental validation section.
 projects: []
 radar: []
 actions:
-  - title: Validate cache
-    description: Verify bounded Astro detail-page invalidation.
-  - title: Validate adjacency
-    description: Verify only the local Daily neighbor rerenders.
-  - title: Validate artifacts
-    description: Verify the complete site artifact remains correct.
+  - title: Validate Astro reuse
+    description: Verify historical detail pages restore while the local Daily neighbor rerenders.
+  - title: Validate scoped Slidev
+    description: Verify only the synthetic Daily presentation is generated and built after cache restore.
+  - title: Validate complete artifact
+    description: Verify the assembled site remains complete across all historical routes and contracts.
 references:
-  - title: Orbis validation source
-    url: https://example.com/orbis-validation
-    supports: Supports the synthetic validation Daily.
+  - id: validation-source
+    title: Orbis incremental validation contract
+    url: https://example.com/orbis-incremental-validation
+    supports: Supports the synthetic assertions used only to exercise Orbis incremental build contracts.
 archivePicks: []
 presentation:
   enabled: true
