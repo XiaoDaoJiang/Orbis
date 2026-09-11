@@ -82,3 +82,4 @@ references:
   - title: Slide generator
     url: https://github.com/XiaoDaoJiang/Orbis/blob/main/tools/generate-slides/index.ts
     supports: Defines the generator entry point for Slidev source production.
+# incremental-validation: scoped-cache-reuse
