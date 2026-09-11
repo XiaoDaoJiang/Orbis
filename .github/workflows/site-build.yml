@@ -38,6 +38,13 @@ jobs:
           corepack prepare pnpm@11.24.0 --activate
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
+      - name: Restore Astro incremental build cache
+        uses: actions/cache@v6
+        with:
+          path: apps/web/node_modules/.astro
+          key: orbis-astro-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-${{ github.sha }}
+          restore-keys: |
+            orbis-astro-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-
       - name: Build and test site
         run: pnpm build
       - name: Upload assembled site

@@ -20,6 +20,9 @@ export default defineConfig({
   site,
   base,
   output: 'static',
+  experimental: {
+    incrementalBuild: true,
+  },
   trailingSlash: 'always',
   outDir: '../../dist/web',
 })
