@@ -1,6 +1,7 @@
 const contentOnlyPatterns = [
   /^content\/briefs\/.+\.ya?ml$/,
-  /^content\/presentations\/.+\.ya?ml$/,
+  /^content\/presentations\/[^/]+\.ya?ml$/,
+  /^content\/presentations\/[^/]+\/slides\.md$/,
   /^content\/essays\/.+\.md$/,
   /^content\/knowledge\/.+\.md$/,
 ]
