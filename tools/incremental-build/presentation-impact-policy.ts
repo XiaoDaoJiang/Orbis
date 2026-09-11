@@ -6,21 +6,26 @@ export type PresentationImpact =
   | { mode: 'ids'; ids: string[]; reasons: string[] }
   | { mode: 'all'; ids: []; reasons: string[] }
 
-const presentationSourcePattern = /^content\/(briefs|presentations)\/[^/]+\.(yaml|yml)$/
+const structuredPresentationSourcePattern = /^content\/(briefs|presentations)\/[^/]+\.(yaml|yml)$/
+const nativePresentationSourcePattern = /^content\/presentations\/([^/]+)\/slides\.md$/
 const definitelyNonPresentationContent = [
   'content/essays/',
   'content/knowledge/',
 ]
 
 function presentationIdFromPath(path: string): string | undefined {
-  if (!presentationSourcePattern.test(path)) return undefined
-  return basename(path, extname(path))
+  if (structuredPresentationSourcePattern.test(path)) return basename(path, extname(path))
+  return nativePresentationSourcePattern.exec(path)?.[1]
+}
+
+function isDeckLocalSource(path: string): boolean {
+  return structuredPresentationSourcePattern.test(path) || nativePresentationSourcePattern.test(path)
 }
 
 function requiresAllDecks(path: string): boolean {
   if (path.startsWith('docs/')) return false
   if (definitelyNonPresentationContent.some((prefix) => path.startsWith(prefix))) return false
-  if (presentationSourcePattern.test(path)) return false
+  if (isDeckLocalSource(path)) return false
 
   if (path.startsWith('content/')) return true
   if (path.startsWith('apps/')) return true
