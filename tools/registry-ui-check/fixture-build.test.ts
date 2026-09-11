@@ -11,6 +11,7 @@ const sourcePath = resolve(root, `content/sources/${sourceId}.yaml`)
 const authorPath = resolve(root, `content/authors/${authorId}.yaml`)
 const essayPath = resolve(root, `content/essays/${slug}.md`)
 const outputPath = resolve(root, `dist/web/essays/${slug}/index.html`)
+const fixtureCacheDir = resolve(root, 'node_modules/.astro-fixtures/registry-ui')
 
 const sourceContent = `name: Archived UI Source
 homepage: https://example.com/archived-ui-source
@@ -63,6 +64,7 @@ async function runBuildWeb(expectSuccess: boolean): Promise<string> {
     cwd: root,
     capture: true,
     expectedExit: expectSuccess ? 'zero' : 'nonzero',
+    env: { ASTRO_CACHE_DIR: fixtureCacheDir },
   })).output
 }
 
@@ -107,4 +109,5 @@ try {
   await rm(authorPath, { force: true })
   await rm(essayPath, { force: true })
   await rm(resolve(root, 'dist/web'), { recursive: true, force: true })
+  await rm(fixtureCacheDir, { recursive: true, force: true })
 }
