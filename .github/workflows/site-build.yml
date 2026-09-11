@@ -29,6 +29,20 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Resolve build base
+        run: |
+          set -euo pipefail
+          base_sha="${{ github.event.before }}"
+          if [ -z "$base_sha" ]; then
+            base_sha="0000000000000000000000000000000000000000"
+          fi
+          echo "ORBIS_BUILD_BASE=$base_sha" >> "$GITHUB_ENV"
+          echo "Build base: $base_sha"
+      - name: Resolve build scope
+        id: build-scope
+        run: node tools/incremental-build/build-scope.mjs --base "$ORBIS_BUILD_BASE"
       - uses: actions/setup-node@v6
         with:
           node-version: '22.16.0'
@@ -45,8 +59,59 @@ jobs:
           key: orbis-astro-main-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-${{ github.sha }}
           restore-keys: |
             orbis-astro-main-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-
-      - name: Build and test site
+      - name: Prepare Slidev cache for full build
+        if: ${{ steps.build-scope.outputs.mode == 'full' }}
+        uses: actions/cache@v6
+        with:
+          path: |
+            apps/slides/generated
+            dist/slides
+          key: orbis-slidev-main-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'config/site.yaml', 'apps/slides/package.json', 'apps/slides/presentation.ts', 'apps/slides/style.css', 'apps/slides/layouts/**', 'apps/slides/templates/**', 'packages/content-schema/package.json', 'packages/content-schema/src/**', 'tools/generate-slides/**', 'tools/build-slides/**', 'tools/shared/content.ts', 'tools/shared/process.ts', 'tools/shared/site-config.ts', 'tools/shared/presentation-scope.ts') }}-${{ github.sha }}
+          restore-keys: |
+            orbis-slidev-main-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'config/site.yaml', 'apps/slides/package.json', 'apps/slides/presentation.ts', 'apps/slides/style.css', 'apps/slides/layouts/**', 'apps/slides/templates/**', 'packages/content-schema/package.json', 'packages/content-schema/src/**', 'tools/generate-slides/**', 'tools/build-slides/**', 'tools/shared/content.ts', 'tools/shared/process.ts', 'tools/shared/site-config.ts', 'tools/shared/presentation-scope.ts') }}-
+      - name: Full build and regression
+        if: ${{ steps.build-scope.outputs.mode == 'full' }}
         run: pnpm build
+      - name: Validate content-only change
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        run: pnpm validate
+      - name: Restore Slidev deck cache
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        id: slidev-cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            apps/slides/generated
+            dist/slides
+          key: orbis-slidev-main-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'config/site.yaml', 'apps/slides/package.json', 'apps/slides/presentation.ts', 'apps/slides/style.css', 'apps/slides/layouts/**', 'apps/slides/templates/**', 'packages/content-schema/package.json', 'packages/content-schema/src/**', 'tools/generate-slides/**', 'tools/build-slides/**', 'tools/shared/content.ts', 'tools/shared/process.ts', 'tools/shared/site-config.ts', 'tools/shared/presentation-scope.ts') }}-${{ github.sha }}
+          restore-keys: |
+            orbis-slidev-main-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'config/site.yaml', 'apps/slides/package.json', 'apps/slides/presentation.ts', 'apps/slides/style.css', 'apps/slides/layouts/**', 'apps/slides/templates/**', 'packages/content-schema/package.json', 'packages/content-schema/src/**', 'tools/generate-slides/**', 'tools/build-slides/**', 'tools/shared/content.ts', 'tools/shared/process.ts', 'tools/shared/site-config.ts', 'tools/shared/presentation-scope.ts') }}-
+      - name: Resolve Slidev impact
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        id: slidev-impact
+        run: pnpm build:presentation-impact --base "$ORBIS_BUILD_BASE" --cache-hit "${{ steps.slidev-cache.outputs.cache-hit }}"
+      - name: Generate all Slidev sources
+        if: ${{ steps.build-scope.outputs.mode == 'content' && steps.slidev-impact.outputs.mode == 'all' }}
+        run: pnpm generate:slides
+      - name: Generate affected Slidev sources
+        if: ${{ steps.build-scope.outputs.mode == 'content' && steps.slidev-impact.outputs.mode == 'ids' && steps.slidev-impact.outputs.ids != '' }}
+        env:
+          SLIDES_IDS: ${{ steps.slidev-impact.outputs.ids }}
+        run: pnpm generate:slides
+      - name: Build web artifacts
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        run: pnpm build:web-artifacts
+      - name: Build all Slidev decks
+        if: ${{ steps.build-scope.outputs.mode == 'content' && steps.slidev-impact.outputs.mode == 'all' }}
+        run: pnpm build:slides
+      - name: Build affected Slidev decks
+        if: ${{ steps.build-scope.outputs.mode == 'content' && steps.slidev-impact.outputs.mode == 'ids' && steps.slidev-impact.outputs.ids != '' }}
+        env:
+          SLIDES_IDS: ${{ steps.slidev-impact.outputs.ids }}
+        run: pnpm build:slides
+      - name: Assemble and verify content-only artifact
+        if: ${{ steps.build-scope.outputs.mode == 'content' }}
+        run: pnpm build:site-artifacts
       - name: Upload assembled site
         uses: actions/upload-artifact@v7
         with:
