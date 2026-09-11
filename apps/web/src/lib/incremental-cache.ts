@@ -20,7 +20,7 @@ export function requireContentDigest(entry: DigestEntry): string {
 export function selectEntriesById<Entry extends { id: string }>(
   entries: readonly Entry[],
   ids: readonly (string | undefined)[],
-  kind: string,
+  _kind: string,
 ): Entry[] {
   const index = new Map(entries.map((entry) => [entry.id, entry]))
   const selected: Entry[] = []
@@ -29,9 +29,12 @@ export function selectEntriesById<Entry extends { id: string }>(
   for (const id of ids) {
     if (!id || seen.has(id)) continue
     const entry = index.get(id)
-    if (!entry) {
-      throw new Error(`Unknown ${kind} ID in incremental cache dependency resolution: ${id}`)
-    }
+
+    // Dependency selection must not replace the existing renderer/registry
+    // validation contract. Missing IDs stay absent here so the normal page
+    // resolver reports the canonical Author/Source error during rendering.
+    if (!entry) continue
+
     selected.push(entry)
     seen.add(id)
   }
