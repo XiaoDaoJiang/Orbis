@@ -12,7 +12,7 @@
     "build:preflight": "tsx tools/build/preflight.ts",
     "test:build-tools": "tsx tools/shared/content.test.ts && tsx tools/shared/process.test.ts && tsx tools/shared/site-config.test.ts && tsx tools/shared/toolchain.test.ts",
     "discovery:feeds": "tsx tools/feed-discovery/index.ts",
-    "test:feed-discovery": "tsx tools/feed-discovery/feed-discovery.test.ts",
+    "test:feed-discovery": "tsx tools/feed-discovery/feed-discovery.test.ts && tsx tools/feed-discovery/snapshot-workflow.test.ts",
     "content:validate": "tsx tools/validate-content/index.ts",
     "evidence:daily:report": "tsx tools/evidence-integrity/report.ts",
     "evidence:daily:correction:guard": "tsx tools/evidence-integrity/correction-guard.ts",
