@@ -27,13 +27,22 @@ await preparePresentationOutput(outputRoot, selectedIds, scope)
 for (const descriptor of selected) {
   const directory = resolve(outputRoot, descriptor.slug)
   await mkdir(directory, { recursive: true })
-  await cp(resolve(root, 'apps/slides/style.css'), resolve(directory, 'style.css'))
-  await cp(resolve(root, 'apps/slides/layouts'), resolve(directory, 'layouts'), { recursive: true })
-  await writeFile(
-    resolve(directory, 'slides.md'),
-    renderPresentation(descriptor, { siteBase }),
-    'utf8',
-  )
+
+  if (descriptor.sourceKind === 'native') {
+    if (!descriptor.nativeSourceDir) throw new Error(`Native presentation is missing source directory: ${descriptor.slug}`)
+    await cp(resolve(root, descriptor.nativeSourceDir), directory, { recursive: true })
+    await cp(resolve(root, 'apps/slides/style.css'), resolve(directory, 'orbis.css'))
+    await cp(resolve(root, 'apps/web/public/favicon.svg'), resolve(directory, 'favicon.svg'))
+  } else {
+    await cp(resolve(root, 'apps/slides/style.css'), resolve(directory, 'style.css'))
+    await cp(resolve(root, 'apps/slides/layouts'), resolve(directory, 'layouts'), { recursive: true })
+    await writeFile(
+      resolve(directory, 'slides.md'),
+      renderPresentation(descriptor, { siteBase }),
+      'utf8',
+    )
+  }
+
   await writeFile(
     resolve(directory, 'seo.json'),
     `${JSON.stringify(buildPresentationSeoManifest(descriptor, config), null, 2)}\n`,
