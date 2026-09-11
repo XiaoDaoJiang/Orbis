@@ -42,9 +42,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: apps/web/node_modules/.astro
-          key: orbis-astro-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-${{ github.sha }}
+          key: orbis-astro-main-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-${{ github.sha }}
           restore-keys: |
-            orbis-astro-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-
+            orbis-astro-main-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-
       - name: Build and test site
         run: pnpm build
       - name: Upload assembled site
