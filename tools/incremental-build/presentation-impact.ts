@@ -1,5 +1,5 @@
 import { access, appendFile, rm } from 'node:fs/promises'
-import { basename, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
 import { collectChangedEntries } from '../path-guard/change-set.ts'
 import { discoverPresentationDescriptors } from '../generate-slides/discover-presentations.ts'
