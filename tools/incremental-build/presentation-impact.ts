@@ -42,18 +42,10 @@ async function writeOutput(name: string, value: string): Promise<void> {
 const base = argumentValue('--base')
 if (!base) throw new Error('presentation-impact requires --base <git-sha>')
 
-const cacheHit = argumentValue('--cache-hit') === 'true'
 const descriptors = await discoverPresentationDescriptors({ root, siteBase, config })
 const currentIds = descriptors.map((descriptor) => descriptor.slug)
 const current = new Set(currentIds)
-
-let impact: PresentationImpact
-if (!cacheHit) {
-  impact = { mode: 'all', ids: [], reasons: ['Slidev cache miss'] }
-} else {
-  impact = classifyPresentationImpact(await collectChangedEntries(root, base))
-}
-
+let impact: PresentationImpact = classifyPresentationImpact(await collectChangedEntries(root, base))
 let buildIds: string[] = []
 let removedIds: string[] = []
 
@@ -78,7 +70,7 @@ if (impact.mode !== 'all') {
     impact = {
       mode: 'all',
       ids: [],
-      reasons: [`Slidev cache is incomplete for: ${missing.join(', ')}`],
+      reasons: [`Slidev cache is unavailable or incomplete for: ${missing.join(', ')}`],
     }
     buildIds = []
     removedIds = []
