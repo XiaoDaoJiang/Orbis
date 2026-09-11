@@ -82,7 +82,7 @@ jobs:
       - name: Resolve Slidev impact
         if: ${{ steps.build-scope.outputs.mode == 'content' }}
         id: slidev-impact
-        run: pnpm build:presentation-impact --base "$ORBIS_PR_BASE_SHA" --cache-hit "${{ steps.slidev-cache.outputs.cache-hit }}"
+        run: pnpm build:presentation-impact --base "$ORBIS_PR_BASE_SHA"
       - name: Generate all Slidev sources
         if: ${{ steps.build-scope.outputs.mode == 'content' && steps.slidev-impact.outputs.mode == 'all' }}
         run: pnpm generate:slides
