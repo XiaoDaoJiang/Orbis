@@ -6,7 +6,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import { buildSourceIndex } from '../../lib/content-registry'
 import {
   buildPublicDiscoveryItems,
-  getRelatedContent,
+  getRelatedContentSnapshot,
   toKnowledgeDiscoveryItem,
 } from '../../lib/content-discovery'
 import {
@@ -46,7 +46,7 @@ export async function getStaticPaths() {
         .filter((candidate) => candidate !== undefined)
       const replacement = replacementEntry ? { id: replacementEntry.id, title: replacementEntry.data.title } : undefined
       const supersedes = supersedesEntries.map((candidate) => ({ id: candidate.id, title: candidate.data.title }))
-      const related = getRelatedContent(current, candidates)
+      const related = getRelatedContentSnapshot(current, candidates)
       const scopedSourceEntries = selectEntriesById(
         sourceEntries,
         entry.data.references.map((reference) => reference.source),
