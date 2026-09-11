@@ -33,7 +33,7 @@
     "test:pages-promotion": "tsx tools/pages-promotion/eligibility.test.ts && tsx tools/pages-promotion/workflow-contract.test.ts",
     "test:evidence-integrity": "tsx tools/evidence-integrity/daily-evidence.test.ts && tsx tools/evidence-integrity/renderer-contract.test.ts && tsx tools/evidence-integrity/ui-contract.test.ts && tsx tools/evidence-integrity/correction-policy.test.ts && tsx tools/evidence-integrity/correction-legacy.test.ts && tsx tools/evidence-integrity/correction-guard.integration.test.ts",
     "test:evidence-ui-artifact": "tsx tools/evidence-integrity/ui-artifact-check.ts",
-    "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts && tsx tools/generate-slides/weekly-v1.test.ts && tsx tools/incremental-build/scoped-presentation-build.test.ts",
+    "test:presentation-platform": "tsx tools/generate-slides/presentation-platform.test.ts && tsx tools/generate-slides/standalone-presentation.test.ts && tsx tools/generate-slides/standalone-source-validation.test.ts && tsx tools/generate-slides/weekly-v1.test.ts && tsx tools/generate-slides/native-presentation.test.ts && tsx tools/incremental-build/scoped-presentation-build.test.ts",
     "test:weekly-brief": "tsx tools/weekly-brief/weekly-schema.test.ts && tsx tools/weekly-brief/weekly-source-validation.test.ts && tsx tools/weekly-brief/weekly-artifact-date-order.test.ts",
     "test:content-registry": "tsx tools/validate-content/registry-contract.test.ts && tsx tools/validate-content/referential-integrity-unit.test.ts && tsx tools/validate-content/referential-integrity.test.ts",
     "test:registry-ui-contract": "tsx tools/registry-ui-check/content-registry.test.ts",
@@ -49,9 +49,10 @@
     "test:knowledge-lifecycle-ui-fixtures": "tsx tools/knowledge-lifecycle/ui-fixture-build.test.ts",
     "test:knowledge-lifecycle-ui-artifact": "tsx tools/knowledge-lifecycle/ui-artifact-check.ts",
     "test:weekly-artifact": "tsx tools/weekly-brief/weekly-artifact-check.ts",
+    "test:native-slidev-artifact": "tsx tools/generate-slides/native-artifact-check.ts",
     "build:prepare": "pnpm validate && pnpm test:multi-presentation",
     "build:web-artifacts": "pnpm build:web && pnpm test:seo-web",
-    "build:site-artifacts": "pnpm assemble && pnpm test:site && pnpm test:evidence-ui-artifact && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact && pnpm test:knowledge-lifecycle-ui-artifact",
+    "build:site-artifacts": "pnpm assemble && pnpm test:site && pnpm test:evidence-ui-artifact && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact && pnpm test:knowledge-lifecycle-ui-artifact && pnpm test:native-slidev-artifact",
     "build": "pnpm build:prepare && pnpm generate:slides && pnpm build:web-artifacts && pnpm build:slides && pnpm build:site-artifacts"
   },
   "devDependencies": {
