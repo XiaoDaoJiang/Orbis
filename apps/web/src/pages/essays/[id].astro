@@ -11,7 +11,7 @@ import {
 } from '../../lib/content-registry'
 import {
   buildPublicDiscoveryItems,
-  getRelatedContent,
+  getRelatedContentSnapshot,
   isPublicEssay,
   toEssayDiscoveryItem,
 } from '../../lib/content-discovery'
@@ -35,7 +35,7 @@ export async function getStaticPaths() {
 
   return essayEntries.filter(isPublicEssay).map((entry) => {
     const current = toEssayDiscoveryItem(entry, base)
-    const related = getRelatedContent(current, candidates)
+    const related = getRelatedContentSnapshot(current, candidates)
     const scopedAuthorEntries = selectEntriesById(authorEntries, entry.data.authors, 'author')
     const scopedSourceEntries = selectEntriesById(
       sourceEntries,
