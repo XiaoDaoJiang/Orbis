@@ -18,7 +18,7 @@ signals:
     impact: medium
   - title: Signal four
     summary: Synthetic signal summary for artifact completeness checking.
-    impact: low
+    impact: watch
 sections:
   - id: section-1
     layout: architecture
