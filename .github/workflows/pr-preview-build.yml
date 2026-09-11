@@ -41,9 +41,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: apps/web/node_modules/.astro
-          key: orbis-astro-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-${{ github.sha }}
+          key: orbis-astro-pr-${{ github.event.pull_request.number }}-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-${{ github.sha }}
           restore-keys: |
-            orbis-astro-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-
+            orbis-astro-pr-${{ github.event.pull_request.number }}-${{ runner.os }}-node-22-${{ hashFiles('pnpm-lock.yaml', 'apps/web/astro.config.mjs') }}-
       - name: Guard generated paths
         run: pnpm path:guard --mode pr --base "$ORBIS_PR_BASE_SHA"
       - name: Guard scheduled Daily
