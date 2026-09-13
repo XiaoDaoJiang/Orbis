@@ -1,0 +1,212 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: 2026-09-13
+status: published
+title: Agent 配置进入可测试时代，运行时漂移必须纳入回归门禁
+summary: 从 Claude Code 把 plugin eval 变成可重复评分工件，到 GPT-6 Astra 对 Skills 与 AGENTS.md 更敏感，再到 Kimi Code 在不改变模型 ID 的情况下切换底层模型，以及 Cognition Fusion 用双 Agent Harness 优化单任务经济性，Agent 工程正在面对一个更具体的问题：配置、模型别名和 Harness 本身都会漂移，必须像代码一样被版本化、评测和治理。
+topics:
+  - agent-harness
+  - coding-agent
+signals:
+  - title: Plugin 与 Skill 开始拥有原生回归测试入口
+    summary: Claude Code v2.1.269 新增 claude plugin eval，可运行插件评测套件并产出可重复评分与 JSON、HTML 报告，Agent 扩展从人工试用开始进入机器可比较的质量门禁。
+    impact: high
+  - title: AGENTS 与 Skills 已成为真实运行时配置
+    summary: OpenAI 明确提醒 GPT-6 Astra 更容易受 Skills 和 AGENTS.md 等文件中的指令影响，并建议审计这些文件；模型升级时，提示与项目规则本身需要进入回归测试矩阵。
+    impact: high
+  - title: 稳定模型 ID 不再等于稳定行为
+    summary: Kimi Code 将 K2.8 Preview 全量切到既有 kimi-for-coding 模型 ID，客户端无需改配置即可获得不同能力与推理设置，说明别名升级必须纳入版本溯源与行为回归。
+    impact: high
+  - title: Harness 正直接优化每个任务的经济性
+    summary: Cognition Fusion 让 frontier lead 与低成本 sidekick 保持独立上下文并协作完成任务，目标不再只是按请求路由模型，而是从整条 Agent 执行链优化质量与单任务成本。
+    impact: high
+sections:
+  - id: plugin-eval-regression-gate
+    layout: architecture
+    title: Agent 扩展开始拥有可重复的质量门禁
+    conclusion: 当 Skill、Plugin 和命令成为 Agent 行为的一部分时，仅靠人工试跑不足以支撑持续升级；评测套件、稳定输入、评分结果和可审阅报告需要像测试工件一样进入发布链。
+    facts:
+      - id: claude-plugin-eval-added
+        text: Anthropic 在 Claude Code v2.1.269 中新增 claude plugin eval，用于针对 Claude Code 运行插件自己的 eval suite。
+        evidence:
+          - anthropic-claude-code-v2-1-269
+      - id: claude-plugin-eval-reproducible
+        text: 该命令会输出带评分的可重复结果，并提供 JSON 与 HTML 报告，官方 release notes 将其作为插件评测能力发布。
+        evidence:
+          - anthropic-claude-code-v2-1-269
+      - id: claude-plugin-eval-release-date
+        text: Claude Code v2.1.269 于 2026-09-11 发布，随后 2026-09-12 已有 v2.1.270，说明扩展能力与宿主版本都在快速迭代。
+        evidence:
+          - anthropic-claude-code-v2-1-269
+    limitations:
+      - plugin eval 能提供可重复评分，但评测质量仍取决于测试样本、grader 与成功标准是否覆盖真实使用场景。
+      - Claude Code 的宿主版本仍在快速更新，单次通过不能替代跨版本持续回归。
+  - id: instruction-files-runtime-config
+    layout: system-map
+    title: Skills 与 AGENTS 文件需要按运行时配置治理
+    conclusion: 更强的 instruction following 会放大项目级规则文件的作用；模型升级不只是替换 model name，还应同时重新验证 Skills、AGENTS、delegation 策略和测试边界。
+    facts:
+      - id: astra-sensitive-to-instruction-files
+        text: OpenAI 的 GPT-6 Astra 指南说明，该模型比此前模型更强地遵循指令，也可能更敏感于 Skills 和 AGENTS.md 等可访问文件中的指令，并明确建议审计这些文件。
+        evidence:
+          - openai-gpt6-astra-guidance
+      - id: astra-delegation-needs-tuning
+        text: OpenAI 指南指出 GPT-6 Astra 在部分工作流中可能比预期更少委派子 Agent，应用应明确指定何时以及以多大程度使用 subagents。
+        evidence:
+          - openai-gpt6-astra-guidance
+      - id: astra-testing-needs-calibration
+        text: OpenAI 指南指出 GPT-6 Astra 在编码任务中倾向于进行充分测试，小任务可能执行超出必要范围的测试，因此应按任务规模校准验证要求。
+        evidence:
+          - openai-gpt6-astra-guidance
+    limitations:
+      - 这些行为建议针对 GPT-6 Astra，不能直接假设其他模型具有相同的 instruction sensitivity 或 delegation 偏好。
+      - 审计规则文件只能降低配置漂移风险，仍需真实任务 eval 才能判断组合后的 Agent 行为。
+  - id: stable-alias-behavior-drift
+    layout: timeline
+    title: 模型别名可以保持不变，但行为与成本边界会改变
+    conclusion: 当供应商在不改变客户端配置的情况下升级别名背后的模型时，生产系统必须记录实际模型版本、发布窗口和评测结果，否则同一配置无法保证同一行为。
+    facts:
+      - id: kimi-k28-same-model-id
+        text: Kimi Code 于 2026-09-11 宣布 K2.8 Preview 已全量上线，同时保持模型 ID 为 kimi-for-coding，因此客户端与第三方工具无需修改配置。
+        evidence:
+          - kimi-code-k28-preview
+      - id: kimi-k28-thinking-levels
+        text: K2.8 Preview 提供 low、high、max 三档 thinking level，默认 max；关闭 thinking 时，相关请求由 K2.8 Preview 的 no-thinking 模式处理。
+        evidence:
+          - kimi-code-k28-preview
+      - id: kimi-k28-million-context
+        text: Kimi Code 文档说明 K2.8 Preview 提供最高 1M context window，并向所有会员层级开放。
+        evidence:
+          - kimi-code-k28-preview
+    limitations:
+      - Kimi 对能力提升和推理效率的描述属于厂商自报，不应直接当作跨供应商 benchmark 结论。
+      - 稳定别名简化了客户端升级，但也意味着调用方需要自行建立 resolved-version 与行为回归的可观测性。
+  - id: dual-agent-harness-economics
+    layout: comparison
+    title: 双 Agent Harness 把模型选择变成持续协作结构
+    conclusion: 任务级成本优化正在从一次性的模型路由转向长期保持上下文的多模型协作；真正需要评测的是 lead、sidekick、委派协议与缓存策略组成的整体系统。
+    facts:
+      - id: fusion-two-persistent-agents
+        text: Cognition Fusion 同时运行两个拥有各自持久上下文和工具的 Agent，由 frontier lead 负责会话并把工作委派给更低成本的 sidekick。
+        evidence:
+          - cognition-fusion
+      - id: fusion-role-boundary
+        text: Fusion 中 lead 负责计划、歧义解释与最终 review，sidekick 负责代码探索、实现、测试并汇报结果；lead 可以在 sidekick 无法处理时重新接管。
+        evidence:
+          - cognition-fusion
+      - id: fusion-brief-exchange-cache
+        text: Fusion 不在模型之间传递完整对话，而只交换 brief、结果和反馈，让两个 Agent 各自建立持久上下文并利用 prompt caching。
+        evidence:
+          - cognition-fusion
+      - id: fusion-vendor-efficiency-claim
+        text: Cognition 报告 Fusion 在多项 coding benchmarks 上相较其他 model harness 最多提升 39% 的效率，并主张应按 price per task 而不是 price per token 评价模型与 Harness 组合。
+        evidence:
+          - cognition-fusion
+    limitations:
+      - 39% 效率提升来自 Cognition 官方及其合作评测，属于厂商自报结果，不代表所有代码库与任务都能复现。
+      - 双 Agent 长驻上下文会增加编排复杂度，收益依赖任务能否被稳定拆分以及 lead 的 review 是否足够可靠。
+  - id: centralized-state-control-plane
+    layout: architecture
+    title: 长期 Agent 的状态层需要集中控制与可预测接口
+    conclusion: Agent 一旦长期运行并持续读取设置、会话与业务状态，数据层就不只是存储问题；集中授权、审计、限流和可预测请求成本能够把状态基础设施变成真正的控制面。
+    facts:
+      - id: habitat-scale
+        text: OpenAI 报告其 Habitat 在线存储平台当前每秒处理超过 7000 万请求，支撑每周超过 10 亿用户使用的产品，并管理超过 500 PB 数据。
+        evidence:
+          - openai-habitat-storage
+      - id: habitat-library-to-service
+        text: OpenAI 将 Habitat 从客户端库拆成独立服务，以建立部署、可观测性与平台改进的单一控制点，并集中执行访问控制、审计日志和底层存储访问限制。
+        evidence:
+          - openai-habitat-storage
+      - id: habitat-bounded-api
+        text: Habitat 刻意使用受限 NoSQL API 来保持请求成本可预测，避免任意 SQL 带来的大扫描和不可控 fanout，并把复杂查询隔离到独立的辅助分析视图。
+        evidence:
+          - openai-habitat-storage
+      - id: habitat-downstream-protection
+        text: Habitat 使用 Envoy 聚合连接并通过 HTTP/2 multiplexing、rate limits 与 circuit breakers 降低大量进程对下游资源造成 thundering herd 的风险。
+        evidence:
+          - openai-habitat-storage
+    limitations:
+      - Habitat 的规模与实现来自 OpenAI 官方工程文章，不能直接外推为所有 Agent 产品都需要同样的分布式架构。
+      - 集中控制点会改善治理一致性，但也会成为关键基础设施，需要独立的高可用、隔离和容量设计。
+projects:
+  - action: READ
+    name: anthropics/claude-code
+    summary: 观察 plugin eval、宿主版本变化与扩展评测能力如何进入 Claude Code 发布链，并把可复用做法映射到自己的 Skill 与 Plugin 测试流程。
+    maturity: growing
+    url: https://github.com/anthropics/claude-code
+  - action: TEST
+    name: openai/codex
+    summary: 用真实项目建立 AGENTS.md、Skills、模型版本与任务结果的回归矩阵，验证规则文件和 Harness 升级对行为的实际影响。
+    maturity: growing
+    url: https://github.com/openai/codex
+radar:
+  - label: Plugin and Skill Evals
+    impact: 96
+    horizon: 10
+    note: Agent 扩展已经能被独立评分，适合立即纳入 CI 与发布门禁。
+  - label: Instruction Config Auditing
+    impact: 94
+    horizon: 10
+    note: 模型对规则文件更敏感后，AGENTS 与 Skills 的漂移会直接改变执行行为。
+  - label: Model Alias Regression
+    impact: 92
+    horizon: 12
+    note: 稳定模型 ID 背后的版本可被无配置升级，生产环境需要 resolved-version 与回归证据。
+  - label: Multi-model Harness Economics
+    impact: 91
+    horizon: 22
+    note: 多模型协作开始直接优化 price per task，但需要验证委派、缓存和 review 的组合收益。
+  - label: Agent State Control Plane
+    impact: 93
+    horizon: 24
+    note: 长期 Agent 的状态规模上升后，集中授权、审计、限流与有界 API 会成为平台能力。
+actions:
+  - title: 给每个 Skill 与 Plugin 建立行为回归套件
+    description: 为关键扩展维护稳定任务集、grader、预期副作用和失败样本，并在宿主 Agent 或模型升级时自动重跑，而不是只验证能否加载。
+  - title: 记录实际模型版本与 Harness provenance
+    description: 在每次 Agent run 中记录模型别名、可解析的底层版本、Harness 版本、规则文件版本和关键配置，使同一任务结果能够跨升级比较。
+  - title: 用 price per task 评估多模型协作
+    description: 对 lead 与 sidekick 组合同时记录成功率、总成本、工具轮次、缓存命中和返工次数，再决定是否优于单模型或简单路由。
+  - title: 把状态访问约束放到独立控制面
+    description: 为长期 Agent 的状态与业务数据提供集中授权、审计、限流、熔断和有界查询接口，避免把资源保护只留给调用端自律。
+references:
+  - id: anthropic-claude-code-v2-1-269
+    title: Claude Code v2.1.269
+    url: https://github.com/anthropics/claude-code/releases/tag/v2.1.269
+    supports: 支撑 claude plugin eval 的发布、可重复评分以及 JSON 和 HTML 报告能力。
+    accessedAt: 2026-09-13
+  - id: openai-gpt6-astra-guidance
+    title: OpenAI GPT-6 Astra model guidance
+    url: https://developers.openai.com/api/docs/guides/latest-model
+    supports: 支撑 Astra 对 Skills 与 AGENTS.md 指令更敏感，以及 subagent delegation 与 testing 需要显式调校的说明。
+    accessedAt: 2026-09-13
+  - id: kimi-code-k28-preview
+    title: Kimi Code K2.8 Preview
+    url: https://www.kimi.com/code/docs/en/kimi-code/whats-new.html
+    supports: 支撑 K2.8 Preview 保持 kimi-for-coding 模型 ID、thinking level 与 1M context 的更新说明。
+    accessedAt: 2026-09-13
+  - id: cognition-fusion
+    title: Introducing Fusion in Devin Desktop and CLI
+    url: https://cognition.com/blog/local-fusion
+    supports: 支撑 Fusion 的 lead 与 sidekick 双 Agent 架构、持久上下文、brief 交换和厂商效率评测。
+    accessedAt: 2026-09-13
+  - id: openai-habitat-storage
+    title: Rapidly scaling online storage to serve over 1 billion ChatGPT users
+    url: https://openai.com/index/scaling-storage-one-billion-users-part-one/
+    supports: 支撑 Habitat 的规模、从 library 到 service 的控制面演进、有界 API 与下游资源保护设计。
+    accessedAt: 2026-09-13
+archivePicks:
+  - title: Agent 进入分层运行栈，Harness 与协调器正在成为独立产品层
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-11.yaml
+    supports: 回看 Harness、Coordinator 与执行环境分层，为本期进一步讨论配置回归与 Harness 经济性提供背景。
+    publishedAt: 2026-09-11
+  - title: Agent 进入高副作用闭环，控制平面开始脱离模型
+    url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-09.yaml
+    supports: 回看权限、身份与证据控制平面，为本期状态层与配置治理提供前置脉络。
+    publishedAt: 2026-09-09
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
