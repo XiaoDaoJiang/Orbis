@@ -2,6 +2,8 @@
 layout: center
 ---
 
+<!-- validation: warning-free native Slidev cache seed -->
+
 # Why a native mode?
 
 <v-clicks>
