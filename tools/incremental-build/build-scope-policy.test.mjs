@@ -6,6 +6,10 @@ for (const path of [
   'content/briefs/weekly/example.yml',
   'content/presentations/platform.yaml',
   'content/presentations/native-talk/slides.md',
+  'content/presentations/native-talk/sections/intro.md',
+  'content/presentations/native-talk/components/MetricCard.vue',
+  'content/presentations/native-talk/assets/diagram.svg',
+  'content/presentations/native-talk/custom.css',
   'content/essays/agent.md',
   'content/knowledge/runtime/note.md',
 ]) {
@@ -15,7 +19,6 @@ for (const path of [
 for (const path of [
   'content/topics/agent.yaml',
   'content/sources/openai.yaml',
-  'content/presentations/native-talk/local-asset.png',
   'apps/web/src/pages/index.astro',
   'tools/build-slides/index.ts',
   'config/site.yaml',
@@ -39,6 +42,7 @@ assert.equal(classifyBuildScope([
 ]), 'content')
 assert.equal(classifyBuildScope([
   { status: 'M', path: 'content/presentations/native-talk/slides.md' },
+  { status: 'M', path: 'content/presentations/native-talk/assets/diagram.svg' },
 ]), 'content')
 assert.equal(classifyBuildScope([
   { status: 'M', path: 'content/briefs/2026-09-11.yaml' },
