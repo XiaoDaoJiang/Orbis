@@ -11,6 +11,8 @@ modes:
       - content/presentations/
       - content/essays/
       - content/knowledge/
+    denyPatterns:
+      - '^content/presentations/[^/]+/'
   scheduled-daily:
     allowPrefixes:
       - content/briefs/
