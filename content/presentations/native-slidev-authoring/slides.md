@@ -2,7 +2,6 @@
 theme: default
 title: Native Slidev Authoring in Orbis
 favicon: ./favicon.svg
-css: ./orbis.css
 transition: slide-left
 orbis:
   kind: native-presentation
