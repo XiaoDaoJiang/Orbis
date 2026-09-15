@@ -5,15 +5,27 @@ import type { PresentationSeoManifest } from './presentation-seo.ts'
 
 const root = resolve(import.meta.dirname, '../..')
 const slug = 'native-slidev-authoring'
-const sourcePath = resolve(root, `content/presentations/${slug}/slides.md`)
-const generatedPath = resolve(root, `apps/slides/generated/${slug}/slides.md`)
-const generatedStyle = resolve(root, `apps/slides/generated/${slug}/orbis.css`)
-const generatedFavicon = resolve(root, `apps/slides/generated/${slug}/favicon.svg`)
-const manifestPath = resolve(root, `apps/slides/generated/${slug}/seo.json`)
+const sourceRoot = resolve(root, `content/presentations/${slug}`)
+const generatedRoot = resolve(root, `apps/slides/generated/${slug}`)
+const sourcePath = resolve(sourceRoot, 'slides.md')
+const importedSourcePath = resolve(sourceRoot, 'sections/why-native.md')
+const generatedPath = resolve(generatedRoot, 'slides.md')
+const generatedImportedPath = resolve(generatedRoot, 'sections/why-native.md')
+const generatedStyle = resolve(generatedRoot, 'orbis.css')
+const generatedFavicon = resolve(generatedRoot, 'favicon.svg')
+const manifestPath = resolve(generatedRoot, 'seo.json')
 const deckPath = resolve(root, `dist/site/slides/${slug}/index.html`)
 const discoveryPath = resolve(root, 'dist/site/slides/index.html')
 
-for (const path of [generatedPath, generatedStyle, generatedFavicon, manifestPath, deckPath, discoveryPath]) {
+for (const path of [
+  generatedPath,
+  generatedImportedPath,
+  generatedStyle,
+  generatedFavicon,
+  manifestPath,
+  deckPath,
+  discoveryPath,
+]) {
   await access(path)
 }
 
@@ -21,6 +33,11 @@ assert.equal(
   await readFile(generatedPath, 'utf8'),
   await readFile(sourcePath, 'utf8'),
   'Native Slidev Markdown must pass through without template rendering',
+)
+assert.equal(
+  await readFile(generatedImportedPath, 'utf8'),
+  await readFile(importedSourcePath, 'utf8'),
+  'Native Slidev support files must remain deck-local build inputs',
 )
 
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as PresentationSeoManifest
