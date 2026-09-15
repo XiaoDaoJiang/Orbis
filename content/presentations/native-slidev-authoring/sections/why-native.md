@@ -2,6 +2,8 @@
 layout: center
 ---
 
+<!-- validation: native Slidev deck-local cache seed -->
+
 # Why a native mode?
 
 <v-clicks>
