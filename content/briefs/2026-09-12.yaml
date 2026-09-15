@@ -1,0 +1,221 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: 2026-09-12
+status: published
+title: Agent 控制面继续下沉，安全、数据与推理基础设施成为新边界
+summary: 从 Anthropic 把战术情报与常规武器能力纳入模型评测，并把真实滥用调查反馈到分类器与防护，到 OpenAI Data agent 和 Alteryx MCP Server 将权限、业务语义与审批带入 Agent 执行链，再到 DeepSelect 与 DeepJIT 将性能优化下沉到 Kernel 和 xPU Runtime，Agent 工程正在从“模型会不会做”转向“风险、数据与计算能否被持续治理”。
+topics:
+  - agent-harness
+  - coding-agent
+signals:
+  - title: 安全评测开始覆盖真实副作用链条
+    summary: Anthropic 的新评测已覆盖账户关联、人物分类、图像与文本定位、制导和无人机控制等任务，Agent 风险评估正在从抽象能力转向可造成现实副作用的完整链条。
+    impact: high
+  - title: 企业数据 Agent 的核心是继承权限与业务语义
+    summary: OpenAI Data agent 把语义层、数据仓库、BI 工具和既有访问控制放进同一分析与行动流程，企业 Agent 的质量开始依赖模型外的受治理上下文。
+    impact: high
+  - title: MCP 正从连接器升级为受控执行边界
+    summary: Alteryx MCP Server 把可调用能力限制在已批准的工作流、数据集和 Toolset，并沿用 workspace、role 与 asset 权限，说明 Tool 接入正在与治理和审计一起产品化。
+    impact: high
+  - title: 推理成本继续下沉到 Kernel 与 Runtime
+    summary: DeepSelect 针对 Sparse Attention 与采样优化 TopK，DeepJIT 则统一 CUDA 与 Ascend 的 JIT、缓存和加载流程，Agent 长上下文与高频调用的成本优化正继续进入模型以下的基础设施层。
+    impact: high
+sections:
+  - id: safety-capability-evals
+    layout: metrics
+    title: 高风险能力评测开始从抽象分数走向任务链
+    conclusion: 当模型能够在模拟环境中执行定位、目标识别和武器控制相关任务时，安全评测需要覆盖可操作任务链，而不能只依赖通用能力分数或单轮拒答率。
+    facts:
+      - id: synthetic-account-linkage-eval
+        text: Anthropic 为跨平台账户关联和人物分类构建了 200 个模拟任务，覆盖两个虚构场景世界和三个难度层级，并用 F1 衡量识别能力。
+        evidence:
+          - anthropic-targeting-evals
+      - id: photo-geolocation-frontier-result
+        text: 在 6000 张无元数据照片的定位评测中，Anthropic 报告 Mythos Preview 和 Mythos 5 的中位距离误差分别为 37.0 km 和 47.2 km，优于其引用的竞技 GeoGuessr 最强人类基线；这一比较属于官方实验设计下的结果。
+        evidence:
+          - anthropic-targeting-evals
+      - id: simulated-weapons-control-evals
+        text: Anthropic 还评测模型编写制导、导航和控制软件的能力，官方报告称 Opus 5、Mythos 5 与 Mythos Preview 能在其三个模拟任务的各难度设置中产出可运行方案，并在较简单到中等设置上迭代到可靠水平。
+        evidence:
+          - anthropic-targeting-evals
+    limitations:
+      - 多项评测基于模拟数据或物理模拟器，不能直接等同于现实世界作战效果。
+      - 官方明确指出这些结果没有直接测量 uplift，且现实行动仍受到材料、组织和操作条件约束。
+  - id: misuse-to-safeguards
+    layout: timeline
+    title: 真实滥用调查正在反向驱动防护系统
+    conclusion: Provider 侧最有价值的安全闭环不是只在发布前做静态评测，而是把真实滥用观测、账户处置、情报共享和新分类器持续反馈到运行中的控制面。
+    facts:
+      - id: seven-harm-areas-observed
+        text: Anthropic 的 2026 年 9 月 Threat Intelligence 报告覆盖其在 2025 年 12 月至 2026 年 8 月间处置的七类滥用，包括网络行动、影响行动、监控、诈骗、生物滥用、常规武器开发和非法蒸馏。
+        evidence:
+          - anthropic-threat-report
+      - id: six-conventional-weapons-cases
+        text: 在常规武器部分，Anthropic 公布了六个已调查并处置的案例，其中三个位于中国、两个位于俄罗斯、一个位于也门，涉及武器软件开发、采购和情报收集。
+        evidence:
+          - anthropic-threat-report
+      - id: safeguards-feedback-loop
+        text: Anthropic 表示会封禁违反政策的账户、将调查发现反馈到防护系统并与公共和私营伙伴共享威胁信息，同时已上线一组用于更好检测和阻断高当量爆炸物与武器开发流量的新分类器。
+        evidence:
+          - anthropic-threat-report
+    limitations:
+      - 这些案例来自单一模型提供商的内部调查视角，外部无法完整复核所有账户归因与处置细节。
+      - 分类器可以提高拦截能力，但官方同时承认底层工程能力具有双重用途，规则无法完全消除误判和绕过风险。
+  - id: governed-data-agent
+    layout: system-map
+    title: Data agent 把语义层、权限和行动接成同一条链
+    conclusion: 企业 Agent 要从“能查数据”走向“能做决策并行动”，关键不是再增加一个聊天入口，而是让业务定义、数据权限、证据复核与外部动作共享同一治理边界。
+    facts:
+      - id: data-agent-connected-sources
+        text: OpenAI Data agent 可连接 Redshift、Datadog、BigQuery、ClickHouse、Databricks、MongoDB、Snowflake 等已批准数据源，并可在授权情况下把 Google Drive 与 SharePoint 文档纳入分析。
+        evidence:
+          - openai-data-agent
+          - openai-data-plugin-help
+      - id: semantic-layer-context
+        text: Data agent 会使用组织已有的业务术语、指标定义、自定义计算和数据关系，并可从 dbt、Databricks Genie Ontology、Snowflake Horizon、GitHub 与 BI dashboard 等受信来源获取上下文。
+        evidence:
+          - openai-data-agent
+      - id: row-column-permission-inheritance
+        text: OpenAI 文档明确说明管理员控制可用连接和角色，查询沿用已连接账户的现有权限，包括 table、row 与 column 级限制，而成功建立连接不会额外扩大源系统权限。
+        evidence:
+          - openai-data-agent
+          - openai-data-plugin-help
+      - id: approved-actions-after-analysis
+        text: Data agent 可以把发现通过 Slack 或 email 分享，并通过已连接工具执行用户批准的动作；官方帮助文档同时要求动作受工具能力、账户权限和适用审批要求约束。
+        evidence:
+          - openai-data-agent
+          - openai-data-plugin-help
+    limitations:
+      - 分析正确性仍依赖语义层、指标定义和源数据质量，连接更多系统不会自动消除业务语义错误。
+      - 将分析结果发布或发送给其他人会产生新的数据传播边界，仍需要人工检查目标、内容和权限。
+  - id: governed-mcp-business-logic
+    layout: architecture
+    title: MCP 的价值正在从“连上工具”升级为“复用受治理业务逻辑”
+    conclusion: 当 MCP Server 直接暴露经过审批的工作流与数据能力，并继承原平台的认证、权限和审计时，Agent 不必把所有确定性业务逻辑重新塞进 Prompt 或上下文。
+    facts:
+      - id: alteryx-mcp-approved-capabilities
+        text: Alteryx MCP Server 允许 MCP 兼容 Agent 发现并调用已批准的 Alteryx 能力，用于创建、检查、测试、运行工作流、获取受治理洞察以及执行自动化动作。
+        evidence:
+          - alteryx-mcp-server
+      - id: workspace-role-asset-controls
+        text: Alteryx 表示外部 Agent 的请求按照适用的 workspace、role 和 asset 权限进行认证与执行，管理员可以决定哪些 workflow、dataset 和 toolset 对 AI 应用暴露。
+        evidence:
+          - alteryx-mcp-server
+      - id: deterministic-processing-outside-model
+        text: Alteryx 建议把数据密集且确定性的处理留在受治理 workflow 中，再只把聚焦后的结果返回给语言模型，以减少模型需要处理的数据量和 token 使用。
+        evidence:
+          - alteryx-mcp-server
+      - id: skills-and-tools-separation
+        text: Alteryx 将 MCP Server 定义为可调用能力入口，同时把 Alteryx Skills 定义为帮助 coding agent 正确构建、测试和操作 workflow 的可复用过程指导，两者分别承担 Tool 与 Procedure 的角色。
+        evidence:
+          - alteryx-mcp-server
+    limitations:
+      - 该模式依赖底层 Alteryx 资产本身已经正确建模和治理，错误 workflow 会被稳定地重复执行。
+      - MCP 可调用能力和实际支持范围会随部署方式、认证方法和产品版本变化，不能假设所有客户端具有相同 Tool surface。
+  - id: kernel-runtime-foundation
+    layout: comparison
+    title: Agent 推理优化正在进入 TopK Kernel 与跨 xPU JIT 层
+    conclusion: 长上下文和高频 Agent 调用带来的成本压力，不只靠模型结构解决；Sparse Attention、采样 Kernel、编译缓存和设备 Runtime 也正在成为可独立复用的优化层。
+    facts:
+      - id: deepselect-topk-scope
+        text: DeepSelect v1.0.0 于 2026-09-10 发布，提供用于 DeepSeek Sparse Attention 和 sampler 的高性能 TopK 实现，官方仓库报告在其覆盖场景中相较 vanilla torch.topk 达到 2 至 20 倍加速。
+        evidence:
+          - deepseek-deepselect
+      - id: deepselect-specialized-workloads
+        text: DeepSelect 明确限定其优化场景，包括 bfloat16 的 Lightning Indexer 和约 128K vocab 的 float32 sampling，并要求较小的 topk 不超过 4096，说明该优化是针对特定 Agent 推理路径的专用 Kernel 而非通用替代品。
+        evidence:
+          - deepseek-deepselect
+      - id: deepjit-cross-backend-runtime
+        text: DeepJIT 是 header-only C++20 JIT Runtime，为 NVIDIA CUDA GPU 与 Huawei Ascend NPU 提供统一的 compile、cache、load 与 launch 工作流，同时保留各后端自己的编译和启动选项。
+        evidence:
+          - deepseek-deepjit
+      - id: deepjit-shared-cache
+        text: DeepJIT 的磁盘缓存支持本地与分布式文件系统，并允许多个用户、进程和节点共享同一缓存目录复用已编译 Kernel；缓存键纳入源码、tracked includes、编译器版本和有效编译选项等输入。
+        evidence:
+          - deepseek-deepjit
+    limitations:
+      - DeepSelect 的性能数字来自项目自身 benchmark，实际收益取决于输入形状、batch、topk、硬件和完整推理栈。
+      - DeepJIT 当前要求 Linux 与特定 CUDA 或 Ascend 工具链，且部分 Python API 与 cache warmup 功能仍处于开发中。
+projects:
+  - action: TEST
+    name: deepseek-ai/DeepSelect
+    summary: 在真实长上下文或大词表推理工作负载中复测 TopK Kernel 收益，并记录 batch、topk、吞吐和端到端延迟的变化。
+    maturity: early
+    url: https://github.com/deepseek-ai/DeepSelect
+  - action: READ
+    name: deepseek-ai/DeepJIT
+    summary: 阅读其 CUDA 与 Ascend backend、缓存键和共享缓存设计，评估是否适合作为多硬件推理扩展的公共 JIT 基础层。
+    maturity: early
+    url: https://github.com/deepseek-ai/DeepJIT
+radar:
+  - label: Physical-risk capability evals
+    impact: 98
+    horizon: 10
+    note: 模型能力进入定位与武器控制相关任务后，高副作用评测必须成为上线与访问策略的一部分。
+  - label: Threat-intel feedback loop
+    impact: 96
+    horizon: 12
+    note: 真实滥用观测、账户处置和新分类器正在把模型安全从发布前测试扩展到持续运行控制面。
+  - label: Governed data agents
+    impact: 94
+    horizon: 14
+    note: 企业 Agent 的可用性越来越取决于语义层、既有权限、证据复核和动作审批能否保持一致。
+  - label: Governed MCP execution
+    impact: 93
+    horizon: 16
+    note: Tool 接入开始携带 workflow、权限和审计边界，MCP 的工程价值正在从连接协议扩展到治理接口。
+  - label: Kernel and xPU runtime optimization
+    impact: 89
+    horizon: 20
+    note: Agent 推理成本正在继续下沉到 Sparse Attention、TopK、JIT 和共享缓存等模型以下的基础设施。
+actions:
+  - title: 给高副作用 Tool 增加能力级评测
+    description: 不只测试模型是否拒答，还为定位、控制、账户关联等真实动作链定义离线任务、成功阈值、人工审批和上线阻断条件。
+  - title: 把企业 Agent 的语义和权限放到模型之外
+    description: 优先复用现有 semantic layer、RBAC 与 source permissions，让模型只消费经过治理的定义和结果，不在 Prompt 中复制业务规则。
+  - title: 将 MCP Tool 与 Skill Procedure 分开治理
+    description: 为每个 MCP capability 定义可调用边界与权限，同时用独立 Skill 描述稳定 SOP，避免把访问能力和操作方法混成一个不可审计 Prompt。
+  - title: 在 Agent 成本分析中加入 Kernel 与 Runtime 指标
+    description: 除 token 与模型价格外，同时测量 TopK、KV、JIT 编译、缓存命中与设备切换成本，找到真正限制长任务吞吐的基础设施层。
+references:
+  - id: anthropic-targeting-evals
+    title: Measuring tactical intelligence targeting and conventional weapons capabilities of AI models
+    url: https://www.anthropic.com/research/intelligence-targeting-conventional-weapons-capabilities
+    supports: Anthropic 对账户关联、人物分类、图像与文本定位以及常规武器制导和控制能力的评测方法、结果与限制。
+    accessedAt: 2026-09-12
+  - id: anthropic-threat-report
+    title: Detecting and countering misuse of AI September 2026
+    url: https://www.anthropic.com/threat-intelligence-report-september-2026
+    supports: Anthropic 真实滥用调查的时间范围、七类风险、六个常规武器案例以及调查结果反馈到分类器和防护的流程。
+    accessedAt: 2026-09-12
+  - id: openai-data-agent
+    title: Now everyone can put data to work
+    url: https://openai.com/index/put-data-to-work/
+    supports: OpenAI Data agent 的数据源、语义层、权限继承、dashboard 与批准后行动能力。
+    accessedAt: 2026-09-12
+  - id: openai-data-plugin-help
+    title: Using the Data plugin in ChatGPT Work and Codex
+    url: https://help.openai.com/en/articles/20001518
+    supports: Data plugin 的 workspace 管理、semantic layer 建议、table row column 权限、外部动作与审批边界。
+    accessedAt: 2026-09-12
+  - id: alteryx-mcp-server
+    title: Alteryx MCP Server and Alteryx Skills
+    url: https://www.alteryx.com/platform/ai-analytics/agentic-analytics/mcp-server
+    supports: Alteryx 通过 MCP 暴露受批准能力、继承 workspace role asset 权限、复用确定性 workflow 以及 Skills 与 Tools 的职责分离。
+    accessedAt: 2026-09-12
+  - id: deepseek-deepselect
+    title: DeepSelect
+    url: https://github.com/deepseek-ai/DeepSelect
+    supports: DeepSelect v1.0.0 的 TopK 优化目标、适用 workload、官方 benchmark 与使用限制。
+    accessedAt: 2026-09-12
+  - id: deepseek-deepjit
+    title: DeepJIT
+    url: https://github.com/deepseek-ai/DeepJIT
+    supports: DeepJIT 的 CUDA Ascend JIT 抽象、编译缓存、共享缓存、工具链要求和当前开发状态。
+    accessedAt: 2026-09-12
+archivePicks: []
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1

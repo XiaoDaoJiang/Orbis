@@ -1,0 +1,176 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: 2026-09-14
+status: published
+title: Agent 工具开始解绑模型账单，路由与生命周期成为新的控制面
+summary: Amp 把 Agent 产品费用与模型、执行计算拆开，Qoder 继续扩大 BYOK 与兼容端点接入，同时即将退役的 Lite tier 暴露出固定模型自动化的生命周期风险；另一端，Dario Amodei 提议把外部评测者和能力检查点嵌入前沿模型发布流程。Agent 平台正在从“绑定一个模型卖席位”转向可插拔模型、显式路由、可预期退役与持续验证的控制面。
+topics:
+  - agent-harness
+  - coding-agent
+signals:
+  - title: Agent 产品正在与模型账单解绑
+    summary: Amp 允许自带模型订阅、API Key 与本地 Runner 免费使用核心 Agent 能力，平台收费开始更多落在远程执行资源和增值服务，而不是强制绑定模型 token。
+    impact: high
+  - title: 模型路由开始成为可配置的运行时资产
+    summary: Amp 可以分别为主 Agent、Oracle 与子 Agent 选择模型和推理强度，Qoder 也把 BYOK 与兼容端点纳入模型选择器，模型组合正在从厂商默认值变成显式配置。
+    impact: high
+  - title: Provider 可替换不等于生命周期无风险
+    summary: Qoder 即将移除 Lite tier，Headless CLI、Cloud Agents API 与 Service Account 的显式 Lite 请求届时会直接失败，说明无人值守 Agent 必须把模型退役与 fallback 当成运行时合同。
+    impact: high
+  - title: 高能力系统的发布门禁正在向持续外部验证扩展
+    summary: Dario Amodei 提议让第三方评测团队持续访问训练和部署流程，并以能力检查点绑定评测、可解释性与训练环境审计，验证开始从一次性报告走向持续治理。
+    impact: high
+sections:
+  - id: decoupled-agent-economics
+    layout: architecture
+    title: Agent Shell 与模型、计算的计费边界开始拆开
+    conclusion: 当用户可以独立提供模型订阅、API Key 和执行机器时，Agent 产品的价值需要更多来自 Harness、协作、远程执行和治理，而不只是转售推理 token。
+    facts:
+      - id: amp-free-with-own-compute-models
+        text: Amp 在 2026-09-13 宣布，用户自带计算资源以及模型订阅或 API Key 时，可以免费使用 Amp，不再要求月度计划才能连接 ChatGPT subscription。
+        evidence: [amp-free-agent]
+      - id: amp-runners-versus-orbs
+        text: Amp 将执行资源显式拆成两类：用户可以免费在自己的 Runner 上运行 Agent，也可以为 Amp 的远程 Orbs 付费，让 Agent 在远程计算机上独立并行执行。
+        evidence: [amp-free-agent]
+      - id: amp-byok-no-token-fee
+        text: Amp 的 Hobby 与 Teams 方案支持从外部订阅或 BYOK 获取模型 token，并声明除 Enterprise tier 外不收取 BYOK token fee 或额外 token limit。
+        evidence: [amp-free-agent]
+    limitations:
+      - 这是 Amp 自身的产品与定价设计，不代表所有 Coding Agent 都会采用相同的商业模式。
+      - 自带模型费用不等于 Agent 总成本为零，远程执行、团队治理和企业控制仍可能单独计费。
+  - id: role-aware-model-routing
+    layout: system-map
+    title: 路由控制面开始区分 Agent 角色而不只是切换单一模型
+    conclusion: 当主 Agent、Oracle、子 Agent 和自定义角色可以分别绑定模型时，模型路由需要像部署配置一样被版本化、审查并进入回归测试。
+    facts:
+      - id: amp-role-level-model-selection
+        text: Amp 的 Tune Modes 允许分别为内置模式的主 Agent、Oracle 和 subagents 选择模型与 reasoning effort，而模式原有的 prompt 与 tools 保持不变。
+        evidence: [amp-custom-dial]
+      - id: amp-provider-backed-billing
+        text: Amp 允许所选角色通过用户自己的 API Key 或 ChatGPT subscription 运行，账单跟随已连接的模型提供方；保持 Auto 的角色则继续跟随 Amp 的默认路由。
+        evidence: [amp-custom-dial]
+      - id: amp-shared-custom-dial
+        text: Amp 的 Build Dial 可以把自定义 plugin agent 与内置模式组合到同一切换面板，Workspace 管理员还可以配置共享 Dial。
+        evidence: [amp-custom-dial]
+    limitations:
+      - 角色级路由增加灵活性，也会增加组合数量；没有固定 eval 集时，很难判断一次模型替换是否改变了整体行为。
+      - Auto 路由会随平台默认值变化，生产环境若需要可复现性仍应记录实际模型与配置。
+  - id: provider-portability-contract
+    layout: comparison
+    title: BYOK 正从密钥输入框升级为 Provider 兼容层
+    conclusion: 真正的模型可移植性不仅是“能填一个 Key”，还需要统一选择器、兼容 API、凭据校验与会话级切换语义，让 Harness 能在不重写工作流的情况下替换推理后端。
+    facts:
+      - id: qoder-cli-byok-wizard
+        text: Qoder CLI 的 Custom model 流程通过 /model 中的 BYOK wizard 完成 Provider、model type 与 model 选择，并在凭据校验通过后立即把模型加入当前可选列表。
+        evidence: [qoder-cli-custom-models]
+      - id: qoder-compatible-endpoints
+        text: Qoder 的 Custom Models 支持预设 Provider，也支持 OpenAI Compatible 与 Anthropic Compatible 自定义 Provider；OpenAI Compatible 还可选择 Chat Completions API 或 Responses API，并配置 Base URL 与多个 Model ID。
+        evidence: [qoder-custom-models]
+      - id: qoder-session-model-switch
+        text: Qoder CLI 在 Custom tab 选择已添加模型后即可切换当前 Session 使用的模型，Provider 与可用模型目录由当前账户的 BYOK catalog 决定。
+        evidence: [qoder-cli-custom-models]
+    limitations:
+      - API 兼容只统一调用表面，不保证不同模型在 tool use、上下文、结构化输出或安全策略上具有等价行为。
+      - Qoder 的 Provider catalog 与计划可用性仍由产品侧控制，因此“兼容端点”不等于无限制接入任意模型。
+  - id: model-lifecycle-failure-boundary
+    layout: timeline
+    title: 模型退役会直接穿透到无人值守 Agent 的失败语义
+    conclusion: 自动化任务如果显式固定模型，就必须同时维护 deprecation 日历、兼容性探针与可审计 fallback；否则 Provider 的正常生命周期变化会被放大为计划任务或 Cloud Agent 的硬故障。
+    facts:
+      - id: qoder-lite-retirement-time
+        text: Qoder 已公告将在 2026-09-18 14:00 Singapore time 移除 Lite model tier，届时 Lite 将从所有 Qoder 产品的模型选择器中退出。
+        evidence: [qoder-lite-retirement]
+      - id: qoder-headless-lite-hard-failure
+        text: Qoder 明确说明，Headless CLI、Cloud Agents API 与 Service Account 如果仍显式指定 Lite，不会自动切换到其他模型，而会在退役时间之后返回错误。
+        evidence: [qoder-lite-retirement]
+      - id: qoder-interactive-versus-automation
+        text: Qoder 的部分交互式产品在 Lite 移除后可能切换到 Auto 或其他可用模型，但 Headless 与 API 自动化保留显式失败语义，交互式 fallback 与无人值守合同并不相同。
+        evidence: [qoder-lite-retirement]
+    limitations:
+      - 该退役事件只说明 Qoder 当前产品合同，不能直接推断其他 Provider 会采用相同的 fallback 策略。
+      - 自动 fallback 虽能减少中断，但如果没有重新评测，也可能把硬故障转化为更隐蔽的行为漂移。
+  - id: continuous-external-release-gates
+    layout: system-map
+    title: 前沿能力发布开始要求把外部验证嵌入运行流程
+    conclusion: 随着模型和 Agent 能力提高，发布门禁可能需要从内部 benchmark 扩展为持续的第三方访问、训练环境审计和能力触发式认证，使“何时可以继续扩能力”成为可验证的控制面问题。
+    facts:
+      - id: embedded-evaluator-commitment
+        text: Dario Amodei 在 2026 年 9 月提出 Embedded Evaluators，主张前沿 AI 公司给予第三方评测团队持续、近似员工级的访问，以核验安全实践、报告事件，并评估成品模型之外的训练 pipeline 与流程；他表示 Anthropic 将单方面推进这一做法。
+        evidence: [dario-pace-frontier]
+      - id: capability-checkpoint-gates
+        text: 该提议进一步描述了 capability checkpoint 模式：当系统达到能力 X 时，需要由评测、可解释性分析与训练环境审计等方式证明安全属性 Y、Z，再继续推进。
+        evidence: [dario-pace-frontier]
+      - id: sandbox-escape-gate-example
+        text: 文中给出的示例能力 X 包括模型能够逃逸或击败大多数常见 sandboxing 方法，而对应门禁应证明其突破环境并控制大量计算机的倾向被压到足够低。
+        evidence: [dario-pace-frontier]
+    limitations:
+      - 这是 Dario Amodei 提出的治理框架与 Anthropic 的单方承诺，不是已形成的行业标准或监管要求。
+      - 第三方持续访问可以提高可验证性，但评测覆盖面、审计独立性和商业敏感信息边界仍需要实际制度设计。
+projects: []
+radar:
+  - label: Bring-your-own-model agent shells
+    impact: 92
+    horizon: 12
+    note: Harness 与模型账单解绑后，团队可以更主动地选择推理供应商与成本边界。
+  - label: Role-aware model routing
+    impact: 94
+    horizon: 14
+    note: 主 Agent、Oracle 与子 Agent 分层选模会快速把 routing config 变成生产配置资产。
+  - label: OpenAI-compatible provider layers
+    impact: 88
+    horizon: 18
+    note: 兼容端点降低接入成本，但行为差异仍要求任务级回归评测。
+  - label: Model deprecation contracts
+    impact: 91
+    horizon: 8
+    note: 无人值守 Agent 对模型退役尤其敏感，应优先建设预警、探针与显式 fallback。
+  - label: Embedded external evaluation
+    impact: 96
+    horizon: 35
+    note: 如果持续外部评测成为惯例，前沿模型发布流程会出现新的独立验证层。
+actions:
+  - title: 拆分 Agent 运行时的四类身份
+    description: 分别记录 Harness 版本、实际模型版本、Provider 路由和执行环境，让同一任务的成本、行为与失败原因可以独立追踪。
+  - title: 把模型路由配置纳入 Eval 与版本控制
+    description: 对主 Agent、Oracle、子 Agent 和 fallback 的模型组合建立固定任务集，每次修改 Dial、BYOK Provider 或 Auto 策略都跑回归。
+  - title: 为模型退役建立预检与硬失败策略
+    description: 在无人值守任务启动前检查模型可用性与 deprecation 时间，并明确哪些任务允许 fallback、哪些任务必须 fail closed。
+  - title: 为高风险能力定义证据化发布门禁
+    description: 把 capability threshold、独立评测、sandbox 测试和训练环境审计结果写成可审阅工件，再由发布流程决定是否允许扩大能力或权限。
+references:
+  - id: amp-free-agent
+    title: Free Agent
+    url: https://ampcode.com/news/free-agent
+    supports: 支撑 Amp 将 Agent 使用与模型订阅、BYOK、Runner 和 Orbs 计费拆开的最新产品合同。
+    accessedAt: 2026-09-14
+  - id: amp-custom-dial
+    title: Customize Your Dial
+    url: https://ampcode.com/news/build-your-own-dial
+    supports: 支撑 Amp 对主 Agent、Oracle、subagents 的角色级模型与推理强度配置，以及共享 Dial。
+    accessedAt: 2026-09-14
+  - id: qoder-cli-custom-models
+    title: Custom Models - Qoder CLI
+    url: https://docs.qoder.com/cli/custom-models
+    supports: 支撑 Qoder CLI 的 BYOK wizard、模型校验、Custom tab 与会话级模型切换流程。
+    accessedAt: 2026-09-14
+  - id: qoder-custom-models
+    title: Custom models - Qoder
+    url: https://docs.qoder.com/qoder/custom-models
+    supports: 支撑 Qoder 对预设 Provider、OpenAI Compatible、Anthropic Compatible、自定义 Base URL 与 Model ID 的配置能力。
+    accessedAt: 2026-09-14
+  - id: qoder-lite-retirement
+    title: Removal of the Lite model tier
+    url: https://docs.qoder.com/release-notes/lite-model-tier-retirement-notice
+    supports: 支撑 Lite tier 的退役时间以及 Headless CLI、Cloud Agents API、Service Account 的硬失败语义。
+    accessedAt: 2026-09-14
+  - id: dario-pace-frontier
+    title: We Must Pace the Frontier
+    url: https://darioamodei.com/post/we-must-pace-the-frontier
+    supports: 支撑 Embedded Evaluators、capability checkpoints 与持续外部验证的治理提议。
+    accessedAt: 2026-09-14
+archivePicks: []
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
