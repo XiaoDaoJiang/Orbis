@@ -37,6 +37,7 @@ The source unit is a directory:
 ```text
 content/presentations/<slug>/
   slides.md
+  style.css
   sections/
   components/
   assets/
@@ -44,7 +45,7 @@ content/presentations/<slug>/
   ...other deck-local files
 ```
 
-`<slug>` must be lowercase kebab-case. `slides.md` is the entry point and uses normal Slidev Markdown. Deck-local support files may use normal relative imports and Slidev features such as `src:` composition.
+`<slug>` must be lowercase kebab-case. `slides.md` is the entry point and uses normal Slidev Markdown. Deck-local support files use ordinary relative imports and Slidev features such as `src:` composition. Global deck styling follows Slidev's native directory convention (`style.css` or `styles/index.*`) rather than an Orbis-specific frontmatter field.
 
 The entry headmatter keeps Slidev configuration native while adding only a small Orbis publication envelope:
 
@@ -53,7 +54,6 @@ The entry headmatter keeps Slidev configuration native while adding only a small
 theme: default
 title: Example Native Talk
 favicon: ./favicon.svg
-css: ./orbis.css
 orbis:
   kind: native-presentation
   summary: A concise description used by Orbis discovery and SEO.
@@ -64,7 +64,9 @@ orbis:
 ---
 ```
 
-Orbis does not translate the presentation into `talk-v1`. During generation it copies the complete deck directory into the generated Slidev workspace, adds the shared `orbis.css` and `favicon.svg` publication assets, and creates Orbis SEO metadata. Slidev then builds the copied `slides.md` directly.
+Orbis does not translate the presentation into `talk-v1`. During generation it copies the complete deck directory into the generated Slidev workspace, supplies the default Orbis favicon only when the deck does not provide one, and creates Orbis SEO metadata. Slidev then builds the copied `slides.md` directly and discovers deck-local styles/components/assets through its normal project conventions.
+
+The example `native-slidev-authoring` deck imports Orbis design tokens from its own `style.css`; this is normal authored Slidev content, not generated configuration.
 
 ## 3. Choosing a mode
 
