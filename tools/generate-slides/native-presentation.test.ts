@@ -21,10 +21,14 @@ assert.equal(descriptor.nativeSourceDir, 'content/presentations/native-slidev-au
 assert.equal(descriptor.title, 'Native Slidev Authoring in Orbis')
 assert.deepEqual(descriptor.topics, ['agent-harness', 'coding-agent'])
 
-const source = await readFile(resolve(root, descriptor.nativeSourceDir, 'slides.md'), 'utf8')
-assert.match(source, /<v-clicks>/)
+const sourceRoot = resolve(root, descriptor.nativeSourceDir)
+const source = await readFile(resolve(sourceRoot, 'slides.md'), 'utf8')
+const imported = await readFile(resolve(sourceRoot, 'sections/why-native.md'), 'utf8')
+assert.match(source, /src: \.\/sections\/why-native\.md/)
 assert.match(source, /layout: two-cols/)
 assert.match(source, /css: \.\/orbis\.css/)
+assert.match(imported, /<v-clicks>/)
+assert.match(imported, /layout: center/)
 
 const seo = buildPresentationSeoManifest(descriptor, config)
 assert.match(seo.canonicalUrl, /\/slides\/native-slidev-authoring\/$/)
