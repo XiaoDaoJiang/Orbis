@@ -2,7 +2,7 @@
 layout: center
 ---
 
-<!-- validation: native Slidev deck-local cache seed -->
+<!-- validation: native Slidev deck-local cache reuse -->
 
 # Why a native mode?
 
