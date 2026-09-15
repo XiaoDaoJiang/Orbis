@@ -2,7 +2,7 @@
 layout: center
 ---
 
-<!-- validation: warning-free native Slidev cache seed -->
+<!-- validation: warning-free native Slidev cache reuse -->
 
 # Why a native mode?
 
