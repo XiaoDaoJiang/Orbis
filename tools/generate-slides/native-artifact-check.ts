@@ -9,9 +9,10 @@ const sourceRoot = resolve(root, `content/presentations/${slug}`)
 const generatedRoot = resolve(root, `apps/slides/generated/${slug}`)
 const sourcePath = resolve(sourceRoot, 'slides.md')
 const importedSourcePath = resolve(sourceRoot, 'sections/why-native.md')
+const styleSourcePath = resolve(sourceRoot, 'style.css')
 const generatedPath = resolve(generatedRoot, 'slides.md')
 const generatedImportedPath = resolve(generatedRoot, 'sections/why-native.md')
-const generatedStyle = resolve(generatedRoot, 'orbis.css')
+const generatedStyle = resolve(generatedRoot, 'style.css')
 const generatedFavicon = resolve(generatedRoot, 'favicon.svg')
 const manifestPath = resolve(generatedRoot, 'seo.json')
 const deckPath = resolve(root, `dist/site/slides/${slug}/index.html`)
@@ -38,6 +39,11 @@ assert.equal(
   await readFile(generatedImportedPath, 'utf8'),
   await readFile(importedSourcePath, 'utf8'),
   'Native Slidev support files must remain deck-local build inputs',
+)
+assert.equal(
+  await readFile(generatedStyle, 'utf8'),
+  await readFile(styleSourcePath, 'utf8'),
+  'Native Slidev global style must follow the standard style.css convention',
 )
 
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as PresentationSeoManifest
