@@ -31,8 +31,7 @@ for (const descriptor of selected) {
   if (descriptor.sourceKind === 'native') {
     if (!descriptor.nativeSourceDir) throw new Error(`Native presentation is missing source directory: ${descriptor.slug}`)
     await cp(resolve(root, descriptor.nativeSourceDir), directory, { recursive: true })
-    await cp(resolve(root, 'apps/slides/style.css'), resolve(directory, 'orbis.css'))
-    await cp(resolve(root, 'apps/web/public/favicon.svg'), resolve(directory, 'favicon.svg'))
+    await cp(resolve(root, 'apps/web/public/favicon.svg'), resolve(directory, 'favicon.svg'), { force: false })
   } else {
     await cp(resolve(root, 'apps/slides/style.css'), resolve(directory, 'style.css'))
     await cp(resolve(root, 'apps/slides/layouts'), resolve(directory, 'layouts'), { recursive: true })
