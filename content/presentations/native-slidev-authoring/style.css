@@ -1,0 +1,19 @@
+@import '@orbis/design-tokens/tokens.css';
+
+.slidev-layout {
+  background: var(--orbis-cream);
+  color: var(--orbis-brown);
+  font-family: var(--orbis-body);
+}
+
+.slidev-layout h1,
+.slidev-layout h2,
+.slidev-layout h3 {
+  color: var(--orbis-brown);
+  font-family: var(--orbis-display);
+  font-weight: 750;
+}
+
+.slidev-layout a {
+  color: var(--orbis-orange);
+}
