@@ -11,6 +11,8 @@ assert.deepEqual(
     { status: 'M', path: 'content/briefs/2026-09-11.yaml' },
     { status: 'A', path: 'content/presentations/platform-talk.yml' },
     { status: 'M', path: 'content/presentations/native-talk/slides.md' },
+    { status: 'M', path: 'content/presentations/native-talk/sections/intro.md' },
+    { status: 'M', path: 'content/presentations/native-talk/assets/diagram.svg' },
   ]),
   {
     mode: 'ids',
@@ -19,6 +21,8 @@ assert.deepEqual(
       'M content/briefs/2026-09-11.yaml -> 2026-09-11',
       'A content/presentations/platform-talk.yml -> platform-talk',
       'M content/presentations/native-talk/slides.md -> native-talk',
+      'M content/presentations/native-talk/sections/intro.md -> native-talk',
+      'M content/presentations/native-talk/assets/diagram.svg -> native-talk',
     ],
   },
 )
@@ -41,13 +45,30 @@ assert.deepEqual(
   },
 )
 
+assert.deepEqual(
+  classifyPresentationImpact([
+    {
+      status: 'R100',
+      oldPath: 'content/presentations/old-native/assets/diagram.svg',
+      path: 'content/presentations/new-native/assets/diagram.svg',
+    },
+  ]),
+  {
+    mode: 'ids',
+    ids: ['new-native', 'old-native'],
+    reasons: [
+      'R100 content/presentations/old-native/assets/diagram.svg -> old-native',
+      'R100 content/presentations/new-native/assets/diagram.svg -> new-native',
+    ],
+  },
+)
+
 for (const path of [
   'apps/slides/style.css',
   'tools/generate-slides/index.ts',
   'packages/content-schema/index.ts',
   'config/site.yaml',
   'content/topics/coding-agent.yaml',
-  'content/presentations/native-talk/local-asset.png',
   'pnpm-lock.yaml',
 ]) {
   const impact = classifyPresentationImpact([{ status: 'M', path }])
