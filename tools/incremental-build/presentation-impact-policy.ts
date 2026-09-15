@@ -7,7 +7,7 @@ export type PresentationImpact =
   | { mode: 'all'; ids: []; reasons: string[] }
 
 const structuredPresentationSourcePattern = /^content\/(briefs|presentations)\/[^/]+\.(yaml|yml)$/
-const nativePresentationSourcePattern = /^content\/presentations\/([^/]+)\/slides\.md$/
+const nativePresentationPathPattern = /^content\/presentations\/([^/]+)\/(.+)$/
 const definitelyNonPresentationContent = [
   'content/essays/',
   'content/knowledge/',
@@ -15,11 +15,11 @@ const definitelyNonPresentationContent = [
 
 function presentationIdFromPath(path: string): string | undefined {
   if (structuredPresentationSourcePattern.test(path)) return basename(path, extname(path))
-  return nativePresentationSourcePattern.exec(path)?.[1]
+  return nativePresentationPathPattern.exec(path)?.[1]
 }
 
 function isDeckLocalSource(path: string): boolean {
-  return structuredPresentationSourcePattern.test(path) || nativePresentationSourcePattern.test(path)
+  return structuredPresentationSourcePattern.test(path) || nativePresentationPathPattern.test(path)
 }
 
 function requiresAllDecks(path: string): boolean {
