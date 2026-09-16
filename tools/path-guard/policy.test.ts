@@ -15,6 +15,7 @@ const prMode = {
 
 const contentAgentMode = {
   allowPrefixes: ['content/briefs/', 'content/presentations/', 'content/essays/', 'content/knowledge/'],
+  denyPatterns: ['^content/presentations/[^/]+/'],
 }
 
 assert.deepEqual(
@@ -47,6 +48,30 @@ assert.deepEqual(
   ], contentAgentMode),
   ['config/site.yaml is outside the allowlist'],
   'A rename cannot hide a protected source outside the content-agent allowlist',
+)
+
+assert.deepEqual(
+  policy.evaluateGuardPolicy([
+    { status: 'M', path: 'content/presentations/structured-talk.yaml' },
+  ], contentAgentMode),
+  [],
+  'Content agents may continue editing structured Presentation YAML',
+)
+
+assert.deepEqual(
+  policy.evaluateGuardPolicy([
+    { status: 'M', path: 'content/presentations/native-talk/slides.md' },
+  ], contentAgentMode),
+  ['content/presentations/native-talk/slides.md matches a protected path pattern'],
+  'Native Slidev source is human-authored code-like content and must stay outside content-agent writes',
+)
+
+assert.deepEqual(
+  policy.evaluateGuardPolicy([
+    { status: 'M', path: 'content/presentations/native-talk/components/MetricCard.vue' },
+  ], contentAgentMode),
+  ['content/presentations/native-talk/components/MetricCard.vue matches a protected path pattern'],
+  'Native Slidev support code must stay outside content-agent writes',
 )
 
 assert.deepEqual(

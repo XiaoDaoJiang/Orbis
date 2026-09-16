@@ -1,4 +1,4 @@
-export type PresentationSourceKind = 'brief' | 'presentation'
+export type PresentationSourceKind = 'brief' | 'presentation' | 'native'
 
 export type PresentationDescriptor = {
   id: string
@@ -9,6 +9,7 @@ export type PresentationDescriptor = {
   template: string
   sourceKind: PresentationSourceKind
   readingUrl?: string
+  nativeSourceDir?: string
   payload: unknown
 }
 

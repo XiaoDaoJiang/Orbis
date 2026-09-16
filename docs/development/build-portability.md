@@ -11,7 +11,9 @@ pnpm test:build-tools
 pnpm build
 ```
 
-`build:preflight` 检查实际 Node/pnpm 版本、站点配置、环境 URL 覆盖和必要目录，并输出工作目录及构建目标。版本不匹配时，先激活 `packageManager` 指定的 pnpm，而不是删除锁文件。`pnpm build` 仍执行全部原有校验、真实 CLI 集成测试和产物检查；不把局部成功当成完整构建成功。
+`build:preflight` 检查实际 Node/pnpm 版本、站点配置、环境 URL 覆盖和必要目录，并输出工作目录及构建目标。版本不匹配时，先激活 `packageManager` 指定的 pnpm，而不是删除锁文件。
+
+`pnpm build` 始终是 canonical clean/full rebuild 入口。它仍执行全部校验、真实 CLI 集成测试、Astro/Slidev 全量构建和最终产物检查；增量 CI 不改变这个合同，也不把局部成功当成完整构建成功。
 
 ## 进程边界
 
@@ -35,10 +37,47 @@ pnpm build
 
 `.gitattributes` 统一文本 LF，二进制文件保持原样。现有 pnpm 锁文件、`allowBuilds` 与依赖发布时间策略不变。
 
+## 增量发布边界
+
+PR Preview 和 `main` Site Build 会先判断变更范围。只有以下纯内容源可以进入 content-only fast path：
+
+- `content/briefs/**/*.yaml|yml`
+- `content/presentations/**/*.yaml|yml`
+- `content/essays/**/*.md`
+- `content/knowledge/**/*.md`
+
+任何 `apps/**`、`packages/**`、`tools/**`、`config/**`、`.github/**`、锁文件、根 package 配置、Topic/Source/Author Registry 或无法明确分类的变更都进入 full lane。分类默认 fail closed：不确定就完整构建。
+
+content-only lane 仍执行完整内容/引用/证据/生命周期验证，然后使用两个可丢失的加速层：
+
+1. Astro 官方 incremental-build cache：只复用 cache identity 和框架依赖图都未变化的静态页面；cache miss 自动正常 render。
+2. Slidev deck cache：保存 `apps/slides/generated` 与 `dist/slides`。`tools/incremental-build/presentation-impact.ts` 根据变更源计算受影响 deck，并检查所有未重建历史 deck 的缓存完整性；cache miss、共享模板/工具变化、缺少历史 deck 或影响范围不明确时自动回退为全量 Slidev build。
+
+Slidev 的默认本地命令仍是 full：
+
+```powershell
+pnpm generate:slides
+pnpm build:slides
+```
+
+只有显式设置 `SLIDES_IDS=id-a,id-b` 或传入 `--ids` 时才进入 deck-scoped 模式。scoped 模式只替换选中的 generated/output deck 目录，保留其他已验证历史 deck；真实集成测试会用 sentinel 验证无关 deck 不会被误删。
+
+PR Preview 的缓存按 PR 隔离，因为 Preview 的 `SITE_BASE` 与生产地址不同。因此新 PR 第一次没有可用 Slidev cache 时会安全地全量构建；同一 PR 的后续 content-only 更新才能复用该 PR 的历史 deck。`main` 使用独立 cache namespace，并由 full Site Build 播种后续 content-only 发布可复用的历史 deck。
+
+缓存始终只是加速层，不是发布历史或 editorial source of truth。删除所有缓存后，`content/** + repository code` 必须仍能通过 `pnpm build` 重建完整 `dist/site`。
+
 ## 验证与发布边界
 
-新增 `Orbis Build Portability` 只读 workflow，在含空格和中文的真实 checkout 路径下执行完整 `pnpm build`：Linux 覆盖最低声明 Node 版本；Windows 覆盖 Node 22/24、Node CLI 与 standalone pnpm；macOS 覆盖 Node 24。矩阵配置不等于已验证成功，以每个提交对应的 CI 结果为准。
+`Orbis Build Portability` 是只读跨平台回归 workflow。它先运行与 Preview/Site Build 相同的 build-scope 判定：
 
-现有 PR Preview、Trusted Publish 和 Production Pages workflow 不变。新增 workflow 不上传发布产物、不持有写权限、不触发 Pages。它不会自动修改 GitHub ruleset；维护者可以把该矩阵的检查加入合并必需项。
+- build/tooling/配置或无法安全分类的 PR/main 变更：运行完整五矩阵 `pnpm build`；
+- content-only PR/main 变更：不重复运行昂贵的跨平台 full matrix，由 canonical Linux Preview/Site Build 负责内容发布验证；
+- `workflow_dispatch` 和每周定时任务：强制 full，用于持续证明 clean rebuild 没被增量路径隐藏。
 
-参考：Node `child_process` 官方文档、pnpm `run` 文档和 `pnpm/action-setup` 的 `package_json_file` / `standalone` 输入约定。
+完整矩阵仍在含空格和中文的真实 checkout 路径下运行：Linux 覆盖最低声明 Node 版本；Windows 覆盖 Node 22/24、Node CLI、CRLF worktree 与 standalone pnpm；macOS 覆盖 Node 24。矩阵配置不等于已验证成功，以每个提交对应的 CI 结果为准。
+
+PR Preview、Trusted Publish 与 Production Pages 的治理边界不变：缓存不能直接发布，Preview/Site Build 仍上传经过 artifact checks 的完整 `dist/site`；Production 继续消费受治理的 workflow artifact。Portability workflow 不上传发布产物、不持有写权限、不触发 Pages。
+
+`tools/incremental-build/workflow-contract.test.ts` 会锁定 full/content 分流、Slidev impact/cache wiring 和 scheduled full portability 的关键 workflow 合同，避免后续 YAML 调整静默移除安全回退。
+
+参考：Node `child_process` 官方文档、pnpm `run` 文档、`pnpm/action-setup` 的 `package_json_file` / `standalone` 输入约定，以及 Astro 7.2 incremental static build 合同。

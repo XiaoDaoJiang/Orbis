@@ -37,7 +37,7 @@ assert.ok(essayReferenceItem, 'Real unsourced Essay Reference item must be prese
 assert.doesNotMatch(essayReferenceItem[1], /data-source-/, 'Unsourced Essay Reference must not receive Source metadata')
 
 assert.ok(!knowledge.includes('<h2>References</h2>'), 'Knowledge without References must not render an empty Reference section')
-assert.ok(essay.includes('Related Content'), 'Essay Related Content must remain present')
+assert.ok(!essay.includes('Related Content'), 'Earliest Essay must not synthesize forward Related Content')
 assert.ok(daily.includes('/slides/2026-08-28/'), 'Brief to Slides navigation must remain present')
 
 async function assertMissing(path: string, message: string) {

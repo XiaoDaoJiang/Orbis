@@ -5,11 +5,19 @@ Automated agents are content contributors, not UI or infrastructure maintainers.
 ## Allowed by default
 
 - `content/briefs/**`
-- `content/presentations/**`
+- structured standalone Presentation files at `content/presentations/*.yaml` or `content/presentations/*.yml`
 - `content/essays/**`
 - `content/knowledge/**`
 
-Presentation decks are generated from structured Briefs or standalone `content/presentations/**`; scheduled agents must never commit generated Slidev files.
+Structured presentation decks are generated from Briefs or flat standalone Presentation YAML files. Scheduled or generic content agents must never commit generated Slidev files.
+
+Native human-authored Slidev presentations live under:
+
+```text
+content/presentations/<slug>/
+```
+
+These directories may contain `slides.md`, `style.css`, imported Markdown, Vue components, assets, snippets and other deck-local files. Because they are code-like authoring surfaces, they are human-authored by default and are not part of the automated content-agent write boundary.
 
 Scheduled agents may reference existing Topic, Source and Author IDs that are already registered and active.
 
@@ -37,6 +45,7 @@ The enforceable correction contract is `pnpm evidence:daily:correction:guard`; f
 
 ## Requires explicit human approval
 
+- native Slidev directories under `content/presentations/<slug>/**`
 - `content/topics/**`
 - `content/sources/**`
 - `content/authors/**`
@@ -51,7 +60,9 @@ New or changed Source/Author Registry identities require explicit human review. 
 - `tools/**`
 - `.github/**`
 - root package, workspace or lock files
-- generated HTML, CSS, JavaScript, Astro components, Vue components or Slidev sources
+- generated HTML, CSS, JavaScript or Astro/Vue build artifacts
+- generated Slidev workspaces under `apps/slides/generated/**`
+- native Slidev directories under `content/presentations/<slug>/**`
 - Source/Author Registry changes without explicit human review
 
-The enforceable allowlist for automated content changes is `config/path-guard.yaml` mode `content-agent`. This document and the guard configuration must stay consistent.
+The enforceable allowlist for automated content changes is `config/path-guard.yaml` mode `content-agent`. That mode allows the `content/presentations/` prefix for structured Presentation YAML while denying nested Presentation directories. This document and the guard configuration must stay consistent.

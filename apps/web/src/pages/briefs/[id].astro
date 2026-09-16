@@ -10,10 +10,15 @@ import { buildSourceIndex } from '../../lib/content-registry'
 import {
   buildPublicDiscoveryItems,
   getDailyAdjacency,
-  getRelatedContent,
+  getRelatedContentSnapshot,
   isPublicBrief,
   toBriefDiscoveryItem,
 } from '../../lib/content-discovery'
+import {
+  adjacentContentCacheIdentity,
+  buildContentPageCacheKey,
+  selectEntriesById,
+} from '../../lib/incremental-cache'
 import { buildBriefJsonLd } from '../../lib/json-ld'
 import { webSiteConfig } from '../../lib/site-config'
 
@@ -29,14 +34,35 @@ export async function getStaticPaths() {
 
   return briefEntries.filter(isPublicBrief).map((entry) => {
     const current = toBriefDiscoveryItem(entry, base)
+    const related = getRelatedContentSnapshot(current, candidates)
+    const adjacent = entry.data.cadence === 'daily' ? getDailyAdjacency(briefEntries, entry.id, base) : {}
+    const scopedSourceEntries = selectEntriesById(
+      sourceEntries,
+      entry.data.references.map((reference) => reference.source),
+      'source',
+    )
+
     return {
       params: { id: entry.id },
       props: {
         entry,
-        sourceEntries,
-        related: getRelatedContent(current, candidates),
-        adjacent: entry.data.cadence === 'daily' ? getDailyAdjacency(briefEntries, entry.id, base) : {},
+        sourceEntries: scopedSourceEntries,
+        related,
+        adjacent,
       },
+      cacheKey: buildContentPageCacheKey({
+        scope: 'brief',
+        entry,
+        dependencyGroups: [
+          { name: 'sources', entries: scopedSourceEntries },
+        ],
+        related,
+        extra: {
+          adjacent: entry.data.cadence === 'daily'
+            ? adjacentContentCacheIdentity(adjacent)
+            : null,
+        },
+      }),
     }
   })
 }

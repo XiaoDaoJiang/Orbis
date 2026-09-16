@@ -15,11 +15,16 @@ function normalizeBasePath(value) {
 
 const site = process.env.SITE_ORIGIN ?? siteConfig.site.origin
 const base = normalizeBasePath(process.env.SITE_BASE ?? siteConfig.site.basePath)
+const cacheDir = process.env.ASTRO_CACHE_DIR ?? './node_modules/.astro'
 
 export default defineConfig({
   site,
   base,
+  cacheDir,
   output: 'static',
+  experimental: {
+    incrementalBuild: true,
+  },
   trailingSlash: 'always',
   outDir: '../../dist/web',
 })

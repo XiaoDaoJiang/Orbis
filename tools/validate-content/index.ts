@@ -1,4 +1,4 @@
-import { relative, resolve } from 'node:path'
+import { basename, relative, resolve } from 'node:path'
 import {
   authorSchema,
   briefSchema,
@@ -8,6 +8,7 @@ import {
   sourceSchema,
   topicSchema,
 } from '@orbis/content-schema'
+import { nativePresentationSchema, type NativePresentation } from '@orbis/content-schema/native-presentation'
 import { evaluateDailyEvidence } from '../evidence-integrity/daily-evidence.ts'
 import { loadEvidenceIntegrityConfig } from '../evidence-integrity/config.ts'
 import { listFiles, readMarkdownFrontmatter, readYaml } from '../shared/content.ts'
@@ -39,6 +40,7 @@ function displayPath(path: string) {
 }
 
 const entries: ParsedContentEntry[] = []
+const nativePresentations: { path: string; value: NativePresentation }[] = []
 let count = 0
 let hasSchemaErrors = false
 
@@ -60,9 +62,36 @@ for (const check of checks) {
   }
 }
 
+const nativeFiles = (await listFiles(resolve(root, 'content/presentations'), ['.md']))
+  .filter((file) => basename(file) === 'slides.md')
+for (const file of nativeFiles) {
+  const result = nativePresentationSchema.safeParse((await readMarkdownFrontmatter(file)).data)
+  if (!result.success) {
+    console.error(`Invalid content: ${displayPath(file)}`)
+    console.error(JSON.stringify(result.error.issues, null, 2))
+    hasSchemaErrors = true
+    continue
+  }
+  count += 1
+  console.log(`✓ ${displayPath(file)}`)
+  nativePresentations.push({ path: file, value: result.data })
+}
+
 if (hasSchemaErrors) process.exit(1)
 
 const integrityErrors = validateReferentialIntegrity(root, entries)
+const topicIds = new Set(
+  entries
+    .filter((entry) => entry.kind === 'topic')
+    .map((entry) => basename(entry.path).replace(/\.(yaml|yml)$/, '')),
+)
+for (const entry of nativePresentations) {
+  entry.value.orbis.topics.forEach((topic, index) => {
+    if (!topicIds.has(topic)) {
+      integrityErrors.push(`Invalid relation: ${displayPath(entry.path)}: orbis.topics[${index}] -> missing topic "${topic}"`)
+    }
+  })
+}
 if (integrityErrors.length) {
   for (const error of integrityErrors) console.error(error)
   process.exit(1)

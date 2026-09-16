@@ -1,9 +1,11 @@
-import { basename, resolve } from 'node:path'
-import { briefSchema, presentationContentSchema } from '@orbis/content-schema'
+import { basename, dirname, relative, resolve } from 'node:path'
+import { briefSchema, presentationContentSchema, registryIdPattern } from '@orbis/content-schema'
+import { nativePresentationSchema } from '@orbis/content-schema/native-presentation'
 import type { PresentationDescriptor } from '../../apps/slides/presentation.ts'
-import { listFiles, readYaml } from '../shared/content.ts'
+import { listFiles, readMarkdownFrontmatter, readYaml } from '../shared/content.ts'
 import { joinBasePath, type SiteConfig } from '../shared/site-config.ts'
 import { toBriefPresentationDescriptor } from './brief-source.ts'
+import { toNativePresentationDescriptor } from './native-source.ts'
 import { toStandalonePresentationDescriptor } from './standalone-source.ts'
 
 export type DiscoverPresentationInput = {
@@ -25,6 +27,14 @@ export function assertUniquePresentationSlugs(descriptors: PresentationDescripto
   }
 }
 
+function nativePresentationSlug(presentationsRoot: string, file: string): string {
+  const relativeDirectory = relative(presentationsRoot, dirname(file)).replaceAll('\\', '/')
+  if (!relativeDirectory || relativeDirectory.includes('/') || !registryIdPattern.test(relativeDirectory)) {
+    throw new Error(`Native Slidev presentation must use content/presentations/<kebab-slug>/slides.md: ${file}`)
+  }
+  return relativeDirectory
+}
+
 export async function discoverPresentationDescriptors({
   root,
   siteBase,
@@ -44,13 +54,27 @@ export async function discoverPresentationDescriptors({
     }))
   }
 
-  const presentationFiles = await listFiles(resolve(root, config.content.presentationsDir), ['.yaml', '.yml'])
+  const presentationsRoot = resolve(root, config.content.presentationsDir)
+  const presentationFiles = await listFiles(presentationsRoot, ['.yaml', '.yml'])
   for (const file of presentationFiles) {
     const presentation = presentationContentSchema.parse(await readYaml(file))
     if (presentation.status !== 'published') continue
 
     const slug = basename(file).replace(/\.(yaml|yml)$/, '')
     descriptors.push(toStandalonePresentationDescriptor(presentation, { slug }))
+  }
+
+  const nativeFiles = (await listFiles(presentationsRoot, ['.md']))
+    .filter((file) => basename(file) === 'slides.md')
+  for (const file of nativeFiles) {
+    const presentation = nativePresentationSchema.parse((await readMarkdownFrontmatter(file)).data)
+    if (presentation.orbis.status !== 'published') continue
+
+    const slug = nativePresentationSlug(presentationsRoot, file)
+    descriptors.push(toNativePresentationDescriptor(presentation, {
+      slug,
+      sourceDir: relative(root, dirname(file)).replaceAll('\\', '/'),
+    }))
   }
 
   assertUniquePresentationSlugs(descriptors)

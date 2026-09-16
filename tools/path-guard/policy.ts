@@ -4,12 +4,17 @@ import { entryPaths } from './change-set.ts'
 export type GuardMode = {
   allowPrefixes?: string[]
   denyPrefixes?: string[]
+  denyPatterns?: string[]
 }
 
 export function matchesPrefix(path: string, prefix: string): boolean {
   const normalized = prefix.replace(/^\.\//, '')
   const directory = normalized.endsWith('/') ? normalized : `${normalized}/`
   return path === normalized.replace(/\/$/, '') || path.startsWith(directory)
+}
+
+function matchesPattern(path: string, pattern: string): boolean {
+  return new RegExp(pattern).test(path)
 }
 
 export function evaluateGuardPolicy(changes: ChangedEntry[], mode: GuardMode): string[] {
@@ -22,6 +27,9 @@ export function evaluateGuardPolicy(changes: ChangedEntry[], mode: GuardMode): s
       }
       if (mode.denyPrefixes?.some((prefix) => matchesPrefix(path, prefix))) {
         violations.push(`${path} is generated/protected and must not be committed`)
+      }
+      if (mode.denyPatterns?.some((pattern) => matchesPattern(path, pattern))) {
+        violations.push(`${path} matches a protected path pattern`)
       }
     }
   }

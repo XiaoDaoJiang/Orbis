@@ -5,6 +5,9 @@ on:
     types: [opened, reopened, synchronize]
   push:
     branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 0'
 
 permissions:
   contents: read
@@ -14,7 +17,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.build-scope.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve portability base
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_sha="$(git rev-parse HEAD^1)"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            base_sha="${{ github.event.before }}"
+          else
+            base_sha="0000000000000000000000000000000000000000"
+          fi
+          if [ -z "$base_sha" ]; then
+            base_sha="0000000000000000000000000000000000000000"
+          fi
+          echo "ORBIS_PORTABILITY_BASE=$base_sha" >> "$GITHUB_ENV"
+          echo "Portability base: $base_sha"
+      - name: Resolve portability scope
+        id: build-scope
+        run: node tools/incremental-build/build-scope.mjs --base "$ORBIS_PORTABILITY_BASE"
+
   build:
+    needs: scope
+    if: ${{ needs.scope.outputs.mode == 'full' }}
     name: Build (${{ matrix.os }}, Node ${{ matrix.node }}, standalone=${{ matrix.standalone }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
