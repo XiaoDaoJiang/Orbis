@@ -1,0 +1,212 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: '2026-09-19'
+status: published
+title: Agent 控制面正在扩张：编排、检索、权限、反馈与评测都开始显式化
+summary: Claude Projects 把复杂任务拆成由协调器管理的并行云端线程，Kimi 将搜索与网页抓取做成可追溯的独立工具接口；Anthropic 在生命科学中用验证授权和离线监控替代单纯实时拦截，Z.ai 则展示了 Infra Agent 如何依赖密集反馈闭环优化推理栈。与此同时，Epoch AI 开始把 Benchmark 本身作为需要审计的工程依赖。Agent 生产化正在从“换更强模型”转向构建可检查、可约束、可验证的控制面。
+topics:
+- agent-harness
+- agent-runtime
+- tool-use
+- verification
+- ai-infra
+signals:
+- title: 复杂任务开始由协调器路由到并行线程
+  summary: Claude Projects 将目标拆给多个独立云端 Claude Code session，每个线程拥有自己的 branch 和仓库副本，主项目负责路由、检查与结果汇总。
+  impact: high
+- title: 联网检索正在从提示技巧变成工具合同
+  summary: Kimi 把搜索、相关片段提取与已知 URL 抓取拆成不同 REST 接口，并保留链接、站点与 authority 等来源信号，方便 Agent 做后续筛选和核验。
+  impact: high
+- title: 高风险能力访问开始从全局拦截转向可验证授权
+  summary: Anthropic 的 LSVP 通过组织与项目级验证、不同 grant 范围以及跨请求离线监控，为高风险生命科学工作提供更细粒度的访问控制。
+  impact: high
+- title: Agent 反馈质量与评测质量正在成为基础设施
+  summary: Z.ai 用 correctness test、trace、microbenchmark 与 end-to-end metric 构成密集反馈闭环；Epoch AI 则要求 benchmark 披露 harness、资源限制和评分逻辑，说明验证环境本身已成为能力的一部分。
+  impact: high
+sections:
+- id: coordinated-parallel-projects
+  layout: architecture
+  title: Project 不再只是上下文容器，而是多线程协调器
+  conclusion: 当每个 worker thread 都拥有独立执行环境、branch 和验证路径时，Project 的核心职责从保存资料转为任务分解、路由、并发控制与合并协调。
+  facts:
+  - id: projects-coordinate-parallel-threads
+    text: Anthropic 于 2026-09-17 发布新版 Claude Projects beta，项目会对目标进行 scope、delegation 与 coordination，并让多个线程并行执行后再汇总结果。
+    evidence:
+    - anthropic-claude-projects
+  - id: threads-are-isolated-cloud-sessions
+    text: Claude Projects 的每个 thread 底层都是独立的 Claude Code cloud session，拥有自己的 branch 与仓库副本；连接仓库后，线程可以运行测试和打开 PR。
+    evidence:
+    - anthropic-claude-projects
+  - id: projects-share-config-and-memory
+    text: 项目可以配置 cloud environment、connectors、plugins、instructions 与 model，并让多个线程共同读写 shared memory；单个线程还可以继续使用 subagents、loops 与 workflows 拆分工作。
+    evidence:
+    - anthropic-claude-projects
+  limitations:
+  - 新版 Projects 当前仍是 beta，首批只向部分使用 cloud sessions 的 Claude Pro 与 Max 用户开放。
+  - Anthropic 明确提示并行线程会更快消耗 usage，且本地线程执行仍属于后续能力。
+- id: retrieval-tool-contracts
+  layout: comparison
+  title: 搜索能力正在被拆成可选择、可约束、可追溯的工具接口
+  conclusion: Agent 的 Web 能力不应只是一条“去搜索”的隐式指令；把发现、相关片段提取和正文抓取拆成不同接口，可以让成本、上下文占用和 provenance 成为显式工程参数。
+  facts:
+  - id: kimi-separates-search-and-fetch
+    text: Kimi 开放平台将联网搜索 Basic、联网搜索 Pro 与网页抓取拆成三个独立 REST 接口：Basic 返回标题、链接与摘要，Pro 返回按相关性排序的正文片段，fetch 则针对已知 URL 返回 Markdown 正文。
+    evidence:
+    - kimi-web-search-tools
+  - id: search-pro-preserves-source-signals
+    text: Kimi Search Pro 的结果保留标题、链接与站点信息，并返回 authority 来源权威性字段，供调用方继续评估、过滤和引用。
+    evidence:
+    - kimi-web-search-tools
+  - id: search-pro-supports-bounded-retrieval
+    text: Kimi Search Pro 支持使用 sites 与 time_window 约束来源和时间范围，Basic 与 Pro 还支持显式设置 limit 与 timeout_seconds。
+    evidence:
+    - kimi-web-search-tools
+  limitations:
+  - authority 是 Kimi 服务侧提供的来源信号，不等同于独立事实核验。
+  - 搜索与网页抓取仍受登录、反爬、页面结构和网络可达性限制。
+- id: verified-domain-access
+  layout: system-map
+  title: 高风险 Agent 权限开始绑定身份、用途与持续监控
+  conclusion: 对高副作用领域，单次请求级内容拦截正在被更完整的授权模型补充：先验证主体和用途，再给出有边界的能力 grant，并跨会话检查实际使用是否偏离授权范围。
+  facts:
+  - id: lsvp-verifies-organizations-and-oversight
+    text: Anthropic 的 Life Sciences Verification Program 要求申请方接受研究资质、安全标准和伦理研究监督审查，再根据需要申请 Standard Use 或 High-risk Use grant。
+    evidence:
+    - anthropic-lsvp
+  - id: lsvp-grants-have-different-scopes
+    text: Standard Use 可覆盖团队日常生命科学工作并按年续期；High-risk Use 针对单个项目、每六个月续期，并移除生命科学请求相关的阻断，但其他保障如 cyber classifiers 仍保留。
+    evidence:
+    - anthropic-lsvp
+  - id: lsvp-uses-cross-session-offline-monitoring
+    text: LSVP 将部分防护从逐请求实时阻断转向离线监控，对照 grant 中声明的安全用途识别跨多请求和多 session 的异常模式，并要求相关流量保留 30 天以支持审查。
+    evidence:
+    - anthropic-lsvp
+  limitations:
+  - LSVP 当前是 beta，尚未覆盖个人计划、第三方平台或 BAA-enabled 组织。
+  - 这是 Anthropic 针对生命科学设计的专用治理模型，不能直接视为通用 Agent 授权标准。
+- id: dense-infra-feedback
+  layout: timeline
+  title: Infra Agent 的关键不是日志更多，而是反馈更局部、更快、更可验证
+  conclusion: 当 Agent 优化复杂系统时，单一端到端指标不足以指导下一步动作；必须把数值正确性、局部性能、trace、runtime event 与生产级目标组织成可归因的实验闭环。
+  facts:
+  - id: glm-infra-agent-built-production-stack
+    text: Z.ai 表示 GLM-5.3-powered Infra Agent 参与构建了 GLM-5.3-Flash 的生产推理基础设施，该系统运行在超过 100,000 个中国制造 AI 加速器组成的集群上。
+    evidence:
+    - zai-glm-infra-agent
+  - id: glm-infra-loop-reached-production-in-two-weeks
+    text: Z.ai 报告从初始模型适配到 production readiness 用时不到两周，并通过一系列内存、量化、并行和 EPD 架构优化把端到端 serving performance 提升约 3 倍。
+    evidence:
+    - zai-glm-infra-agent
+  - id: dense-feedback-combines-local-validation-signals
+    text: 该 Infra Agent 的迭代工作流同时使用 correctness tests、runtime logs、execution traces、runtime events、microbenchmarks 与 end-to-end metrics，让 Agent 根据当前假设选择更局部且可验证的检查方式。
+    evidence:
+    - zai-glm-infra-agent
+  limitations:
+  - 吞吐与规模数据来自 Z.ai 自报，尚未由独立第三方在同一硬件和工作负载下复现。
+  - Z.ai 仍把目标定义、系统约束和关键生产风险评审明确保留给人类工程师。
+- id: benchmark-governance-loop
+  layout: metrics
+  title: Benchmark 也需要像生产依赖一样被审计和版本化
+  conclusion: 当 Agent 排名会影响模型选择、资源配置和上线决策时，只记录一个分数不够；任务可检查性、harness 设置、scorer 质量和版本一致性都应进入评测 provenance。
+  facts:
+  - id: epoch-reviews-external-benchmarks
+    text: Epoch AI 的 Benchmark Reviews 对外部 benchmark 使用统一 rubric，并给出 Verified、Flawed 与 Not enough information 等 verdict；Epoch 自己创建的 benchmark 因利益冲突不纳入内部评审。
+    evidence:
+    - epoch-benchmark-reviews
+  - id: reviewability-requires-harness-disclosure
+    text: Epoch 的 Reviewability 标准要求至少能够检查任务与评分逻辑，并披露模型实际使用的 harness/API 设置，包括 reasoning effort、token 或时间限制、tool access 和 system prompts。
+    evidence:
+    - epoch-benchmark-reviews
+  - id: epoch-flags-score-and-scaffold-failures
+    text: Epoch 的 rubric 将错误 ground truth、过严或可被 reward-hack 的 scorer、未版本化的评分变化、资源不足以及不公平 scaffold 选择列为可能影响 benchmark 解释性的缺陷。
+    evidence:
+    - epoch-benchmark-reviews
+  limitations:
+  - Benchmark Reviews 仍是 Epoch 自己定义并持续演进的 rubric，不是行业统一标准。
+  - 对不公开足够任务或评分信息的 benchmark，Epoch 只能给出 Not enough information，而不能完成同等级审计。
+projects:
+- action: TEST
+  name: Kimi Web Search APIs
+  summary: 用同一组 Agent 检索任务对比 Basic、Pro 与 fetch 的返回结构、token 使用、可追溯性和失败模式。
+  maturity: growing
+  url: https://platform.kimi.com/docs/guide/best-practices-for-web-search
+- action: READ
+  name: Z.ai GLM Infra Agent
+  summary: 精读 dense feedback 如何把 correctness、trace、microbenchmark 和端到端指标接成 Agent 可直接使用的实验闭环。
+  maturity: early
+  url: https://z.ai/blog/glm-built-its-inference-infrastructure
+- action: READ
+  name: Epoch Benchmark Reviews
+  summary: 把 Reviewability、scoring、elicitation 和 scaffold fairness 映射到自己的 Coding Agent 与 Tool-use eval 门禁。
+  maturity: growing
+  url: https://epoch.ai/data/benchmark-reviews-documentation/methodology
+radar:
+- label: Coordinator + worker threads
+  impact: 96
+  horizon: 8
+  note: 多线程云端执行把任务拆分、branch 隔离、验证和合并顺序推到 Project 控制面。
+- label: Retrieval tool contracts
+  impact: 91
+  horizon: 10
+  note: 搜索、相关片段与正文抓取拆成独立接口后，成本、来源与时效约束可以被程序化管理。
+- label: Verified capability grants
+  impact: 95
+  horizon: 18
+  note: 高风险领域开始用身份、用途、期限和持续监控定义权限，而不是只依赖逐请求拦截。
+- label: Dense engineering feedback
+  impact: 97
+  horizon: 12
+  note: 复杂系统中的 Agent 能否自我纠错越来越取决于可归因、低成本、客观的局部反馈。
+- label: Benchmark provenance
+  impact: 93
+  horizon: 14
+  note: 模型排名越来越需要同时携带 harness、资源预算、scorer 和 benchmark 版本信息。
+actions:
+- title: 把并行 Agent 分支当成受控执行单元
+  description: 为每个 worker 绑定独立 workspace、branch、测试结果和合并依赖，协调器只负责路由、汇总和冲突处理。
+- title: 为联网工具保存 provenance
+  description: 记录查询条件、时间窗、来源 URL、抓取模式和最终进入上下文的片段，避免把“搜索到了”与“事实已核验”混为一谈。
+- title: 把高风险权限改成有期限的 capability grant
+  description: 对敏感工具或副作用操作绑定主体、用途、资源范围、有效期与审计策略，并跨 session 检查是否偏离授权目标。
+- title: 给 Eval 增加 harness 与 scorer 审计
+  description: 在记录 benchmark 分数之外固定模型参数、token/时间预算、工具权限、scaffold、scorer 版本和失败样本，避免不可比较的排行榜驱动决策。
+references:
+- id: anthropic-claude-projects
+  title: 'Projects redesigned: from folder to conversation'
+  url: https://claude.com/blog/projects-redesigned
+  supports: Anthropic 关于 Claude Projects 协调器、并行 thread、独立 cloud session、branch、shared memory 与项目配置边界的官方说明。
+  accessedAt: '2026-09-19'
+- id: kimi-web-search-tools
+  title: 联网搜索最佳实践
+  url: https://platform.kimi.com/docs/guide/best-practices-for-web-search
+  supports: Kimi 开放平台关于 Search Basic、Search Pro、网页抓取、authority、来源追溯、站点/时间过滤与调用参数的官方文档。
+  accessedAt: '2026-09-19'
+- id: anthropic-lsvp
+  title: Introducing the Life Sciences Verification Program
+  url: https://www.anthropic.com/news/life-sciences-verification-program
+  supports: Anthropic 关于生命科学身份验证、Standard/High-risk grant、持续监控、30 天数据保留及产品可用性边界的官方发布。
+  accessedAt: '2026-09-19'
+- id: zai-glm-infra-agent
+  title: 'Toward Recursive Self-Improvement: How GLM Built Its Own Inference Infrastructure'
+  url: https://z.ai/blog/glm-built-its-inference-infrastructure
+  supports: Z.ai 关于 GLM-5.3 Infra Agent、十万级加速器推理栈、约 3 倍 serving 提升与 dense feedback 工程方法的官方技术文章。
+  accessedAt: '2026-09-19'
+- id: epoch-benchmark-reviews
+  title: Benchmark Reviews Documentation – Methodology
+  url: https://epoch.ai/data/benchmark-reviews-documentation/methodology
+  supports: Epoch AI 关于 benchmark review verdict、reviewability、harness 披露、scoring、elicitation、scaffold fairness 与版本一致性的官方 rubric。
+  accessedAt: '2026-09-19'
+archivePicks:
+- title: Agent 的长期状态正在变成一等工件，Memory、Thread 与安全事件都需要可检查
+  url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-18.yaml
+  supports: 前一期讨论长期 Workspace、文件化 Memory、review provenance 与 incident record，可与本期多线程协调和显式控制面连续阅读。
+  publishedAt: '2026-09-18'
+- title: Agent 生产化进入第二阶段，CI、权限与成本控制面开始重构
+  url: https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-16.yaml
+  supports: 回顾 Agent 吞吐提升后 CI、权限与成本成为新瓶颈，为本期验证、权限和评测控制面提供背景。
+  publishedAt: '2026-09-16'
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
