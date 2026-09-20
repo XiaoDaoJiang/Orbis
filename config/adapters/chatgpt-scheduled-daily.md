@@ -173,7 +173,9 @@ Do not claim GitHub CI or Trusted Preview success until those systems have actua
 
 This adapter **must not direct-write `main`**.
 
-This adapter **must not merge** pull requests, approve its own changes, or bypass human/policy review.
+This adapter **must not merge** pull requests, approve its own changes, or bypass repository policy.
+
+For an owned Scheduled Daily PR, the repository may enable GitHub-native Auto Merge **after** the trusted PR build and public Preview smoke check succeed. That merge authority belongs to the repository workflow, not to this adapter. The adapter must not call merge APIs or enable Auto Merge itself.
 
 This adapter **must not invoke Production Pages**, workflow dispatch for production deployment, or acquire production deployment credentials.
 
@@ -193,4 +195,4 @@ failed
 
 `revision-required` and correction-required situations are reported as safe stops, not silently converted into normal writes.
 
-The external ChatGPT task's responsibility ends at the candidate PR / observable CI boundary. Production publication remains governed by Orbis after human integration.
+The external ChatGPT task's responsibility ends at the candidate PR / observable CI boundary. Integration may then be completed by the repository's guarded Scheduled Daily Auto Merge policy; Production publication remains governed by Orbis after integration.
