@@ -72,3 +72,78 @@ jobs:
             'This preview was rebuilt from the read-only PR artifact and passed a public availability smoke check before this comment was posted.' \
             > "$body_file"
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$body_file"
+
+      - name: Verify Scheduled Daily auto-merge eligibility
+        id: daily-auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.preview.outputs.pr }}
+          SOURCE_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          pr_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
+          base_ref="$(jq -r '.base.ref' <<< "$pr_json")"
+          head_ref="$(jq -r '.head.ref' <<< "$pr_json")"
+          head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
+          state="$(jq -r '.state' <<< "$pr_json")"
+          draft="$(jq -r '.draft' <<< "$pr_json")"
+          body="$(jq -r '.body // ""' <<< "$pr_json")"
+
+          eligible=false
+          reason=not-scheduled-daily
+
+          if [[ "$head_ref" != automation/daily/* ]]; then
+            echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
+            echo "reason=$reason" >> "$GITHUB_OUTPUT"
+            echo "Auto-merge skipped: head branch is not a Scheduled Daily candidate ($head_ref)"
+            exit 0
+          fi
+
+          target_date="${head_ref#automation/daily/}"
+          expected_path="content/briefs/${target_date}.yaml"
+
+          if [[ ! "$target_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            reason=invalid-daily-branch
+          elif [ "$base_ref" != "main" ]; then
+            reason=unexpected-base
+          elif [ "$state" != "open" ]; then
+            reason=pr-not-open
+          elif [ "$draft" != "false" ]; then
+            reason=pr-is-draft
+          elif [ "$head_sha" != "$SOURCE_HEAD_SHA" ]; then
+            reason=stale-preview
+          elif ! grep -q '<!-- orbis-content-automation:v1 -->' <<< "$body"; then
+            reason=missing-automation-marker
+          else
+            mapfile -t changed_files < <(
+              gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100" --jq '.[].filename'
+            )
+            if [ "${#changed_files[@]}" -ne 1 ]; then
+              reason=unexpected-file-count
+            elif [ "${changed_files[0]}" != "$expected_path" ]; then
+              reason=unexpected-file
+            else
+              eligible=true
+              reason=eligible
+            fi
+          fi
+
+          echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          echo "Scheduled Daily auto-merge eligibility: eligible=$eligible reason=$reason head=$head_ref sha=$head_sha"
+
+      - name: Enable GitHub Auto Merge for Scheduled Daily
+        if: ${{ steps.daily-auto-merge.outputs.eligible == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.preview.outputs.pr }}
+          SOURCE_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --auto \
+            --squash \
+            --match-head-commit "$SOURCE_HEAD_SHA"
+          echo "GitHub Auto Merge enabled for Scheduled Daily PR #$PR_NUMBER at $SOURCE_HEAD_SHA"
