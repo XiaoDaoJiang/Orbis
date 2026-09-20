@@ -1,0 +1,204 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: '2026-09-20'
+status: published
+title: Coding Agent 栈正在模块化：Harness、项目指令、授权、评测与本地 Runtime 开始分层
+summary: MiniMax Code 把终端 Coding Agent、BYOK、ACP、MCP 与插件能力放进可开源检查的 Harness；Claude Code 开始以 built-in plugin 兼容 AGENTS.md；OpenAI 将插件/MCP 的用户授权落到 OAuth 2.1、PKCE 与资源绑定；Anthropic 则推动 evaluator 进入模型公司内部持续评测。与此同时，JetBrains Junie Local 展示了本地 Coding Agent 的效果越来越取决于模型与 Runtime 的联合优化。Coding Agent 正从单一产品形态拆成可替换、可治理、可验证的分层系统。
+topics:
+  - agent-harness
+  - coding-agent
+  - mcp
+signals:
+  - title: Coding Agent Harness 正从厂商黑盒变成可替换执行层
+    summary: MiniMax Code 公开终端 Agent 源码，同时支持自有模型、OpenAI/Anthropic 兼容 API、Headless、ACP、MCP 与插件，说明 Harness 与模型提供方开始解耦。
+    impact: high
+  - title: AGENTS.md 正在进入跨 Agent 的项目指令兼容层
+    summary: Claude Code 的 built-in agents-md plugin 可以按模式加载 AGENTS.md，并把它交给引擎按 project instruction 处理，使仓库级约定逐渐脱离单一 Agent 私有文件名。
+    impact: high
+  - title: Tool 授权正在成为 MCP Runtime 的硬合同
+    summary: OpenAI 要求需要用户身份或写操作的 MCP plugin 使用 OAuth 2.1，并通过 PKCE、resource 绑定、元数据发现和 token 校验把授权边界从提示词提升到协议层。
+    impact: high
+  - title: 评测与本地执行都在向 Runtime 内部移动
+    summary: Anthropic 推动独立 evaluator 获得接近员工的持续观察权限，JetBrains 则用 Coding Agent benchmark 与 Runtime 优化共同选择本地模型，表明验证和执行环境正在成为同一工程系统的一部分。
+    impact: high
+sections:
+  - id: open-pluggable-agent-harness
+    layout: architecture
+    title: 开源 Harness 正把模型、工具与宿主入口拆成可替换层
+    conclusion: 当同一个 Coding Agent 可以切换模型提供方、TUI、Headless 与 ACP 入口，并通过 MCP、插件和 skills 扩展能力时，真正需要稳定的是 Harness 合同，而不是绑定某一家模型 API。
+    facts:
+      - id: minimax-code-open-terminal-agent
+        text: MiniMax Code 将自己定义为开源终端 Coding Agent，可理解项目、修改代码并运行测试；仓库第一方代码默认采用 MIT 许可证。
+        evidence:
+          - minimax-code-repo
+      - id: minimax-code-provider-pluggability
+        text: MiniMax Code 支持 MiniMax 登录或 BYOK，自定义 provider 可使用 openai-completions、openai-responses 与 anthropic-messages 三种 API 格式。
+        evidence:
+          - minimax-code-repo
+      - id: minimax-code-multiple-host-entrypoints
+        text: MiniMax Code 同时提供交互式 TUI、用于脚本和 CI 的 headless exec，以及面向兼容编辑器和客户端的 ACP 入口，并支持 MCP、plugins、skills 与 subagents。
+        evidence:
+          - minimax-code-repo
+    limitations:
+      - 开源 CLI 不等同于完整桌面产品源码；仓库说明桌面应用并不包含在当前公开源码中。
+      - API 兼容并不保证不同模型在工具调用、上下文预算和错误语义上完全一致，仍需逐 provider 验证。
+  - id: portable-repository-instructions
+    layout: comparison
+    title: 项目指令正在从产品私有文件走向兼容层
+    conclusion: 仓库级 Agent 约定如果能被多个 Harness 直接读取，就可以从“给某个产品写提示词”升级为可版本化的工程契约；但兼容层仍需要明确优先级和嵌套语义。
+    facts:
+      - id: claude-agents-md-built-in-plugin
+        text: Claude Code 仓库中的 agents-md 已作为 built-in plugin 提供，并通过 instructionFiles 选项决定只读 CLAUDE.md、回退到 AGENTS.md、两者并读或只保留 managed instructions。
+        evidence:
+          - claude-agents-md
+      - id: agents-md-default-fallback-semantics
+        text: 默认 claude-md-or-agents-md 模式下，如果项目没有自己的 CLAUDE.md 系列文件，插件会把路径上的 AGENTS.md 和 .claude/AGENTS.md 作为 project instruction files 交给引擎。
+        evidence:
+          - claude-agents-md
+      - id: agents-md-nested-read-semantics
+        text: 对项目子目录中的 Read，插件会在尚未提供且未被同目录 CLAUDE.md 覆盖时附加对应的嵌套 AGENTS.md，使目录级规则能够随代码读取进入上下文。
+        evidence:
+          - claude-agents-md
+    limitations:
+      - README 明确列出 AGENTS.md 与原生 CLAUDE.md 加载语义仍存在差异，例如 IDE 打开文件、部分 @ 引用和 --add-dir 场景不能完全等价。
+      - 多种指令文件并存时仍需团队定义冲突优先级，不能假设不同 Agent 对同一仓库会得到完全一致的有效上下文。
+  - id: protocol-level-tool-authorization
+    layout: system-map
+    title: MCP 工具权限正在从提示词约束变成协议级授权
+    conclusion: 对能读取用户数据或产生外部写入的工具，Agent Runtime 需要验证“谁在调用、能访问什么资源、拥有哪些 scope”，而不能只依赖模型在自然语言中的自我约束。
+    facts:
+      - id: openai-mcp-oauth-required
+        text: OpenAI 插件文档要求带身份的 MCP server 实现符合 MCP Authorization 规范的 OAuth 2.1 流程；资源服务器负责在每次请求上验证 access token。
+        evidence:
+          - openai-plugin-auth
+      - id: openai-mcp-pkce-and-resource-binding
+        text: ChatGPT 作为 MCP OAuth 客户端执行 authorization code + PKCE，并要求 code_challenge_methods_supported 包含 S256；resource 参数贯穿授权与 token 流程，用于把 token 绑定到目标 MCP server。
+        evidence:
+          - openai-plugin-auth
+      - id: openai-mcp-client-and-user-separation
+        text: OpenAI 文档区分客户端身份与最终用户授权：mTLS 可用于验证 ChatGPT 这个 MCP 客户端，而 OAuth 2.1 继续负责用户身份和工具访问授权。
+        evidence:
+          - openai-plugin-auth
+    limitations:
+      - 协议完成鉴权并不自动提供业务级最小权限、审批、幂等和可撤销语义，这些仍需工具服务自身实现。
+      - 不同 MCP host 对客户端注册、回调和企业域约束的支持可能不同，不能把某一 host 的扩展能力当成通用 MCP 标准。
+  - id: embedded-evaluation-inside-the-lab
+    layout: timeline
+    title: Evaluation 正从发布前外部检查走向开发过程中的持续观察
+    conclusion: 如果 evaluator 只能在模型完成后拿到少量黑盒接口，很多训练与部署决策无法被检查；把独立 evaluator 嵌入开发过程，会让评测更接近持续验证而非一次性验收。
+    facts:
+      - id: anthropic-accenture-embedded-eval
+        text: Anthropic 于 2026-09-18 宣布与 Accenture 合作开展 independent embedded evaluation，工作包括模型评测与 red teaming、alignment assessment 和 safeguard testing。
+        evidence:
+          - anthropic-embedded-eval
+      - id: embedded-evaluator-employee-like-access
+        text: Anthropic 表示 embedded evaluator 将在 AI 公司内部工作并获得接近员工级别的访问，从训练阶段观察模型形成过程、跟踪构建和部署决策并直接与员工交流。
+        evidence:
+          - anthropic-embedded-eval
+      - id: embedded-eval-standards-not-settled
+        text: Anthropic 同时承认目前尚无统一标准规定 embedded evaluator 应访问哪些信息、如何报告结果以及独立评测应如何长期融资。
+        evidence:
+          - anthropic-embedded-eval
+    limitations:
+      - 该合作模式仍处早期阶段，访问边界、独立性和报告机制尚未形成行业统一标准。
+      - Anthropic 直接资助本次工作，因此其独立性需要结合未来治理结构、报告方式与其他 evaluator 的参与继续观察。
+  - id: local-agent-model-runtime-co-design
+    layout: metrics
+    title: 本地 Coding Agent 的竞争单位正在变成 Model × Runtime × Eval
+    conclusion: 本地 Agent 的可用性不只由模型参数规模决定；输出 token、推理策略、解码 Runtime、硬件支持和 Agent 任务评测共同决定真实交互速度与完成率。
+    facts:
+      - id: junie-local-blended-model-results
+        text: JetBrains 报告其 Qwen3.8-3.6-27B-blend 在 100 项内部 Coding Agent benchmark 中完成 37 项任务，高于 Qwen3.6 的 34 项并接近 Qwen3.8 的 39 项，同时相较 Qwen3.8 减少 71% 输出 token。
+        evidence:
+          - jetbrains-junie-local
+      - id: junie-runtime-mtp-tradeoff
+        text: Junie Local 使用 multi-token prediction；JetBrains 在 M5 MacBook Pro 上测得每轮预测 2 个 token 相比不使用 MTP 解码快 60%，预测 4 个 token 时加速降为 36%，说明更多 speculative work 不一定更快。
+        evidence:
+          - jetbrains-junie-local
+      - id: junie-local-windows-rtx-preview
+        text: JetBrains 表示 Junie nightly build 已提供实验性 Windows RTX 支持，覆盖 Ampere 或更新架构且显存至少 24 GB 的 NVIDIA RTX 显卡。
+        evidence:
+          - jetbrains-junie-local
+    limitations:
+      - 37/34/39 等 Coding Agent 结果来自 JetBrains 自己的 100-task 内部 benchmark，不能直接外推为其他仓库和任务的普遍能力排名。
+      - 本地推理收益高度依赖硬件、量化、Runtime 与上下文长度，单一设备结果不代表所有开发机。
+projects:
+  - action: TEST
+    name: MiniMax Code
+    summary: 在隔离仓库中验证 BYOK、AGENTS.md、Headless、ACP、MCP 与权限模式是否能组成可替换的 Coding Agent Harness。
+    maturity: early
+    url: https://github.com/MiniMax-AI/minimax-code
+  - action: READ
+    name: Claude Code agents-md
+    summary: 阅读 built-in agents-md plugin 的优先级、嵌套加载和 hook 语义，评估 AGENTS.md 作为跨 Harness 项目契约的可移植边界。
+    maturity: early
+    url: https://github.com/anthropics/claude-code/tree/main/mods/agents-md
+  - action: TEST
+    name: Junie Local
+    summary: 用真实仓库任务记录 solve rate、输出 token、首 token 延迟和总耗时，比较本地模型与云模型的 Runtime 成本结构。
+    maturity: growing
+    url: https://blog.jetbrains.com/junie/2026/09/smarter-local-al/
+radar:
+  - label: Open pluggable agent harness
+    impact: 95
+    horizon: 8
+    note: Harness 开源并支持多 provider 后，模型选择、工具层和宿主入口第一次可以被独立替换和验证。
+  - label: Portable AGENTS.md contract
+    impact: 94
+    horizon: 6
+    note: 多个 Coding Agent 读取同一仓库级指令文件，可显著降低项目规则在不同 Harness 之间重复维护的成本。
+  - label: Protocol-level MCP authorization
+    impact: 98
+    horizon: 8
+    note: 当 Agent 开始操作真实 SaaS 与内部系统，OAuth scope、resource binding 和 token verification 会直接决定副作用边界。
+  - label: Embedded continuous evaluation
+    impact: 90
+    horizon: 24
+    note: evaluator 更接近训练与部署流程能增加可检查性，但独立性、访问范围和报告标准仍在形成。
+  - label: Local agent runtime co-design
+    impact: 92
+    horizon: 14
+    note: 本地 Coding Agent 的体验越来越取决于模型、解码 Runtime、硬件和 Agent benchmark 的联合优化。
+actions:
+  - title: 把项目约定收敛到可移植指令层
+    description: 优先维护 AGENTS.md 等仓库级工程契约，并明确与产品私有指令文件的覆盖关系，再验证主要 Coding Agent 对嵌套规则的实际行为。
+  - title: 为 Harness 建立 provider contract tests
+    description: 用同一组读写、工具调用、错误恢复和长上下文任务测试不同模型 API，避免把 OpenAI/Anthropic 兼容接口误当成行为完全等价。
+  - title: 把 MCP OAuth 当成工具上线门禁
+    description: 对带用户数据或写操作的 MCP server 检查 PKCE、resource/audience、scope、token 验证和重新授权路径，并把权限失败纳入自动化测试。
+  - title: 将 Eval 接近真实 Runtime
+    description: 除模型分数外，同时记录 Harness、工具、权限、硬件、token 与延迟条件，让 Agent 评测能够解释真实生产环境中的能力和成本。
+references:
+  - id: minimax-code-repo
+    title: MiniMax Code
+    url: https://github.com/MiniMax-AI/minimax-code
+    source: github
+    supports: MiniMax Code 的开源许可证、终端 Coding Agent 定位、BYOK/provider 格式、TUI/headless/ACP 入口以及 MCP、plugins、skills 和 subagents 能力。
+    accessedAt: '2026-09-20'
+  - id: claude-agents-md
+    title: Claude Code agents-md built-in plugin
+    url: https://github.com/anthropics/claude-code/tree/main/mods/agents-md
+    source: github
+    supports: Claude Code 对 AGENTS.md 的 built-in plugin、instructionFiles 模式、fallback/combined 加载、project instruction 与 nested Read 语义。
+    accessedAt: '2026-09-20'
+  - id: openai-plugin-auth
+    title: Authentication - Plugins
+    url: https://developers.openai.com/plugins/build/auth
+    supports: OpenAI 插件/MCP 的 OAuth 2.1、PKCE S256、resource binding、token 验证以及 mTLS 客户端身份边界。
+    accessedAt: '2026-09-20'
+  - id: anthropic-embedded-eval
+    title: Partnering with Accenture on embedded evaluation
+    url: https://www.anthropic.com/news/accenture-embedded-evaluation
+    supports: Anthropic 与 Accenture 的 embedded evaluation 合作、评测范围、接近员工级访问以及当前标准仍未确定的边界。
+    accessedAt: '2026-09-20'
+  - id: jetbrains-junie-local
+    title: Making Local AI Smarter and Faster
+    url: https://blog.jetbrains.com/junie/2026/09/smarter-local-al/
+    supports: Junie Local 的 blended model 内部 Coding Agent benchmark、输出 token 变化、MTP Runtime 取舍与 Windows RTX 实验支持。
+    accessedAt: '2026-09-20'
+archivePicks: []
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
