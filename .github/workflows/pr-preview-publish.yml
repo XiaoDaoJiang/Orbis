@@ -10,6 +10,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: orbis-trusted-pr-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id }}
+  cancel-in-progress: false
+
 jobs:
   publish-preview:
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
@@ -21,8 +25,9 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
         run: |
-          if [ -z "$PR_NUMBER" ]; then
-            echo 'No pull request is associated with this workflow run'
+          set -euo pipefail
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo 'No valid pull request is associated with this workflow run'
             exit 1
           fi
           echo "pr=$PR_NUMBER" >> "$GITHUB_OUTPUT"
@@ -35,6 +40,21 @@ jobs:
           path: preview
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
+      - name: Stamp trusted preview provenance
+        env:
+          PR_NUMBER: ${{ steps.preview.outputs.pr }}
+          SOURCE_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        run: |
+          set -euo pipefail
+          rm -f preview/orbis-preview-provenance.json
+          jq -n --arg repository "$GITHUB_REPOSITORY" --arg pr "$PR_NUMBER" \
+            --arg sha "$SOURCE_HEAD_SHA" --arg sourceRun "$SOURCE_RUN_ID" \
+            --arg sourceAttempt "$SOURCE_RUN_ATTEMPT" --arg publisherRun "$GITHUB_RUN_ID" \
+            --arg publisherAttempt "$GITHUB_RUN_ATTEMPT" \
+            '{repository: $repository, pr: $pr, sha: $sha, sourceRun: $sourceRun, sourceAttempt: $sourceAttempt, publisherRun: $publisherRun, publisherAttempt: $publisherAttempt}' \
+            > preview/orbis-preview-provenance.json
       - name: Publish preview branch
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -47,18 +67,21 @@ jobs:
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
         run: |
+          set -euo pipefail
           preview_root="${PREVIEW_URL%/index.html}"
           for attempt in $(seq 1 12); do
-            if rss="$(curl --fail --silent --show-error --location --max-time 15 "$preview_root/rss.xml")" \
+            if proof="$(curl --fail --silent --show-error --location --max-time 15 "$preview_root/orbis-preview-provenance.json?run=$GITHUB_RUN_ID&attempt=$GITHUB_RUN_ATTEMPT")" \
+              && jq -e --slurpfile expected preview/orbis-preview-provenance.json '. == $expected[0]' <<< "$proof" > /dev/null \
+              && rss="$(curl --fail --silent --show-error --location --max-time 15 "$preview_root/rss.xml")" \
               && grep -q '<rss' <<< "$rss" \
               && curl --fail --silent --show-error --location --max-time 15 "$preview_root/favicon.svg" > /dev/null; then
-              echo "Public preview assets are reachable: $PREVIEW_URL"
+              echo "Exact public preview is reachable: $PREVIEW_URL"
               exit 0
             fi
-            echo "Preview not visible yet (attempt $attempt/12)"
+            echo "Exact preview not visible yet (attempt $attempt/12)"
             sleep 5
           done
-          echo "Public preview did not become reachable: $PREVIEW_URL" >&2
+          echo "Current preview did not become reachable: $PREVIEW_URL" >&2
           exit 1
       - name: Comment preview URL
         env:
@@ -69,6 +92,74 @@ jobs:
           body_file="$(mktemp)"
           printf '%s\n\n%s\n' \
             "Orbis public preview: $PREVIEW_URL" \
-            'This preview was rebuilt from the read-only PR artifact and passed a public availability smoke check before this comment was posted.' \
+            'This preview was rebuilt from the read-only PR artifact and passed a public availability smoke check with exact source/run provenance before this comment was posted.' \
             > "$body_file"
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$body_file"
+
+  verify-daily-gate:
+    needs: publish-preview
+    if: ${{ always() && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests[0].number }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+      statuses: write
+    outputs:
+      eligible: ${{ steps.gate.outputs.eligible }}
+    steps:
+      - name: Checkout trusted policy only
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: refs/heads/main
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: |
+            config/daily-auto-merge.json
+            tools/content-automation/daily-auto-merge.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.16.0'
+      - name: Publish current-head Daily gate
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREVIEW_VERIFIED: ${{ needs.publish-preview.result == 'success' }}
+        run: node trusted/tools/content-automation/daily-auto-merge.mjs verify
+
+  auto-merge-daily:
+    needs: [publish-preview, verify-daily-gate]
+    if: ${{ needs.verify-daily-gate.outputs.eligible == 'true' && vars.ORBIS_DAILY_AUTO_MERGE == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: daily-auto-merge
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Checkout trusted policy only
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: refs/heads/main
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: |
+            config/daily-auto-merge.json
+            tools/content-automation/daily-auto-merge.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.16.0'
+      - name: Recheck policy and request native Auto Merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORBIS_AUTO_MERGE_TOKEN: ${{ secrets.ORBIS_AUTO_MERGE_TOKEN }}
+          ORBIS_DAILY_AUTO_MERGE: ${{ vars.ORBIS_DAILY_AUTO_MERGE }}
+          PREVIEW_VERIFIED: ${{ needs.publish-preview.result == 'success' }}
+        run: node trusted/tools/content-automation/daily-auto-merge.mjs merge

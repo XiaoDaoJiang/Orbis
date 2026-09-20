@@ -1,0 +1,10 @@
+{
+  "repository": "XiaoDaoJiang/Orbis",
+  "repositoryId": 1348334245,
+  "baseBranch": "main",
+  "producerIds": [38294800],
+  "statusContext": "scheduled-daily-merge-gate",
+  "requiredChecks": ["build-preview", "scheduled-daily-merge-gate"],
+  "checksIntegrationId": 15368,
+  "previewWorkflowPath": ".github/workflows/pr-preview-build.yml"
+}

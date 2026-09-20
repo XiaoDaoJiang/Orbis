@@ -101,7 +101,8 @@ references:
 - 不修改 `.github/**`、`apps/**`、`packages/**`、`tools/**`、`config/**` 或根 workspace/lock 文件；
 - 提交前运行内容校验；环境允许时运行完整 `pnpm build`；
 - 环境有完整 Git base 时运行 `pnpm automation:daily:guard --base <integration-base> --target-date <targetDate>`；
-- 不直接 push `main`，不自动 merge，不调用 Production Pages deploy；
+- Producer 不直接 push `main`、不调用 merge API、也不自行启用 Auto Merge；符合仓库约束的 Scheduled Daily PR 可由 Repository Gate 在 Trusted Preview 成功后启用 GitHub-native Auto Merge；
+- Producer 不调用 Production Pages deploy；
 - 不得虚构来源、提交状态、CI 状态、Preview 状态、部署状态或公网链接。
 
 ## PR 模型
@@ -116,8 +117,8 @@ Asia/Shanghai targetDate
   -> content-only PR
   -> repository full Build
   -> Trusted Preview
-  -> Human / Policy Review
-  -> merge main
+  -> Repository Daily Auto Merge Gate / Policy Review
+  -> GitHub-native Auto Merge -> main
   -> existing governed Pages pipeline
 ```
 
