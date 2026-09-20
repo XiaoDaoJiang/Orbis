@@ -236,7 +236,7 @@ Evidence V1 correction provenance 与 append-only correction guard 属于显式 
 - 修改 GitHub Actions 或 Pages 配置；
 - 修改 `config/evidence-integrity.yaml` legacy allowlist；
 - 创建或修改 Source / Author / Topic Registry；
-- 直接 push `main`、自动 merge 或触发 Production Pages deploy；
+- 由 Scheduled Daily Producer 直接 push `main`、调用 merge API、启用 Auto Merge 或触发 Production Pages deploy；Repository Gate 可在受控条件满足后为该 Daily PR 启用 GitHub-native Auto Merge；
 - 伪造来源、evidence coverage、验证结果、CI、PR Preview 或生产部署状态。
 
-Orbis 的长期原则是：**内容是源，展示是构建产物；候选由 Agent 生产，发布由 Repository Gate 决定；证据关系必须显式，事实真实性仍由证据与 Human Review 负责。**
+Orbis 的长期原则是：**内容是源，展示是构建产物；候选由 Agent 生产，集成与发布由 Repository Gate 决定；Scheduled Daily 可在受控 Preview / Policy Gate 后自动集成；证据关系必须显式，事实真实性仍由证据与 Review 机制负责。**
