@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
 
 const workflow = await readFile('.github/workflows/pr-preview-build.yml', 'utf8')
 
@@ -38,5 +39,8 @@ assert.match(workflow, /--target-date "\$target_date"/)
 assert.match(workflow, /permissions:\s*\n\s*contents:\s*read/)
 assert.doesNotMatch(workflow, /pages:\s*write/)
 assert.doesNotMatch(workflow, /id-token:\s*write/)
+
+// Keep dependency-free trusted gate regressions in the existing validate/build chain.
+execFileSync(process.execPath, ['--test', 'tools/content-automation/daily-auto-merge.test.mjs'], { stdio: 'inherit' })
 
 console.log('Scheduled Daily and correction PR Preview workflow contract passed')

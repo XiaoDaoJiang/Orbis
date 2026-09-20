@@ -10,6 +10,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: orbis-trusted-pr-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id }}
+  cancel-in-progress: false
+
 jobs:
   publish-preview:
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
@@ -21,8 +25,9 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
         run: |
-          if [ -z "$PR_NUMBER" ]; then
-            echo 'No pull request is associated with this workflow run'
+          set -euo pipefail
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo 'No valid pull request is associated with this workflow run'
             exit 1
           fi
           echo "pr=$PR_NUMBER" >> "$GITHUB_OUTPUT"
@@ -35,6 +40,21 @@ jobs:
           path: preview
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
+      - name: Stamp trusted preview provenance
+        env:
+          PR_NUMBER: ${{ steps.preview.outputs.pr }}
+          SOURCE_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        run: |
+          set -euo pipefail
+          rm -f preview/orbis-preview-provenance.json
+          jq -n --arg repository "$GITHUB_REPOSITORY" --arg pr "$PR_NUMBER" \
+            --arg sha "$SOURCE_HEAD_SHA" --arg sourceRun "$SOURCE_RUN_ID" \
+            --arg sourceAttempt "$SOURCE_RUN_ATTEMPT" --arg publisherRun "$GITHUB_RUN_ID" \
+            --arg publisherAttempt "$GITHUB_RUN_ATTEMPT" \
+            '{repository: $repository, pr: $pr, sha: $sha, sourceRun: $sourceRun, sourceAttempt: $sourceAttempt, publisherRun: $publisherRun, publisherAttempt: $publisherAttempt}' \
+            > preview/orbis-preview-provenance.json
       - name: Publish preview branch
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -47,18 +67,21 @@ jobs:
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
         run: |
+          set -euo pipefail
           preview_root="${PREVIEW_URL%/index.html}"
           for attempt in $(seq 1 12); do
-            if rss="$(curl --fail --silent --show-error --location --max-time 15 "$preview_root/rss.xml")" \
+            if proof="$(curl --fail --silent --show-error --location --max-time 15 "$preview_root/orbis-preview-provenance.json?run=$GITHUB_RUN_ID&attempt=$GITHUB_RUN_ATTEMPT")" \
+              && jq -e --slurpfile expected preview/orbis-preview-provenance.json '. == $expected[0]' <<< "$proof" > /dev/null \
+              && rss="$(curl --fail --silent --show-error --location --max-time 15 "$preview_root/rss.xml")" \
               && grep -q '<rss' <<< "$rss" \
               && curl --fail --silent --show-error --location --max-time 15 "$preview_root/favicon.svg" > /dev/null; then
-              echo "Public preview assets are reachable: $PREVIEW_URL"
+              echo "Exact public preview is reachable: $PREVIEW_URL"
               exit 0
             fi
-            echo "Preview not visible yet (attempt $attempt/12)"
+            echo "Exact preview not visible yet (attempt $attempt/12)"
             sleep 5
           done
-          echo "Public preview did not become reachable: $PREVIEW_URL" >&2
+          echo "Current preview did not become reachable: $PREVIEW_URL" >&2
           exit 1
       - name: Comment preview URL
         env:
@@ -69,81 +92,74 @@ jobs:
           body_file="$(mktemp)"
           printf '%s\n\n%s\n' \
             "Orbis public preview: $PREVIEW_URL" \
-            'This preview was rebuilt from the read-only PR artifact and passed a public availability smoke check before this comment was posted.' \
+            'This preview was rebuilt from the read-only PR artifact and passed a public availability smoke check with exact source/run provenance before this comment was posted.' \
             > "$body_file"
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$body_file"
 
-      - name: Verify Scheduled Daily auto-merge eligibility
-        id: daily-auto-merge
+  verify-daily-gate:
+    needs: publish-preview
+    if: ${{ always() && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests[0].number }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+      statuses: write
+    outputs:
+      eligible: ${{ steps.gate.outputs.eligible }}
+    steps:
+      - name: Checkout trusted policy only
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: refs/heads/main
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: |
+            config/daily-auto-merge.json
+            tools/content-automation/daily-auto-merge.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.16.0'
+      - name: Publish current-head Daily gate
+        id: gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ steps.preview.outputs.pr }}
-          SOURCE_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          set -euo pipefail
+          PREVIEW_VERIFIED: ${{ needs.publish-preview.result == 'success' }}
+        run: node trusted/tools/content-automation/daily-auto-merge.mjs verify
 
-          pr_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
-          base_ref="$(jq -r '.base.ref' <<< "$pr_json")"
-          head_ref="$(jq -r '.head.ref' <<< "$pr_json")"
-          head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
-          state="$(jq -r '.state' <<< "$pr_json")"
-          draft="$(jq -r '.draft' <<< "$pr_json")"
-          body="$(jq -r '.body // ""' <<< "$pr_json")"
-
-          eligible=false
-          reason=not-scheduled-daily
-
-          if [[ "$head_ref" != automation/daily/* ]]; then
-            echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
-            echo "reason=$reason" >> "$GITHUB_OUTPUT"
-            echo "Auto-merge skipped: head branch is not a Scheduled Daily candidate ($head_ref)"
-            exit 0
-          fi
-
-          target_date="${head_ref#automation/daily/}"
-          expected_path="content/briefs/${target_date}.yaml"
-
-          if [[ ! "$target_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-            reason=invalid-daily-branch
-          elif [ "$base_ref" != "main" ]; then
-            reason=unexpected-base
-          elif [ "$state" != "open" ]; then
-            reason=pr-not-open
-          elif [ "$draft" != "false" ]; then
-            reason=pr-is-draft
-          elif [ "$head_sha" != "$SOURCE_HEAD_SHA" ]; then
-            reason=stale-preview
-          elif ! grep -q '<!-- orbis-content-automation:v1 -->' <<< "$body"; then
-            reason=missing-automation-marker
-          else
-            mapfile -t changed_files < <(
-              gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100" --jq '.[].filename'
-            )
-            if [ "${#changed_files[@]}" -ne 1 ]; then
-              reason=unexpected-file-count
-            elif [ "${changed_files[0]}" != "$expected_path" ]; then
-              reason=unexpected-file
-            else
-              eligible=true
-              reason=eligible
-            fi
-          fi
-
-          echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
-          echo "reason=$reason" >> "$GITHUB_OUTPUT"
-          echo "Scheduled Daily auto-merge eligibility: eligible=$eligible reason=$reason head=$head_ref sha=$head_sha"
-
-      - name: Enable GitHub Auto Merge for Scheduled Daily
-        if: ${{ steps.daily-auto-merge.outputs.eligible == 'true' }}
+  auto-merge-daily:
+    needs: [publish-preview, verify-daily-gate]
+    if: ${{ needs.verify-daily-gate.outputs.eligible == 'true' && vars.ORBIS_DAILY_AUTO_MERGE == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: daily-auto-merge
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Checkout trusted policy only
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: refs/heads/main
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: |
+            config/daily-auto-merge.json
+            tools/content-automation/daily-auto-merge.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.16.0'
+      - name: Recheck policy and request native Auto Merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ steps.preview.outputs.pr }}
-          SOURCE_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          set -euo pipefail
-          gh pr merge "$PR_NUMBER" \
-            --repo "$GITHUB_REPOSITORY" \
-            --auto \
-            --squash \
-            --match-head-commit "$SOURCE_HEAD_SHA"
-          echo "GitHub Auto Merge enabled for Scheduled Daily PR #$PR_NUMBER at $SOURCE_HEAD_SHA"
+          ORBIS_AUTO_MERGE_TOKEN: ${{ secrets.ORBIS_AUTO_MERGE_TOKEN }}
+          ORBIS_DAILY_AUTO_MERGE: ${{ vars.ORBIS_DAILY_AUTO_MERGE }}
+          PREVIEW_VERIFIED: ${{ needs.publish-preview.result == 'success' }}
+        run: node trusted/tools/content-automation/daily-auto-merge.mjs merge

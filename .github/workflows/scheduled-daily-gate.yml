@@ -1,0 +1,39 @@
+name: Orbis Scheduled Daily Gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review, converted_to_draft]
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+# Shared with Preview Publish: a late initializer must not overwrite its proof.
+concurrency:
+  group: orbis-trusted-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  initialize-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted policy only
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: refs/heads/main
+          path: trusted
+          persist-credentials: false
+          sparse-checkout: |
+            config/daily-auto-merge.json
+            tools/content-automation/daily-auto-merge.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.16.0'
+      - name: Initialize current-head status (never merge)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node trusted/tools/content-automation/daily-auto-merge.mjs initialize
