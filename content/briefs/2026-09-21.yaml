@@ -1,0 +1,224 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: '2026-09-21'
+status: published
+title: Agent 执行栈正在分出快慢路径：专用决策器、真实任务评测与并发 Runtime 同时成熟
+summary: CUA-S1 把 GUI 表单决策压缩成小型 one-pass 模型，Android Bench 开始同时评测模型、Agent 架构与工具调用合同；Realtime-Venus 则用双循环把实时交互和后台任务拆开。与此同时，Grok Voice Transcribe 2.0 把 turn detection 等语音控制能力下沉到输入层，Xing4.0-29B-A4B 则把 Agent 规划、工具调用与推理 Runtime 适配直接写进模型发布。Agent 工程正在从“一个大模型包办全部步骤”转向快路径、慢路径、评测与运行时协同的分层系统。
+topics:
+  - agent-harness
+  - coding-agent
+signals:
+  - title: 高频界面决策开始从通用 LLM 下沉到专用 System One 模型
+    summary: cua-s1-forms 不生成文本，而是一次前向为表单元素的候选动作打分，显示 Agent 热路径可以用小型专用模型承担低延迟、边界明确的判断。
+    impact: high
+  - title: Agent Benchmark 正从裸模型比较升级为 Model × Harness × Tool Contract
+    summary: Android Bench 采用 Harbor、mini-swe-agent v2 原生工具调用，并新增 specialized agent 与 long-horizon 结果，使评测对象更接近真实软件工程 Agent 系统。
+    impact: high
+  - title: 实时 Agent Runtime 正把对话循环与后台执行循环分离
+    summary: Realtime-Venus 让一个循环持续处理语音和视觉交互，另一个循环异步执行委派任务并把结果送回同一会话，避免长任务阻塞实时交互。
+    impact: high
+  - title: 模型可用性越来越取决于输入基础设施与推理 Runtime 是否同步就绪
+    summary: Grok Voice Transcribe 2.0 把 streaming、turn detection、diarization 等能力做成语音 Agent 输入原语；Xing4.0 则在模型发布时同时面对多种推理框架适配尚未合并的现实。
+    impact: high
+sections:
+  - id: specialist-fast-path-for-computer-use
+    layout: architecture
+    title: Computer Use 的高频决策可以从通用生成模型拆成专用快路径
+    conclusion: 当动作空间有限、目标可枚举时，用小型分类式模型先完成低延迟决策，再把复杂规划留给通用 Agent，可以降低每一步都调用大模型的成本与等待时间；但安全边界仍必须由 Runtime 独立执行。
+    facts:
+      - id: cua-s1-one-pass-option-scorer
+        text: cua-s1-forms 是面向 GUI 表单填写的 one-pass option scorer；它不生成文本，而是针对每个 UI 元素和候选动作输出概率，并可将多个元素在一个 batch 中并行评分。
+        evidence:
+          - cua-s1-forms-model-card
+      - id: cua-s1-small-model-profile
+        text: 该 checkpoint 的模型卡给出 706,048 个可训练参数和约 2.8 MB checkpoint，并说明训练使用 10,000 个合成 episode；模型卡报告 form-disjoint synthetic test top-1 为 99.95%，真实 demo eval 为 196 个决策。
+        evidence:
+          - cua-s1-forms-model-card
+      - id: cua-s1-runtime-safety-boundary
+        text: Cua-S1 仓库把 planning 与 execution 分离，默认 dry run，并要求单一明确目标窗口、snapshot-bound element token、变更后重新观察；execute 与 submit 需要分别显式开启。
+        evidence:
+          - cua-s1-repository
+    limitations:
+      - 模型卡明确说明真实评测只有 196 个决策，且尚未在任意真实世界表单上验证，不能把 demo 结果外推为通用 computer-use 能力。
+      - Cua-S1 仓库将 checkpoint 输出视为决策建议而不是授权边界，实际执行仍需要最小权限、独立验证与人工确认机制。
+  - id: benchmark-the-whole-agent-system
+    layout: comparison
+    title: 软件工程评测开始把 Harness、工具协议和任务时长纳入同一实验
+    conclusion: 当不同 Agent 使用不同工具调用方式、系统提示和执行环境时，只比较基础模型分数会遗漏关键变量；可复现评测需要把模型、Harness、工具接口和任务集一起版本化。
+    facts:
+      - id: android-bench-real-world-task-set
+        text: Android Bench 1.0 包含 100 个任务，来自 38,989 个开源 Android pull request 的候选池，并以真实 issue 与已合并修复为基础构造软件工程任务。
+        evidence:
+          - android-bench-methodology
+      - id: android-bench-harbor-and-native-tools
+        text: Android Bench 已将执行标准化到 Harbor，并在 mini-swe-agent v2 中要求模型通过 provider API 的原生 bash tool 调用执行命令，而不是输出 Markdown shell 代码块。
+        evidence:
+          - android-bench-methodology
+      - id: android-bench-specialized-agents
+        text: Android Bench 在 2026-09-17 的 changelog 中新增 long-horizon tasks，并开始发布 specialized agents 的结果，包括 antigravity-sdk、pi 与 codex。
+        evidence:
+          - android-bench-changelog
+    limitations:
+      - Android Bench 聚焦 Android 工程且任务分布有明确筛选标准，结果不能直接代表所有语言、仓库或企业内部代码库。
+      - 其成本与延迟指标包含 provider 网络与当时价格，官方也提醒失败较早的模型可能因为少执行步骤而显得更便宜或更快。
+  - id: dual-loop-realtime-agent-runtime
+    layout: system-map
+    title: 实时 Agent 需要把“继续交互”和“后台执行”变成两个并发循环
+    conclusion: 语音和视觉 Agent 如果把工具执行塞进单一对话循环，长任务会直接阻塞用户体验；双循环 Runtime 允许感知与说话继续进行，同时把耗时工作交给异步 Harness。
+    facts:
+      - id: realtime-venus-three-components
+        text: Realtime-Venus 由 9B 的 Omni、9B 的 Audio 和 Realtime-Venus-Harness 三部分组成；Harness 负责捕获委派请求、执行后台工作并把结果返回原会话。
+        evidence:
+          - realtime-venus-repository
+      - id: realtime-venus-continuous-interaction
+        text: Realtime-Venus 的设计允许模型在持续接收音视频输入和生成语音时，把自然语言任务异步委派给 Harness，后台任务完成后再由同一会话安排结果的口语化交付。
+        evidence:
+          - realtime-venus-repository
+      - id: realtime-venus-two-loop-architecture
+        text: 项目页面将系统描述为两个共享同一会话的循环：一个负责实时感知与语音，另一个负责委派任务与回复准备。
+        evidence:
+          - realtime-venus-project
+    limitations:
+      - 项目公开结果主要来自作者论文与项目方测试，仍需要在不同硬件、网络和真实工具链中复现实测。
+      - 在线 demo 对 GPU 和本地模型服务有较高要求，持续全双工体验的资源成本不能仅从模型参数量判断。
+  - id: speech-input-becomes-agent-control-plane
+    layout: timeline
+    title: Speech-to-Text 正从转写组件变成 Voice Agent 的控制输入层
+    conclusion: 当转写服务直接提供 streaming、speaker、关键词和 turn-end 信号时，语音 Agent 的 Runtime 可以把更多会话状态判断建立在结构化输入事件上，而不是在文本生成之后补救。
+    facts:
+      - id: grok-transcribe-streaming-and-turn-detection
+        text: Grok Voice Transcribe 2.0 支持 batch 与 streaming 转写，并提供 word-level timestamps、speaker diarization、最多 8 个独立 channel、最多 100 个 key terms 和 smart turn detection。
+        evidence:
+          - grok-voice-transcribe-2
+      - id: grok-transcribe-multilingual-switching
+        text: xAI 表示该模型可自动检测语言、支持数十种语言并在一次录音中跟随语言切换；其官方 short-phrase 测试中 WER 从上一代的 20.6% 降至 6.8%。
+        evidence:
+          - grok-voice-transcribe-2
+      - id: grok-transcribe-price-and-transition
+        text: 官方定价保持 batch 每小时 0.10 美元、streaming 每小时 0.20 美元，并表示 2.0 将成为 Speech-to-Text API 默认模型，1.0 会在之后数周逐步弃用。
+        evidence:
+          - grok-voice-transcribe-2
+    limitations:
+      - 准确率和 WER 数字来自 xAI 自有评测，应视为厂商报告而不是独立 benchmark 结论。
+      - 更准确的转写和 turn detection 仍不能替代业务层授权、幂等、敏感数据处理与操作确认。
+  - id: agent-model-runtime-co-design
+    layout: metrics
+    title: Agent 模型发布正在把推理框架适配本身暴露为交付条件
+    conclusion: Agent 能力不仅由权重决定；长上下文、tool parser、reasoning parser、speculative decoding 和 serving framework 的实现状态会直接影响模型是否能进入真实 Harness。
+    facts:
+      - id: xing4-agent-oriented-model
+        text: Xing4.0-29B-A4B 采用 29B 总参数、每 token 激活 4B 的 MoE 结构，原生支持 256K context，并将 mHC、MLA 与 MTP 组合描述为面向多步规划、工具调用和复杂推理链的 Agent-oriented architecture。
+        evidence:
+          - xing4-repository
+      - id: xing4-agent-benchmarks
+        text: 项目方报告 Xing4.0-29B-A4B 在 SWE-bench Verified、Terminal-Bench 2.1、Claw-Eval 与 Tau3-Bench 上分别取得 75.0、57.5、76.55 与 64.63；这些数字均来自模型发布方给出的评测。
+        evidence:
+          - xing4-repository
+      - id: xing4-runtime-support-pending
+        text: Xing4.0 仓库说明 SGLang、vLLM、TensorRT-LLM、llama.cpp 与 KTransformers 的原生支持 PR 在发布时仍处于 pending，需要使用对应 PR branch 才能启用完整支持。
+        evidence:
+          - xing4-repository
+    limitations:
+      - Benchmark 结果属于模型发布方自报，应结合独立复现和目标仓库任务再判断真实收益。
+      - 推理框架的 pending 适配意味着即使权重已开放，生产 Runtime 仍可能需要自定义分支和额外兼容验证。
+projects:
+  - action: TEST
+    name: CUA-S1
+    summary: 在隔离桌面与固定表单任务中测试“小型决策器 + 通用 Planner”双层架构，记录延迟、错误动作、abstain 和人工确认比例。
+    maturity: experimental
+    url: https://github.com/trycua/cua/tree/main/libs/cua-s1
+  - action: READ
+    name: Android Bench
+    summary: 阅读 Harbor、mini-swe-agent v2 与 specialized agent 的评测配置，把模型与 Harness 的差异纳入自己的 Coding Agent benchmark。
+    maturity: growing
+    url: https://developer.android.com/bench
+  - action: TEST
+    name: Realtime-Venus
+    summary: 重点验证双循环委派、结果回送和打断处理，而不是只比较语音模型本身的主观自然度。
+    maturity: early
+    url: https://github.com/inclusionAI/Realtime-Venus
+  - action: TEST
+    name: Xing4.0-29B-A4B
+    summary: 在真实 Coding Agent 任务中验证 4B active MoE 的速度、tool calling 和 Runtime 兼容性，并记录尚需自定义推理分支的成本。
+    maturity: early
+    url: https://github.com/XingChen-AGI/Xing4.0-29B-A4B
+radar:
+  - label: Specialist System One decision models
+    impact: 91
+    horizon: 8
+    note: 对动作空间有限的高频步骤，小模型快路径可以明显降低通用 LLM 的调用次数，但必须保留独立执行边界。
+  - label: Harness-aware coding benchmarks
+    impact: 96
+    horizon: 6
+    note: 原生工具调用、specialized agent 与 long-horizon 任务正在让 Coding Agent 评测更接近真实工程系统。
+  - label: Dual-loop realtime agent runtime
+    impact: 94
+    horizon: 12
+    note: 实时交互和后台任务解耦后，Voice/Vision Agent 才能在长任务执行期间保持连续对话。
+  - label: Structured speech control signals
+    impact: 88
+    horizon: 8
+    note: streaming、diarization 和 turn detection 逐渐成为 Voice Agent Runtime 可直接消费的输入事件。
+  - label: Model-runtime co-design
+    impact: 93
+    horizon: 10
+    note: tool parser、reasoning parser、speculative decoding 与 serving 支持决定新模型能否稳定进入现有 Agent Harness。
+actions:
+  - title: 为 Agent 热路径拆出可替换的快决策层
+    description: 找出枚举动作、分类、路由和字段匹配等高频步骤，用小模型或规则实现 fast path，并把复杂规划和异常回退保留给通用 Agent。
+  - title: 把 Benchmark 配置与模型版本一起锁定
+    description: 记录 Harness、system instructions、tool schema、任务集、provider endpoint 和运行资源，避免把执行环境变化误判成模型能力变化。
+  - title: 对实时 Agent 建立前台与后台两个状态机
+    description: 将 listen/speak 与 delegate/work/deliver 分开建模，明确打断、取消、结果回送和已经播放确认等状态。
+  - title: 新模型接入先跑 Runtime compatibility gate
+    description: 在比较模型质量前先验证 tool calling、reasoning parser、长上下文、并发和目标 serving framework，未通过兼容门禁就不要进入生产评测。
+references:
+  - id: cua-s1-forms-model-card
+    title: cua-s1-forms Model Card
+    url: https://huggingface.co/cua-ai/cua-s1-forms
+    supports: CUA-S1 表单专用 one-pass scorer 的架构、参数规模、训练集、作者报告结果与适用限制。
+    accessedAt: '2026-09-21'
+  - id: cua-s1-repository
+    title: Cua-S1 Repository README
+    url: https://github.com/trycua/cua/tree/main/libs/cua-s1
+    source: github
+    supports: Cua-S1 的研究定位、planning/execution 分离、dry-run 默认值、snapshot-bound token 与执行安全边界。
+    accessedAt: '2026-09-21'
+  - id: android-bench-methodology
+    title: Android Bench 1.0 Methodology
+    url: https://developer.android.com/bench/methodology/1
+    supports: Android Bench 的真实任务集、Harbor 标准化、mini-swe-agent v2 原生工具调用与成本延迟指标方法。
+    accessedAt: '2026-09-21'
+  - id: android-bench-changelog
+    title: Android Bench Changelog
+    url: https://developer.android.com/bench/changelog
+    supports: 2026-09-17 增加 long-horizon tasks、specialized agents 与新的 agent results。
+    accessedAt: '2026-09-21'
+  - id: realtime-venus-repository
+    title: Realtime-Venus Repository
+    url: https://github.com/inclusionAI/Realtime-Venus
+    source: github
+    supports: Realtime-Venus 的 Omni、Audio、Harness 三组件、持续全双工交互、异步委派与结果回送架构。
+    accessedAt: '2026-09-21'
+  - id: realtime-venus-project
+    title: Realtime-Venus Project Page
+    url: https://realtime-venus.github.io/
+    supports: Realtime-Venus 的 two-loop system、项目演示与作者公开的委派/全双工设计说明。
+    accessedAt: '2026-09-21'
+  - id: grok-voice-transcribe-2
+    title: Introducing Grok Voice Transcribe 2.0
+    url: https://x.ai/news/grok-voice-transcribe-2
+    supports: Grok Voice Transcribe 2.0 的 streaming、timestamps、diarization、multichannel、key-term、turn detection、作者评测与定价。
+    accessedAt: '2026-09-21'
+  - id: xing4-repository
+    title: Xing4.0-29B-A4B Repository
+    url: https://github.com/XingChen-AGI/Xing4.0-29B-A4B
+    source: github
+    supports: Xing4.0 的 MoE/long-context/Agent-oriented 架构、发布方 benchmark 与推理框架适配状态。
+    accessedAt: '2026-09-21'
+archivePicks: []
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
