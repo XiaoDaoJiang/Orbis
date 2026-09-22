@@ -1,0 +1,197 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: '2026-09-22'
+status: published
+title: Agent 栈正在走向声明式控制面：运行时、长任务、专业模型与可靠输入被拆成独立层
+summary: Google AX 把 Task、Workspace、Gateway 与 Model 做成声明式 Agent Runtime 原语，并加入 sandbox、网络边界与 suspend/resume；Step 5 Preview 则把 24 小时执行反馈与百万上下文用于长任务能力展示。与此同时，Qwen-Image-2.1 用更紧凑的专业模型统一生成与编辑，WeVisDoc 通过两阶段数据构建提升复杂文档解析鲁棒性。新的工程重点正在从“单模型能力”转向可编排、可暂停、可验证、可替换的系统组件。
+topics:
+  - agent-harness
+  - mcp
+signals:
+  - title: Agent Runtime 正从脚本集合升级为声明式控制面
+    summary: Google AX 用 Task、Workspace、Gateway 与 Model 表达隔离执行、预热工具、网络出口和模型配置，并提供 suspend/resume，让 Agent 工作负载开始拥有类似 Kubernetes 的生命周期合同。
+    impact: high
+  - title: 长任务能力开始用持续执行与反馈闭环而不是单轮分数衡量
+    summary: Step 5 Preview 的发布把 24 小时 kernel 优化、后训练循环和数千轮游戏进展作为核心案例，说明长时间保持状态、读取反馈并继续修正正在成为 Agent 模型的重要能力维度。
+    impact: high
+  - title: 多模态能力正在拆成更紧凑、可直接嵌入工具链的专业模型
+    summary: Qwen-Image-2.1 将图像生成与编辑统一到同一模型，并把视觉生成组件压到 7B，同时加入透明图和多参考图编辑，使视觉能力更像 Agent 可调用的专业工具。
+    impact: medium
+  - title: Agent 的输入质量正在成为下游推理可靠性的前置条件
+    summary: WeVisDoc 通过广覆盖数据与残差错误驱动的第二阶段精炼提升文档解析，说明复杂文档进入 Agent 之前的结构化、公式、表格与阅读顺序恢复需要被当成独立可靠性层。
+    impact: high
+sections:
+  - id: declarative-agent-control-plane
+    layout: architecture
+    title: Agent Runtime 开始像集群控制面一样声明任务、工作区和网络边界
+    conclusion: 当 Agent 任务能用稳定资源对象描述执行环境、工具与网络权限时，运行时就可以把隔离、复用和生命周期从 Prompt 约定提升为基础设施合同。
+    facts:
+      - id: ax-four-runtime-primitives
+        text: Google AX 用 Task、Workspace、Gateway 与 Model 四类核心资源分别表达隔离任务、预置 Git/MCP/skills 的工作区、网络出口 allowlist 和模型配置；资源通过 ax.io/v1alpha1 manifests 声明。
+        evidence:
+          - google-ax-repository
+      - id: ax-sandbox-and-scale-design
+        text: AX 项目将自身描述为运行在 Agent Substrate 之上的声明式 Agent 编排器，目标是在集群中高吞吐运行大量自治任务，并为任务提供 sandbox、CPU/内存限制与网络隔离。
+        evidence:
+          - google-ax-repository
+      - id: ax-suspend-resume-lifecycle
+        text: AX CLI 提供 ax suspend 与 ax resume，使空闲任务能够暂停并从保存状态继续，同时 ax watch、ax describe 与 ax ssh 提供运行状态观察和调试入口。
+        evidence:
+          - google-ax-repository
+    limitations:
+      - AX README 明确警告核心概念、协议与规范仍在快速演进，稳定版之前可能出现重大 breaking changes。
+      - 项目关于集群规模的描述属于项目设计目标，真实吞吐仍取决于 Kubernetes、Agent Substrate、任务镜像和模型服务等部署条件。
+  - id: long-horizon-feedback-loop
+    layout: timeline
+    title: 长任务能力正在从“长上下文”升级为持续执行、反馈和回滚循环
+    conclusion: 百万上下文只是容量；真正的长任务 Agent 还需要在数小时执行中保存最佳状态、根据环境反馈调整策略，并能在失败尝试后回到有效进展点。
+    facts:
+      - id: step5-model-profile
+        text: Step 5 Preview 官方页面将其定位为面向 agentic work 的旗舰模型，采用稀疏 MoE 架构，给出 600B 总参数、每 token 激活 27B 参数，并支持 1M-token context 与视觉输入。
+        evidence:
+          - step5-preview
+      - id: step5-kernel-feedback-run
+        text: 阶跃星辰报告其在 H100 上进行 24 小时 MLA kernel 优化实验：模型持续实现、运行并测量候选，当候选降低吞吐时丢弃并从当前最佳版本继续；页面报告最佳运行达到 508 TFLOPS。
+        evidence:
+          - step5-preview
+      - id: step5-posttraining-and-gameplay
+        text: 官方还展示了 24 小时自动后训练数据循环，以及 Pokémon Red 超过 3,000 turns、600 万 interaction tokens 的持续运行，用来观察模型在长时间目标下维持状态和利用反馈的能力。
+        evidence:
+          - step5-preview
+    limitations:
+      - 上述 benchmark、kernel、后训练和游戏结果来自模型发布方，应视为厂商自报，需要在目标 Harness 与真实代码库中独立复现。
+      - 长上下文和长时间运行会放大 token、工具、GPU 与失败恢复成本，不能只根据最终任务分数判断生产可用性。
+  - id: specialist-multimodal-tools
+    layout: comparison
+    title: 多模态能力正在从通用模型拆成紧凑的专业工具组件
+    conclusion: 对图像生成与编辑这类边界清晰的能力，更小的专业模型如果能统一输入输出和编辑语义，就更容易作为 Agent 工具接入，而不必让通用 Planner 自己承担所有视觉生成职责。
+    facts:
+      - id: qwen-image-unified-generation-editing
+        text: Qwen-Image-2.1 将 text-to-image generation 与 image editing 统一在同一模型中，官方给出的视觉生成组件规模为 7B 参数、32 层 Single-Stream DiT。
+        evidence:
+          - qwen-image-21
+      - id: qwen-image-transparent-workflows
+        text: Qwen-Image-2.1 原生支持常规与 RGBA 透明图生成、透明图层编辑以及从照片中提取主体，使透明资产工作流不再需要独立模型拼接。
+        evidence:
+          - qwen-image-21
+      - id: qwen-image-multi-reference-editing
+        text: 官方说明该模型编辑时最多支持 10 张参考图，并可通过圈选、涂画标记或独立 mask 指定局部编辑，同时强调人物与产品身份保持。
+        evidence:
+          - qwen-image-21
+    limitations:
+      - 质量、效率和身份保持的描述主要来自 Qwen 官方发布与模型卡，仍需使用真实素材对文字、产品一致性和复杂局部编辑进行复测。
+      - 7B 指的是视觉生成组件，并不等同于整个端到端调用链只有 7B 参数或固定显存需求。
+  - id: robust-document-ingestion
+    layout: metrics
+    title: 可靠文档解析正在成为 Agent 输入层的独立工程问题
+    conclusion: 如果表格、公式、阅读顺序或真实拍摄退化在进入 Agent 前已经丢失，后续更强的推理模型也无法恢复不存在的证据；因此 ingestion 需要自己的数据、评测和误差闭环。
+    facts:
+      - id: wevisdoc-two-stage-data-framework
+        text: Tencent WeChat Vision Team 将 WeVisDoc 描述为两阶段 data-centric 文档解析框架：Stage I 扩大语义、结构和外观覆盖，Stage II 根据残差错误诊断定向构造并重新分配训练数据。
+        evidence:
+          - wevisdoc-project
+      - id: wevisdoc-model-family
+        text: WeVisDoc 提供 2B 与 4B 两个端到端模型，把页面图像直接转换为结构化 Markdown，并覆盖文本、公式、表格和阅读顺序。
+        evidence:
+          - wevisdoc-project
+      - id: wevisdoc-reported-benchmarks
+        text: 项目页面报告 WeVisDoc-4B 在 OmniDocBench v1.6 Overall 为 95.38，在 PureDocBench 三个轨道的平均 Overall 为 75.54；Stage II 在 Real Degraded 轨道相对 Stage I 报告 +4.03 Overall。
+        evidence:
+          - wevisdoc-project
+    limitations:
+      - 这些数值来自项目作者发布页面，仍需结合自己的扫描件、截图、PDF 渲染与多语言版式进行独立评测。
+      - 端到端 Markdown 方便进入 LLM，但复杂业务仍需要对关键表格、金额、单位和页级定位保留可回溯原始证据。
+  - id: model-to-system-delivery-unit
+    layout: system-map
+    title: 新的交付单位正在从“模型”变成 Runtime × Specialist × Ingestion 的组合
+    conclusion: AX、Step 5 Preview、Qwen-Image-2.1 与 WeVisDoc 分别把运行时、长任务推理、视觉生成和文档输入做成独立层；工程上更值得版本化的是这些层之间的合同、权限和证据边界。
+    facts:
+      - id: runtime-contracts-remain-unstable
+        text: AX 当前 API 仍使用 v1alpha1，仓库同时明确提示稳定版之前可能发生重大概念、协议和规范变化，说明 Agent control plane 本身仍处于快速收敛期。
+        evidence:
+          - google-ax-repository
+      - id: model-release-includes-execution-evidence
+        text: Step 5 Preview 的发布不仅给出静态 benchmark，还公开了 24 小时执行循环与长时间交互案例；这些结果虽然属于厂商自报，但把执行轨迹和反馈闭环纳入了模型交付叙事。
+        evidence:
+          - step5-preview
+      - id: specialist-components-are-publishable-artifacts
+        text: Qwen-Image-2.1 已公开模型权重与模型卡，WeVisDoc 也发布 2B/4B 模型与技术页面，使视觉生成和文档解析可以作为可独立部署、替换和评测的专业组件进入 Agent 系统。
+        evidence:
+          - qwen-image-21
+          - wevisdoc-project
+    limitations:
+      - 组件化会增加版本、协议、部署和观测组合数量，需要明确每层的兼容矩阵与回归测试。
+      - 模型或项目开放并不自动等于生产可用；权限、资源预算、数据治理和失败恢复仍属于 Runtime 责任。
+projects:
+  - action: READ
+    name: Google AX
+    summary: 重点阅读 Task、Workspace、Gateway、Model 与 suspend/resume，把声明式 Agent 生命周期同现有 Kubernetes/Runner 设计做映射。
+    maturity: experimental
+    url: https://github.com/google/ax
+  - action: TEST
+    name: Qwen-Image-2.1
+    summary: 用真实产品图、透明图和多参考编辑任务验证 7B 视觉生成组件的质量、延迟与显存，并记录失败类型。
+    maturity: early
+    url: https://huggingface.co/Qwen/Qwen-Image-2.1
+  - action: TEST
+    name: WeVisDoc-4B
+    summary: 把扫描 PDF、截图表格和低质量拍照文档送入 WeVisDoc，与现有 OCR/解析流水线比较结构恢复率和人工复核成本。
+    maturity: early
+    url: https://huggingface.co/tencent/WeVisDoc-4B
+radar:
+  - label: Declarative agent control planes
+    impact: 97
+    horizon: 8
+    note: Task、Workspace、Gateway 与 Model 等资源对象让 Agent 运行边界从脚本约定转成可版本化基础设施。
+  - label: Long-horizon execution loops
+    impact: 95
+    horizon: 10
+    note: 数小时持续执行、反馈和回滚正在成为衡量 Agent 能力的重要维度，但成本与失败恢复必须同时测量。
+  - label: Specialist multimodal tools
+    impact: 86
+    horizon: 12
+    note: 更紧凑的生成/编辑模型更容易被 Planner 当成工具组合，降低所有视觉任务都走通用大模型的必要性。
+  - label: Robust document ingestion
+    impact: 92
+    horizon: 6
+    note: 真实文档中的退化、表格和阅读顺序错误会直接污染 Agent 后续证据链，输入可靠性应优先验证。
+  - label: Model × Runtime compatibility
+    impact: 94
+    horizon: 8
+    note: 模型、Runner、网络策略、工具协议与专业组件的兼容矩阵正在成为生产 Agent 的主要维护对象。
+actions:
+  - title: 为本地 Agent Runtime 画出声明式资源边界
+    description: 参考 AX 的 Task、Workspace、Gateway、Model 拆分，审视现有 Agent 项目中哪些状态仍藏在启动脚本、环境变量或 Prompt 中，并确定可版本化的最小资源合同。
+  - title: 给长任务测试同时记录进展、回退和资源成本
+    description: 不要只看最终 pass/fail；至少记录最佳状态 checkpoint、失败尝试、工具调用、token/GPU 时间和恢复点，验证长时间 Agent 是否真正形成有效反馈闭环。
+  - title: 把视觉生成与文档解析当成独立可替换工具
+    description: 分别用 Qwen-Image-2.1 与 WeVisDoc 构建小型适配层，让 Planner 只消费稳定输入输出合同，并对模型升级做单独回归。
+  - title: 建立组件级 evidence 与版本追踪
+    description: 对 Runtime、模型、parser 和工具保存明确版本及测试证据，避免某一层升级后只能通过最终 Agent 失败来反推原因。
+references:
+  - id: google-ax-repository
+    title: Google AX — open agentic orchestrator
+    url: https://github.com/google/ax
+    supports: AX 的 Task、Workspace、Gateway、Model、sandbox、network fencing、MCP/skills 预置以及 suspend/resume 生命周期。
+    accessedAt: '2026-09-22'
+  - id: step5-preview
+    title: 'Step 5 Preview: Advancing the Pareto Frontier'
+    url: https://www.stepfun.com/step-5-preview
+    supports: Step 5 Preview 的模型规模、1M context，以及 24 小时 kernel/后训练实验和长时间交互案例。
+    accessedAt: '2026-09-22'
+  - id: qwen-image-21
+    title: 'Qwen-Image-2.1: Compact, Efficient, and Unified Image Creation'
+    url: https://qwen.ai/blog?id=qwen-image-2.1
+    supports: Qwen-Image-2.1 的 7B 视觉生成组件、统一生成/编辑、透明图和最多 10 张参考图编辑能力。
+    accessedAt: '2026-09-22'
+  - id: wevisdoc-project
+    title: 'WeVisDoc: From Coverage to Capability for Robust End-to-End Document Parsing'
+    url: https://tencent.github.io/WeVisDoc/
+    supports: WeVisDoc 两阶段 data-centric 方法、2B/4B 模型与 OmniDocBench/PureDocBench 项目方报告结果。
+    accessedAt: '2026-09-22'
+archivePicks: []
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
