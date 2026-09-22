@@ -138,7 +138,7 @@ jobs:
     environment: daily-auto-merge
     permissions:
       actions: read
-      contents: read
+      contents: write
       pull-requests: read
       statuses: write
     steps:
