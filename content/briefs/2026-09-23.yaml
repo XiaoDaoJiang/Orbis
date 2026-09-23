@@ -1,0 +1,206 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: '2026-09-23'
+status: published
+title: Agent 系统正在变成闭环工程：训练、Harness、评测、工作台与领域审查开始各自成层
+summary: MiMo-V2.6 把大规模 RL、长轨迹与多 Agent 训练基础设施连成持续反馈闭环，Grok 4.7 则直接针对多小时任务和自身 Harness 做训练；与此同时，Code2Video Benchmark 用专门 Judge 取代“能运行就算通过”的单一评价，ZCode 把同一 Agent Runtime 暴露给 Desktop、Web 与 CLI。OpenAI 的数学顾问机制进一步说明，当系统进入真实研究和高自主任务时，能力提升必须和独立审查、结果传播与领域标准一起设计。
+topics:
+  - agent-harness
+  - coding-agent
+signals:
+  - title: 长任务训练正在从静态数据转向真实环境中的持续反馈循环
+    summary: MiMo-V2.6 把更大规模 RL、百万上下文、多任务环境和统一轨迹表示放进同一训练系统，说明 Agent 能力越来越依赖“执行—反馈—更新”的闭环，而不是只扩大预训练语料。
+    impact: high
+  - title: Model × Harness 联合优化开始成为显式模型能力
+    summary: Grok 4.7 不仅针对多小时任务做更长 RL，还声明原生理解 Grok Bot Harness；模型与执行框架之间的接口正在从部署后适配变成训练阶段目标。
+    impact: high
+  - title: Agent 评测正在从正确性扩展到结果质量和专业判断
+    summary: Code2Video Benchmark 将 Engagement、Prompt-Intent、Composition、Temporal 与 Craft 拆成独立评价轴，并训练专门 Judge 对齐人类偏好，表明 Agent 评测需要直接检查最终工作产物。
+    impact: high
+  - title: 高自主系统需要把领域审查机制纳入交付链
+    summary: OpenAI 为数学 AI 建立独立顾问组，负责结果重要性、传播方式与研究标准建议；当 Agent 开始参与开放问题和专业研究时，Human Review 需要从最终审批前移到能力治理本身。
+    impact: medium
+sections:
+  - id: rl-feedback-infrastructure
+    layout: architecture
+    title: 大规模 RL 正把环境、轨迹、Grader 与多 Agent 协作做成统一训练基础设施
+    conclusion: 当训练对象变成长时间软件工程、视觉、Cyber 与多 Agent 任务后，RL 的核心工程问题不再只是奖励函数，而是如何稳定搬运轨迹、控制任务分布、校验奖励并维持训练与推理一致性。
+    facts:
+      - id: mimo-live-rl-scale
+        text: Xiaomi MiMo 表示 MiMo-V2.6-Pro 与 Flash 在不到 6 天的 Live RL 中各完成 30 个训练步骤，累计约 75 万条 trajectories，并把 1M context 纳入训练吞吐设计。
+        evidence:
+          - mimo-v26-release
+      - id: mimo-multi-task-harness-training
+        text: 官方说明训练覆盖 Code、General、Visual 与 Cyber 等多任务环境，并接入多个 Harness，使不同能力维度在同一 RL 系统中协同改进。
+        evidence:
+          - mimo-v26-release
+      - id: mimo-trajectory-control-plane
+        text: MiMo-V2.6 的多 Agent RL 使用统一 trajectory 表示与 penalty 机制，并将 control plane 与 data plane 解耦，以支持高并发交互、海量轨迹迁移和混合 batch 中的任务比例稳定。
+        evidence:
+          - mimo-v26-release
+    limitations:
+      - 训练成本、benchmark 提升和样本效率均来自 Xiaomi 官方报告，需要在独立 Harness 与真实代码库中复现。
+      - 大规模 RL 会引入 reward hacking、任务分布漂移和训练推理不一致等额外风险，不能只用单一 benchmark 改善判断稳定性。
+  - id: harness-native-model-training
+    layout: comparison
+    title: Harness 正从模型外部脚手架变成模型训练时直接优化的对象
+    conclusion: 如果模型在训练阶段已经学习某个 Harness 的工具语义、交互节奏和长任务反馈模式，运行时适配成本会下降；但这也会让模型能力与特定执行框架形成新的耦合关系。
+    facts:
+      - id: grok-longer-rl
+        text: SpaceXAI 表示 Grok 4.7 使用比 Grok 4.6 更大的 base model，并进行了更长的 RL 训练，任务分布更偏向需要数小时完成的问题。
+        evidence:
+          - grok-47-release
+      - id: grok-native-harness-understanding
+        text: 官方明确称 Grok 4.7 被训练为原生理解 Grok Bot Harness，并将更好的自我检查与长上下文管理作为此次改进的一部分。
+        evidence:
+          - grok-47-release
+      - id: grok-multi-hour-benchmarks
+        text: 发布页同时报告 CursorBench 4.0、AA Briefcase v1.1 与 Terminal-Bench 4.0 等长任务或专业工作 benchmark，用于衡量 coding、office work 与 terminal execution 表现。
+        evidence:
+          - grok-47-release
+    limitations:
+      - benchmark 与安全数据均来自模型发布方，必须在目标代码库、工具权限与真实任务预算下重新验证。
+      - Harness-native 优化可能提升特定执行栈效率，也可能降低迁移到其他工具协议或 Agent Runtime 时的可移植性。
+  - id: artifact-quality-evaluation
+    layout: metrics
+    title: “代码能运行”已经不足以评价 Agent，结果质量需要专门的 Judge
+    conclusion: 当 Agent 输出的是视频、文档、UI 或其他专业工件时，语法正确和任务完成只能作为底线；真正有价值的评测需要覆盖时序、构图、审美和专业质量，并对 Judge 本身进行人类对齐验证。
+    facts:
+      - id: code2video-five-axis
+        text: HeyGen 的 Code2Video Benchmark 将生成视频拆成 Engagement、Prompt-Intent、Composition、Temporal 与 Craft 五个独立评价轴，而不是只输出一个总分。
+        evidence:
+          - code2video-benchmark
+      - id: code2video-specialized-judge
+        text: 该 benchmark 使用专门训练的 Judge 模型进行成对比较；官方报告其在 1,464 个样本上的总体人类偏好对齐率为 82%，并随 Judge 置信度上升而提高。
+        evidence:
+          - code2video-benchmark
+      - id: code2video-harness-cost
+        text: 报告指出 skills、system prompts、多轮或多 Agent review、reference retrieval 等 Harness scaffolding 可以提升结果，但同时增加 token、模型调用、延迟、工程维护和回归测试成本。
+        evidence:
+          - code2video-benchmark
+    limitations:
+      - Judge 架构与训练细节尚未完整公开，当前结果应视为 HeyGen 自报的评估方法和实验数据。
+      - 专业 Judge 可能减少通用 VLM 的评价误差，但仍需要保留人类抽检与位置偏差、模型家族偏差等控制措施。
+  - id: shared-agent-workbench
+    layout: system-map
+    title: Agent Runtime 开始从单一 CLI 扩展成共享后端上的多入口工作台
+    conclusion: 当 Desktop、Web 与 Terminal 共享 Agent Runtime、协议和状态服务时，产品入口可以变化而执行核心保持一致；真正需要稳定的是 workspace、认证、远程连接和运行时合同。
+    facts:
+      - id: zcode-shared-runtime-surfaces
+        text: ZCode 官方仓库将产品描述为同时提供 Desktop、浏览器界面和终端 Agent 的 AI 编程工作台，其中 Agent CLI 与 Runtime 同时服务于 Desktop 与 Web。
+        evidence:
+          - zcode-repository
+      - id: zcode-unified-cli-package
+        text: ZCode 命令行发行包把 TUI、Web、后端与 Agent 组装成同一运行包；默认进入 TUI，使用 --web 则启动浏览器工作台，两种模式都可在本机运行而不依赖 Electron。
+        evidence:
+          - zcode-repository
+      - id: zcode-network-auth-boundary
+        text: Web 模式默认监听 127.0.0.1；当监听非本机地址时默认生成访问令牌，并支持通过 ZCODE_SERVER_AUTH_TOKEN 为 HTTP 与 WebSocket 服务配置认证。
+        evidence:
+          - zcode-repository
+    limitations:
+      - ZCode 当前仓库仍处于快速演进期，多入口共享 Runtime 会放大跨平台打包、远程资源和状态兼容问题。
+      - 本机默认无 token 的 Web 模式依赖回环地址作为边界；一旦开放局域网或远程访问，应显式验证认证与 workspace 权限。
+  - id: domain-governance-loop
+    layout: timeline
+    title: 当 AI 开始进入开放研究问题，Human Review 必须从结果验收升级为领域治理
+    conclusion: 高自主 Agent 的最后一道防线不应只是“任务完成后有人看一眼”；当系统能够提出或验证新的专业结论时，结果重要性、传播方式、学术规范和外部监督都需要成为执行链的一部分。
+    facts:
+      - id: openai-math-progress-claim
+        text: OpenAI 表示其自 2026 年 8 月 28 日开始训练的一款内部模型已解决 100 多个长期开放数学问题；这一能力声明来自 OpenAI 官方，仍需通过学术界独立审查理解其范围与意义。
+        evidence:
+          - openai-math-advisory
+      - id: independent-math-advisory-group
+        text: OpenAI 与数学家合作建立独立 Mathematics and AI Advisory Group，成员不由 OpenAI 支付报酬，并可公开提出未经请求的建议和评论。
+        evidence:
+          - openai-math-advisory
+      - id: advisory-review-scope
+        text: 该顾问组将就新结果的重要性、传播协调、数学研究的学术与专业标准，以及 AI 工具如何支持研究与学习提供建议，但不负责决定 OpenAI 内部数学能力发展的节奏。
+        evidence:
+          - openai-math-advisory
+    limitations:
+      - “解决开放问题”的具体成果、验证状态和学术接受度并未在该公告中逐项展开，不能把厂商声明直接等同于数学共同体共识。
+      - 独立顾问机制可以改善审查与沟通，但不能替代可复现证明、同行评议和领域专家对具体结果的验证。
+projects:
+  - action: READ
+    name: MiMo-V2.6
+    summary: 重点阅读其 Live RL、统一轨迹、Grader 与 control/data plane 设计，比较自己 Agent 训练或评测流水线中哪些反馈仍停留在离线阶段。
+    maturity: early
+    url: https://mimo.mi.com/docs/en-US/news/latest/v2-6
+  - action: TEST
+    name: Grok 4.7
+    summary: 用相同代码库和相同工具权限测试多小时 coding 任务，单独记录自我校验、工具调用稳定性、长上下文成本与失败恢复表现。
+    maturity: early
+    url: https://x.ai/news/grok-4-7
+  - action: READ
+    name: Code2Video Benchmark
+    summary: 借鉴五轴 Judge 思路，为非代码工件定义“能运行之外”的质量轴，并明确哪些轴需要专门 evaluator 和人工抽检。
+    maturity: experimental
+    url: https://www.heygen.com/research/introducing-code2video-benchmark
+  - action: CLONE
+    name: ZCode
+    summary: 查看 Desktop、Web 与 CLI 如何共享 Agent Runtime、RPC 与 workspace 边界，重点比较本地、远程和认证路径的设计。
+    maturity: early
+    url: https://github.com/zai-org/ZCode
+radar:
+  - label: Long-horizon RL feedback loops
+    impact: 97
+    horizon: 8
+    note: 环境执行、奖励校验、轨迹搬运和多 Agent 交互正在成为模型能力提升的直接训练对象。
+  - label: Harness-native model optimization
+    impact: 95
+    horizon: 6
+    note: 模型开始显式针对特定 Harness 训练，运行时接口将进入模型选择和回归测试矩阵。
+  - label: Artifact-specific evaluators
+    impact: 92
+    horizon: 10
+    note: 专业工件需要超越语法和任务完成率的 Judge，评价体系本身会成为 Agent Harness 的关键组件。
+  - label: Shared multi-surface runtimes
+    impact: 88
+    horizon: 12
+    note: CLI、Web 与 Desktop 共用 Runtime 能减少执行逻辑分叉，但会提高状态、认证和跨平台兼容要求。
+  - label: Domain governance for autonomous research
+    impact: 94
+    horizon: 10
+    note: 当 Agent 参与开放研究问题时，独立专家审查、传播规则和专业标准必须进入能力交付链。
+actions:
+  - title: 给长任务记录完整反馈轨迹
+    description: 除最终成功率外，保存工具调用、环境反馈、回滚点、grader 结果和耗时，让多小时任务可以解释“为什么改进或失败”。
+  - title: 建立 Model × Harness 回归矩阵
+    description: 对每个候选模型固定同一工具协议、权限、上下文预算和恢复策略，分别测裸模型与 Harness 适配后的收益和耦合成本。
+  - title: 为最终工件增加质量 Judge
+    description: 对 UI、文档、演示或视频等输出定义 3–5 个领域质量轴，并至少保留一部分人工成对偏好用于校准自动 evaluator。
+  - title: 把高自主任务的专家审查前移
+    description: 对研究、数学、安全或高风险专业任务，在任务设计阶段就定义外部专家、传播边界和证据要求，而不是只在最终输出时做一次审批。
+references:
+  - id: mimo-v26-release
+    title: 'MiMo-V2.6: Scaling Up Reinforcement Learning for Self-Improvement'
+    url: https://mimo.mi.com/docs/en-US/news/latest/v2-6
+    supports: MiMo-V2.6 的 Live RL 规模、多任务环境、统一 trajectory、Grader、control/data plane 与模型发布信息。
+    accessedAt: '2026-09-23'
+  - id: grok-47-release
+    title: Introducing Grok 4.7
+    url: https://x.ai/news/grok-4-7
+    supports: Grok 4.7 的更长 RL、多小时任务训练、Grok Bot Harness 原生理解、benchmark 与可用性说明。
+    accessedAt: '2026-09-23'
+  - id: code2video-benchmark
+    title: 'Benchmarking Code-to-Video: Evaluating AI Agents on the Art of Motion Design'
+    url: https://www.heygen.com/research/introducing-code2video-benchmark
+    supports: Code2Video 的五轴评价、专门 Judge、人类偏好对齐实验与 Harness scaffolding 成本分析。
+    accessedAt: '2026-09-23'
+  - id: zcode-repository
+    title: ZCode Repository
+    url: https://github.com/zai-org/ZCode
+    supports: ZCode 的 Desktop/Web/CLI 入口、共享 Agent Runtime、统一运行包与网络认证边界。
+    accessedAt: '2026-09-23'
+  - id: openai-math-advisory
+    title: Advisory Group on Mathematics and Artificial Intelligence
+    url: https://openai.com/index/advisory-group-on-mathematics-and-ai/
+    supports: OpenAI 数学能力声明、独立顾问组组织方式以及结果审查、传播与专业标准职责。
+    accessedAt: '2026-09-23'
+archivePicks: []
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
