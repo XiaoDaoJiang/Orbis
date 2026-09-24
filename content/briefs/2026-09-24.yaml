@@ -1,0 +1,210 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: '2026-09-24'
+status: published
+title: Agent 工程进入运行经济学阶段：任务成本、缓存、异步调度、兼容层与外部审查成为控制面
+summary: GPT-6 Sol/Luna 与 Claude Opus 5.5 同时把价格、缓存和任务级成本推到模型选择前台；OpenRouter Batch API 进一步把非实时工作显式拆成异步队列。与此同时，Step Code 把 MCP、Agent Skills、插件和多 Agent 编排做成可迁移的执行层，而 OpenAI 的第三方评估原则则把安全声明、证据与独立审查纳入部署治理。对 Agent 系统而言，下一轮优化重点正在从单次能力分数转向可观测、可调度、可迁移、可审计的运行控制面。
+topics:
+  - agent-harness
+  - coding-agent
+  - mcp
+signals:
+  - title: 模型选择正在从“最强模型”转向任务级价格性能曲线
+    summary: GPT-6 Sol/Luna 与 Claude Opus 5.5 都把更低价格、缓存读成本和长任务效率作为核心发布指标，Agent 路由需要用真实任务成本而不是单看每百万 token 单价。
+    impact: high
+  - title: Prompt cache 已经成为长时 Agent 的运行状态
+    summary: GPT-6 的缓存诊断、显式 breakpoint 与预热机制，以及 Claude Code 对 turns、cache reads 和工具变化的成本说明，都表明上下文复用必须进入 Runtime 可观测性与配置管理。
+    impact: high
+  - title: 非实时 Agent 工作正在被拆成独立的异步调度层
+    summary: OpenRouter Batch API 把评测、回填、批量摘要等工作放进最长 24 小时的完成窗口，以折扣价格换取可变延迟，适合从交互路径中剥离吞吐型任务。
+    impact: medium
+  - title: Agent 生产化同时需要兼容层和独立审查层
+    summary: Step Code 将 MCP、Skills、插件和多 Agent 编排放在统一 CLI 中，而 OpenAI 的第三方评估框架要求对安全声明、证据、方法和独立性进行明确约束；可迁移性与可审计性正在同时上升为系统级要求。
+    impact: high
+sections:
+  - id: task-level-model-economics
+    layout: comparison
+    title: 模型路由的优化目标正在从 token 单价变成“完成一次任务要花多少”
+    conclusion: 对长时 coding agent 和知识工作流，模型价格只有和完成率、回合数、缓存占比、输出长度及重试次数一起观察才有工程意义；默认模型选择应该建立在任务级成本曲线上。
+    facts:
+      - id: gpt6-price-reduction
+        text: OpenAI 发布 GPT-6 Sol 与 GPT-6 Luna，并将两者 API 输入和输出价格分别较 GPT-5.6 的促销价格下调约 50%，同时把两款模型定位为更高性价比的 GPT-6 层级。
+        evidence:
+          - openai-gpt6-sol-luna
+      - id: gpt6-coding-cost-claims
+        text: OpenAI 在发布页用 FrontierCode、DeepSWE 与 OSWorld 等任务报告能力与每任务成本对比，明确把 coding agent 和 computer-use 的 cost-per-task 作为模型价值的一部分。
+        evidence:
+          - openai-gpt6-sol-luna
+      - id: opus55-task-economics
+        text: Anthropic 表示 Claude Opus 5.5 在典型工作负载上运行成本较 Opus 5 低 40%，输入与输出 token 单价降低 20%，cache read 单价降低 60%，输出速度提升超过 30%。
+        evidence:
+          - anthropic-opus55-release
+    limitations:
+      - 两家公司展示的 benchmark、成本与典型工作负载口径不同，不能直接把厂商图表当成跨供应商统一排名。
+      - 真正的默认模型策略仍应在自己的代码库、工具权限、上下文规模和失败恢复规则下做任务级复测。
+  - id: cache-as-runtime-state
+    layout: architecture
+    title: Prompt cache 正从账单优化项升级为 Agent Runtime 的显式状态
+    conclusion: 长时 Agent 会反复发送稳定指令、工具定义和历史上下文，缓存命中率因此直接影响延迟与成本；Runtime 需要像管理连接池和工作区一样管理稳定前缀、工具集合与缓存失效。
+    facts:
+      - id: gpt6-cache-controls
+        text: OpenAI 表示 GPT-6 prompt caching 默认提高命中率，对符合条件的缓存输入读取提供最高 90% 折扣，并新增 Dashboard、miss diagnostics、显式 cache breakpoints 与 prewarm 能力。
+        evidence:
+          - openai-gpt6-prompt-caching
+      - id: gpt6-tool-change-cache-preservation
+        text: GPT-6 的缓存指南支持通过 configuration_update 调整 reasoning effort，并建议用 allowed_tools 或 tool_choice 保持工具定义稳定，从而在改变可调用工具时尽量保留已有缓存前缀。
+        evidence:
+          - openai-gpt6-prompt-caching
+      - id: claude-turn-cache-cost
+        text: Anthropic 的 Claude Code 成本说明把一次任务描述为多轮工具循环，并指出每轮会重发已有上下文；其示例显示 cache hit rate 对长会话输入成本影响显著，连接或断开 MCP server 也可能因工具定义变化而触发缓存失效。
+        evidence:
+          - anthropic-opus55-task-costs
+    limitations:
+      - OpenAI 与 Anthropic 的缓存生命周期、写入价格和失效规则并不相同，不能抽象成完全一致的跨模型语义。
+      - 提高 cache hit rate 不能替代上下文裁剪；随着会话增长，即使命中缓存，每轮仍会产生持续增加的读取成本。
+  - id: asynchronous-batch-scheduling
+    layout: metrics
+    title: 吞吐型 Agent 工作应与交互路径分离，交给异步 Batch 调度
+    conclusion: 对 eval、backfill、批量分类和夜间任务，低延迟不是核心目标；将这类负载显式路由到 Batch 队列，可以用更宽的完成时间窗口换取显著价格折扣，同时减少在线 Agent 路径的资源竞争。
+    facts:
+      - id: openrouter-batch-price-window
+        text: OpenRouter 的 Batch API 允许提供方在最长 24 小时窗口内完成请求，官方称支持该模式的提供方通常按正常每 token 价格的约 50% 或更低收费，当前覆盖 70 多个模型。
+        evidence:
+          - openrouter-batch-api
+      - id: openrouter-batch-latency
+        text: OpenRouter 报告其两周 beta 中超过 23 万个已完成 batch 的中位完成时间为 7 分钟，90% 在 1 小时内完成，但完成时间会随提交时段与 batch 规模变化。
+        evidence:
+          - openrouter-batch-api
+      - id: openrouter-batch-contract
+        text: Batch API 支持 chat completions、responses、messages 与 embeddings 请求形态，并让每个请求独立返回结果；默认单个 batch 在一个 provider 上执行，输入和结果最长保留 30 天或直至主动删除。
+        evidence:
+          - openrouter-batch-api
+    limitations:
+      - Batch 的完成时间没有交互式 SLA，不能用于用户正在等待的主链路或需要严格低延迟的工具调用。
+      - 单 provider 执行和数据保留策略会影响容灾、合规与敏感数据设计，需要在接入前纳入路由规则。
+  - id: interoperable-agent-cli
+    layout: system-map
+    title: Coding Agent 的竞争开始转向协议兼容、长任务委派与上下文隔离
+    conclusion: 当 CLI 能直接承接 MCP、Skills、插件和多 Agent 编排时，用户迁移成本更多由运行时合同而非单一模型决定；兼容已有配置和保持子任务上下文隔离将成为 Harness 的关键能力。
+    facts:
+      - id: stepcode-full-task-loop
+        text: Step Code 官方仓库将其描述为在终端中完成读代码、修改和运行测试的完整任务循环，并原生支持 MCP servers、Agent Skills、plugins 与 multi-agent orchestration。
+        evidence:
+          - step-code-repository
+      - id: stepcode-long-running-delegation
+        text: Step Code 提供 /goal 用于自主推进长任务、/cron 用于按计划运行，并声明会把长时任务拆给并行 subagents，各自使用隔离 context 以减少主会话中的重复内容。
+        evidence:
+          - step-code-repository
+      - id: stepcode-migration-compatibility
+        text: Step Code 会在首次启动时自动导入 Claude Code 与 Codex 的 MCP 配置，支持大多数 Claude Code plugins，并保留 Ask、Read Only、Bypass 与 Autopilot 四种权限模式。
+        evidence:
+          - step-code-repository
+    limitations:
+      - Step Code 对 token efficiency 和长任务可靠性的表述来自项目自身，仍需要在相同仓库与相同模型预算下独立比较。
+      - Windows PowerShell 支持目前仍标注为 beta，官方更推荐 Windows 用户通过 WSL 安装和运行。
+  - id: independent-assessment-control-plane
+    layout: timeline
+    title: 外部评估正在从一次性红队活动变成围绕安全声明与证据的治理接口
+    conclusion: 高自主 Agent 的治理不能只依赖发布前的一次内部测试；更成熟的控制面需要先定义可审查的 claim，再明确证据、访问范围、方法、独立性、修复时限和发布规则。
+    facts:
+      - id: openai-four-assessment-areas
+        text: OpenAI 提议把第三方深度评估集中在四类问题：安全案例、关键 safeguards、能力与 alignment evaluations，以及重大 misalignment incident 的独立调查。
+        evidence:
+          - openai-third-party-assessments
+      - id: openai-claim-evidence-structure
+        text: OpenAI 将 safety claim 定义为可由证据评估的具体安全断言，将 safety case 定义为由证据支撑并显式说明假设、不确定性与残余风险的结构化论证。
+        evidence:
+          - openai-third-party-assessments
+      - id: openai-assessment-principles
+        text: 该原则要求第三方评估具备清晰预注册范围、与 claim 相称的访问权限、透明方法、专业独立性、安全保密、可执行发现与负责任发布机制。
+        evidence:
+          - openai-third-party-assessments
+    limitations:
+      - 这是一套由 OpenAI 提出的实践原则，并非行业统一标准；不同组织仍需根据法律、数据敏感度和威胁模型设计具体评估机制。
+      - 独立评估能够增强安全声明可信度，但不能替代持续运行时监控、事件响应和内部工程控制。
+projects:
+  - action: CLONE
+    name: Step Code
+    summary: 对照现有 Coding Agent 测试 MCP 配置迁移、Skills/插件兼容、长任务 /goal 与多 Agent context 隔离，记录迁移成本和失败模式。
+    maturity: early
+    url: https://github.com/stepfun-ai/Step-Code
+  - action: READ
+    name: OpenRouter Batch API
+    summary: 评估现有 eval、批量摘要和 backlog 任务是否能从同步 Agent 链路迁移到异步 batch，并核对 provider、保留期和延迟约束。
+    maturity: growing
+    url: https://openrouter.ai/blog/announcements/batch-api/
+radar:
+  - label: Task-level model economics
+    impact: 96
+    horizon: 5
+    note: Agent 路由需要同时记录完成率、回合数、输出量、缓存占比与每任务成本，模型单价已经不足以指导默认选择。
+  - label: Prompt cache observability
+    impact: 94
+    horizon: 4
+    note: 稳定前缀、工具定义、缓存诊断和失效原因将进入长时 Agent 的基础 Runtime 指标。
+  - label: Async batch scheduling
+    impact: 86
+    horizon: 8
+    note: eval、backfill 与批量处理适合从交互路径拆出，用延迟弹性换取更低推理成本和更稳定吞吐。
+  - label: Agent ecosystem compatibility
+    impact: 89
+    horizon: 10
+    note: MCP、Skills、plugins 和配置迁移能力会直接影响 Harness 的切换成本与团队采用速度。
+  - label: Independent safety assessment
+    impact: 93
+    horizon: 12
+    note: 高自主系统需要把可审查 claim、证据、访问范围和独立评估者纳入长期治理接口。
+actions:
+  - title: 建立任务级模型成本看板
+    description: 在相同真实任务上记录完成率、turn 数、fresh/cache input、output、重试和总成本，用这些指标决定 Sol、Luna、Opus 或其他模型的默认路由。
+  - title: 把缓存命中率纳入 Agent Runtime 指标
+    description: 固定 system prompt 与 tool schema 的稳定前缀，监控 cache hit/miss 和失效原因，并在接入或移除 MCP 工具时显式做缓存回归。
+  - title: 将非交互负载迁移到异步队列
+    description: 从 eval、历史回填和批量摘要开始，设置可接受完成窗口与失败重试策略，对比 Batch 与同步 API 的成本、吞吐和尾延迟。
+  - title: 为 Harness 建立兼容性回归矩阵
+    description: 对 MCP、Skills、plugins、权限模式和长任务恢复分别做迁移测试，确保更换 Coding Agent 时不会把配置兼容误当成模型能力差异。
+  - title: 用 claim-evidence 结构准备外部审查
+    description: 对高风险 Agent 能力先写清可验证 claim、支撑证据、限制和剩余风险，再定义第三方需要的访问范围、测试方法和整改闭环。
+references:
+  - id: openai-gpt6-sol-luna
+    title: Introducing GPT-6 Sol and Luna
+    url: https://openai.com/index/introducing-gpt-6-sol-and-luna/
+    supports: GPT-6 Sol/Luna 的定位、API 价格、coding 与 computer-use 每任务成本比较，以及缓存相关发布信息。
+    accessedAt: '2026-09-24'
+  - id: openai-gpt6-prompt-caching
+    title: Better prompt caching for GPT-6
+    url: https://openai.com/index/better-prompt-caching-for-gpt-6/
+    supports: GPT-6 prompt caching 的折扣、Dashboard、diagnostics、cache breakpoints、prewarm 与工具变化时的缓存保持策略。
+    accessedAt: '2026-09-24'
+  - id: anthropic-opus55-release
+    title: Introducing Claude Opus 5.5
+    url: https://www.anthropic.com/claude-opus-5-5
+    supports: Claude Opus 5.5 的价格、cache read、速度、agentic coding 与安全评测发布信息。
+    accessedAt: '2026-09-24'
+  - id: anthropic-opus55-task-costs
+    title: What a task costs on Opus 5.5
+    url: https://claude.com/blog/what-a-task-costs-on-opus-5-5
+    supports: Claude Code 多轮任务成本、cache hit rate、turn 数、effort 与 MCP 工具变化对缓存和成本的影响。
+    accessedAt: '2026-09-24'
+  - id: openrouter-batch-api
+    title: 'OpenRouter Batch API: half-price inference by bundling requests'
+    url: https://openrouter.ai/blog/announcements/batch-api/
+    supports: Batch API 的价格折扣、最长完成窗口、beta 延迟分布、请求形态、provider 路由和结果保留策略。
+    accessedAt: '2026-09-24'
+  - id: step-code-repository
+    title: Step Code Repository
+    url: https://github.com/stepfun-ai/Step-Code
+    source: github
+    supports: Step Code 的完整终端任务循环、MCP/Skills/plugins、多 Agent、长任务委派、配置迁移与权限模式。
+    accessedAt: '2026-09-24'
+  - id: openai-third-party-assessments
+    title: Priorities and principles for effective third party assessments
+    url: https://openai.com/index/priorities-principles-third-party-assessments/
+    supports: 第三方评估的四类优先领域、safety claim/safety case 定义，以及范围、访问、方法、独立性和发布原则。
+    accessedAt: '2026-09-24'
+archivePicks: []
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
