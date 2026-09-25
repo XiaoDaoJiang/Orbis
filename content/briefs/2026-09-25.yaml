@@ -1,0 +1,197 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: '2026-09-25'
+status: published
+title: Agent 工程的瓶颈正在外移：压缩无效推理、保留输入结构、识别说话者并用领域 Rubric 约束输出
+summary: Fireworks Ember-1 把“少想但不降质”做成专门训练目标，说明长时 Agent 的成本优化开始进入模型层；Logics-Parsing-V3 与 Nemotron 3 Diarization 则分别为长文档和多人语音保留结构状态，让输入不再被压平成无上下文文本。Gemini 3.8 TTS 把可控表达、声音身份和安全标记带到输出侧，而 MentalHealthBench 用专家共识 Rubric 展示了高风险对话如何从通用安全检查升级为情境化评测。对 Agent Runtime 来说，下一步控制面需要同时管理推理预算、结构化感知、表达能力和领域验收标准。
+topics:
+  - agent-harness
+  - coding-agent
+signals:
+  - title: 长时 Agent 的第一笔成本正在变成“无效推理税”
+    summary: Ember-1 通过训练缩短 Kimi K3 的推理轨迹，在官方基准与生产 A/B 中报告显著 token 降幅，说明 Runtime 之外还可以直接优化模型的思考长度与失败循环。
+    impact: high
+  - title: Agent 输入层正在从文本抽取升级为可持续结构状态
+    summary: Logics-Parsing-V3 用跨页结构状态恢复长文档层级，Nemotron 3 Diarization 用说话者缓存维持多人语音中的 speaker continuity；输入质量越来越依赖专门的状态化解析器。
+    impact: high
+  - title: Voice Agent 的输出层开始同时要求表达控制与身份治理
+    summary: Gemini 3.8 Flash TTS 把自然语言声线设计、逐行表演控制、双说话者场景和声音复制放进同一模型，同时配套 consent verification、SynthID 与 C2PA。
+    impact: high
+  - title: 高风险 Agent 的评测正从规则黑名单转向情境 Rubric
+    summary: MentalHealthBench 用跨国家临床专家为不同对话场景编写带权重的正负标准，并用共识规则筛选 Rubric，展示了领域 Agent 需要按上下文评价“应该做什么”，而不仅是“不能做什么”。
+    impact: high
+sections:
+  - id: efficient-reasoning-as-runtime-economics
+    layout: metrics
+    title: 推理长度开始成为 Agent 的可训练运行经济学指标
+    conclusion: 多轮 Agent 会反复携带已有思考历史，过长的 reasoning trace 会持续放大 token 与延迟成本；因此应把“完成同一任务需要多少有效推理”纳入模型路由和专项训练，而不是只调低通用 reasoning effort。
+    facts:
+      - id: ember-token-reduction
+        text: Fireworks 将 Ember-1 描述为基于 Kimi K3 的专门模型，并报告在保持 K3 质量的同时减少约 40% token，训练目标是削减不必要推理而保留有价值的反思。
+        evidence:
+          - fireworks-ember1
+      - id: ember-training-evaluation-scale
+        text: Fireworks 表示 Ember-1 经历了 50 多次训练实验和 200 多次评测，训练集合覆盖数学、代码、指令遵循、搜索、工具使用与软件工程等单轮和长交互任务。
+        evidence:
+          - fireworks-ember1
+      - id: ember-production-ab
+        text: Fireworks 报告两个生产 coding workload 的 A/B 测试中，Ember-1 在质量相近时每任务约少用 35% token，并称其中一个客户已开始在生产中使用该模型。
+        evidence:
+          - fireworks-ember1
+    limitations:
+      - token 与质量结果来自 Fireworks 自身评测和客户 A/B 描述，应在目标代码库、相同 Harness 与预算下独立复测。
+      - 缩短推理不等于所有任务都应少思考；需要区分冗余循环与解决复杂问题所需的有效反思。
+  - id: stateful-document-ingestion
+    layout: architecture
+    title: 长文档解析正在用“结构状态”替代把整份 PDF 硬塞进 Context
+    conclusion: 对研究、合同、设计文档和知识库 Agent，可靠输入首先是恢复标题层级、跨页元素和视觉文本关系；紧凑的跨页结构状态可以把文档理解从一次性 OCR 变成持续的 ingestion runtime。
+    facts:
+      - id: logics-v3-model-scope
+        text: Alibaba 的 Logics-Parsing-V3 是 0.8B 视觉语言模型，从单页识别扩展到结构化长文档解析，并支持复杂布局、公式与化学符号。
+        evidence:
+          - alibaba-logics-parsing
+      - id: logics-v3-structural-state
+        text: 官方 README 说明该模型按页顺序处理文档，并将紧凑结构状态跨窗口传递，以恢复标题层级、跨页元素合并和视觉文本关联，而无需在每一步重处理完整历史。
+        evidence:
+          - alibaba-logics-parsing
+      - id: logics-v3-long-doc-output
+        text: Logics-Parsing-V3 的推理脚本支持图片、PDF 和页面目录，输出包括 Markdown、跨页文档层级、原始标签和带元数据的解析结果。
+        evidence:
+          - alibaba-logics-parsing
+    limitations:
+      - 官方性能结论主要基于 MPDocBench、OmniDocBench 与自建长文档集合，实际效果仍取决于扫描质量、版式和业务文档分布。
+      - 结构化解析只能改善输入表示，不能自动保证后续检索、引用定位或 Agent 结论正确。
+  - id: speaker-aware-voice-input
+    layout: system-map
+    title: Voice Agent 需要先知道“谁在何时说话”，再谈记忆和行动
+    conclusion: 会议、客服和多人协作场景里，纯 ASR 文本会丢失承诺、反对和打断来自谁；把 diarization 作为独立输入层，可以让 Agent Memory、总结和 action item 保留说话者与时间证据。
+    facts:
+      - id: nemotron-model-capability
+        text: NVIDIA Nemotron 3 Diarization 是约 100M 参数的 open-weight 模型，支持实时与录音对话中的最多八个匿名说话者，并处理重叠语音。
+        evidence:
+          - nvidia-nemotron-diarization
+      - id: nemotron-streaming-memory
+        text: 该模型在流式推理中使用 Arrival-Order Speaker Cache 与 FIFO 上下文维持跨 chunk 的说话者通道稳定，并提供从 30.4 秒到 0.32 秒的推荐输入缓冲配置。
+        evidence:
+          - nvidia-nemotron-diarization
+      - id: nemotron-benchmark-result
+        text: NVIDIA 报告 Nemotron 3 Diarization 在 VoiceArena 初始 Diarization-Bench 的 12 个系统、17 个配置中以 14.72% DER 排名第一，并明确提示该榜单仍可能随正式评测更新。
+        evidence:
+          - nvidia-nemotron-diarization
+    limitations:
+      - diarization 输出的是匿名 speaker channel，不是现实身份识别；要映射到具体人仍需会议元数据或独立身份验证。
+      - 缓冲时延不等于端到端 Voice Agent 延迟，网络、ASR、模型计算和应用处理仍需单独测量。
+  - id: controllable-voice-output
+    layout: comparison
+    title: TTS 正从“把文字念出来”变成 Voice Agent 的可编排表达层
+    conclusion: 当语音模型能被逐行指导语气、节奏、角色和双人互动时，Agent 的回复策略开始包含“如何说”而不仅是“说什么”；这也要求 Runtime 同时管理声音资产、同意证明和生成内容标记。
+    facts:
+      - id: gemini-tts-models
+        text: Google 发布 Gemini 3.8 Flash TTS 与 Flash-Lite TTS，分别面向深度创意控制和高吞吐低成本语音生成，并将 expressive voice agents 列为目标场景。
+        evidence:
+          - google-gemini38-tts
+      - id: gemini-tts-control
+        text: Gemini 3.8 Flash TTS 支持通过自然语言设计声音，并可逐行控制表演、节奏、方言切换与非语言 backchannel，同时支持原生双说话者场景。
+        evidence:
+          - google-gemini38-tts
+      - id: gemini-tts-identity-safety
+        text: Google 表示声音复制可从约 30 秒授权音频建立一致声线，并要求 consent verification；Gemini Audio 生成音频还使用 SynthID，声音复制流程配套 C2PA credentials。
+        evidence:
+          - google-gemini38-tts
+    limitations:
+      - Google 展示的质量与 benchmark 结果来自官方评测，实时 Agent 仍需在目标语言、网络和设备条件下测试端到端延迟与稳定性。
+      - 声音复制能力受地区和授权规则限制，生产系统不能把技术可用性等同于身份与版权许可。
+  - id: contextual-domain-evaluation
+    layout: timeline
+    title: 高风险对话评测正在从“违规检测”走向专家共识的情境化行为合同
+    conclusion: 对心理健康、医疗、金融等领域 Agent，仅检查是否触发禁止项不足以衡量是否给出了恰当帮助；更稳健的评测需要把上下文、用户角色、应做行为和有害行为编码成可重复执行的领域 Rubric。
+    facts:
+      - id: mentalhealthbench-expert-cohort
+        text: OpenAI 的 MentalHealthBench 与来自 22 个国家的 80 多名持证心理健康专家共同构建，覆盖成人、青少年、照护者和临床人员，以及非急性、高急性和紧急场景。
+        evidence:
+          - openai-mentalhealthbench
+      - id: mentalhealthbench-rubric-consensus
+        text: 每段合成对话由至少三位专家审阅，Rubric 条目采用 -10 到 +10 权重；只有至少两位专家同意且没有第三位反对的标准才被保留。
+        evidence:
+          - openai-mentalhealthbench
+      - id: mentalhealthbench-automated-grader
+        text: MentalHealthBench 使用 GPT-5.6 Sol 自动对模型回复执行专家编写的标准，并把安全、寻求上下文、保留用户自主性和适当提供可执行建议等行为拆成可解释维度。
+        evidence:
+          - openai-mentalhealthbench
+    limitations:
+      - 自动 grader 仍是模型，会引入自身偏差；高风险部署不能只依赖单一自动评分器。
+      - Benchmark 使用合成对话并不能覆盖真实用户的全部文化差异、长期关系和产品级安全机制。
+projects:
+  - action: CLONE
+    name: Logics-Parsing-V3
+    summary: 用真实需求文档和长 PDF 测试跨页层级、表格与引用定位，比较“结构状态解析”与普通 OCR/RAG 的上下文成本和错误传播。
+    maturity: early
+    url: https://github.com/alibaba/Logics-Parsing
+  - action: TEST
+    name: NVIDIA Nemotron 3 Diarization
+    summary: 在会议录音和实时麦克风流中组合 diarization 与 ASR，测量 speaker attribution、重叠语音、端到端延迟及下游总结质量。
+    maturity: early
+    url: https://huggingface.co/nvidia/Nemotron-3-Diarization
+radar:
+  - label: Efficient reasoning specialization
+    impact: 94
+    horizon: 6
+    note: 长时 Agent 的推理轨迹会反复进入上下文，减少无效思考有机会同时降低 token、延迟和失败循环成本。
+  - label: Stateful document ingestion
+    impact: 91
+    horizon: 8
+    note: 长文档 Agent 需要保留跨页结构与层级，而不是把 OCR 文本简单切块后完全交给 LLM 重建。
+  - label: Speaker-aware voice memory
+    impact: 89
+    horizon: 10
+    note: Voice Agent 一旦进入会议与多人协作，说话者连续性会直接影响记忆、承诺提取和行动归因。
+  - label: Controllable voice output
+    impact: 85
+    horizon: 12
+    note: 可编排语气、角色和双人交互会让输出策略成为 Runtime 的新维度，同时带来声音身份治理要求。
+  - label: Domain-specific rubric evaluation
+    impact: 96
+    horizon: 7
+    note: 高风险 Agent 需要把场景上下文和专家标准做成持续回归，而不是只依赖通用拒答率和安全黑名单。
+actions:
+  - title: 把 reasoning token 作为 Agent 一级运行指标
+    description: 对相同长任务记录成功率、步骤数、reasoning/output token、重试和总成本，识别“多想但没有增加成功率”的模型与阶段。
+  - title: 为输入层增加结构保真回归
+    description: 用长 PDF 和多人录音建立固定样本，分别验证跨页层级、speaker continuity、时间戳和引用定位是否能稳定传递到 Agent 的检索与总结结果。
+  - title: 将 Voice Agent 拆成可替换的输入与输出组件
+    description: 分别评估 diarization、ASR、LLM、TTS 的准确率与延迟，避免用单一端到端主观体验掩盖说话者归因或声音治理问题。
+  - title: 为高风险工作流建立领域 Rubric
+    description: 从真实任务抽取应做行为、禁止行为、上下文询问与升级条件，先由领域专家形成共识，再接入自动 grader 做持续回归。
+references:
+  - id: fireworks-ember1
+    title: Introducing Ember-1
+    url: https://fireworks.ai/blog/ember-1
+    supports: Ember-1 的训练目标、token 减少、训练与评测规模、Agent/Coding workload 以及生产 A/B 结果。
+    accessedAt: '2026-09-25'
+  - id: alibaba-logics-parsing
+    title: Logics-Parsing-V3 Repository
+    url: https://github.com/alibaba/Logics-Parsing
+    source: github
+    supports: Logics-Parsing-V3 的 0.8B 模型定位、跨页结构状态、长文档解析方式、输出格式与官方 benchmark 描述。
+    accessedAt: '2026-09-25'
+  - id: nvidia-nemotron-diarization
+    title: Know Who Spoke When: Build Real-Time, Multi-Speaker AI with NVIDIA Nemotron 3 Diarization
+    url: https://huggingface.co/blog/nvidia/nemotron-diarization
+    supports: Nemotron 3 Diarization 的模型规模、八说话者支持、流式缓存、延迟配置、DER 结果和部署限制。
+    accessedAt: '2026-09-25'
+  - id: google-gemini38-tts
+    title: Gemini 3.8 text-to-speech says hello
+    url: https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-8-text-to-speech/
+    supports: Gemini 3.8 Flash/Flash-Lite TTS 的 voice design、逐行控制、双说话者场景、声音复制与 consent/SynthID/C2PA 安全机制。
+    accessedAt: '2026-09-25'
+  - id: openai-mentalhealthbench
+    title: Introducing MentalHealthBench
+    url: https://openai.com/index/introducing-mentalhealthbench/
+    supports: MentalHealthBench 的专家规模、场景覆盖、Rubric 权重与共识方法、自动 grader 和行为维度。
+    accessedAt: '2026-09-25'
+archivePicks: []
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
