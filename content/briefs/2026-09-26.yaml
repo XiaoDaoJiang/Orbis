@@ -1,0 +1,204 @@
+kind: brief
+cadence: daily
+evidenceVersion: 1
+publishedAt: '2026-09-26'
+status: published
+title: Agent Runtime 正从聊天循环升级为持续运行系统：后台任务、故障路由、服务器工具与多 Agent 试验场同步成型
+summary: DeepSeek Harness 把定时任务、后台执行和运行时工具变更带入桌面 Agent；Claude 把 refusal 与 fallback 暴露成可观测控制流，OpenRouter 则把工具执行与预算提升到服务端协议层。与此同时，Gemini Live Avatar 展示了前台对话与后台工具并发的交互模式，Project Swap 与 Agora-2 则把多 Agent 协调放进可测量市场和共享世界。Agent 系统的下一步不是再加一个聊天入口，而是把持久状态、恢复语义、工具预算、并发交互和多 Agent 评测做成明确 Runtime 合同。
+topics:
+- agent-harness
+- coding-agent
+- mcp
+signals:
+- title: 桌面 Agent 正变成会持续运行的本地 Runtime
+  summary: DeepSeek Harness 的候选版本把定时任务持久化、后台任务继续运行和会话内启用新工具放到同一产品层，说明 Agent 生命周期正在超出单次聊天窗口。
+  impact: high
+- title: 失败与工具调用开始拥有显式控制流和预算
+  summary: Claude 将 refusal 作为 HTTP 200 的结构化 stop reason 并提供 fallback 轨迹，OpenRouter 则为服务端工具定义独立 step budget；恢复和资源边界正在从应用约定进入协议。
+  impact: high
+- title: 实时 Agent 的前台交互与后台执行正在解耦
+  summary: Gemini 3.8 Live with Live Avatar 可以在保持连续对话时异步触发工具和取数，实时 Agent 因而需要分别管理交互连续性与任务执行状态。
+  impact: high
+- title: 多 Agent 评测正在从聊天对话走向共享环境
+  summary: Project Swap 用真实参与者偏好和交易结果衡量代理效果，Agora-2 则让多人和 Agent 在统一世界状态中实时互动；多 Agent 能力需要在规则、状态与结果均可观察的环境里评估。
+  impact: high
+sections:
+- id: persistent-agent-runtime
+  layout: architecture
+  title: 持久任务、后台执行和热启工具把桌面 Agent 推向真正的 Runtime
+  conclusion: 当任务能跨窗口和重启继续存在、运行中的会话还能接入新工具时，桌面 Agent 已不再只是聊天 UI；任务存储、生命周期、审批和退出语义必须成为独立运行时能力。
+  facts:
+  - id: dsh-scheduled-task-persistence
+    text: DeepSeek Harness v0.1.7-rc.2 新增定时任务管理与运行记录；启用后任务可在应用重启后保留，并支持最短每分钟重复执行一次。
+    evidence:
+    - deepseek-harness-017-rc2
+  - id: dsh-background-task-lifecycle
+    text: 同一候选版本允许桌面窗口关闭后任务继续在后台运行，并在真正退出应用前提示退出对运行中任务的影响。
+    evidence:
+    - deepseek-harness-017-rc2
+  - id: dsh-runtime-tool-activation
+    text: 该版本允许进行中的对话直接使用新启用的工具而无需另开会话，同时在自动审阅拒绝操作时允许具备人工审批权限的会话由用户决定是否继续。
+    evidence:
+    - deepseek-harness-017-rc2
+  limitations:
+  - 该版本仍是 release candidate，功能和行为可能在正式版前继续调整。
+  - 定时任务与时间上下文默认关闭，是否启用仍需要显式产品策略和权限边界。
+- id: refusal-aware-routing
+  layout: system-map
+  title: 模型拒绝不应再被当成普通错误，而应进入可观测的恢复状态机
+  conclusion: 当 refusal、fallback、模型切换和后续 sticky routing 都有结构化信号时，Agent Runtime 应把模型级策略拒绝建模为独立状态，并为主 Agent、子 Agent 和后台任务统一配置恢复路径。
+  facts:
+  - id: claude-refusal-is-success-response
+    text: Claude Platform 将部分安全分类器拒绝表示为正常 HTTP 200 响应，并使用 stop_reason 为 refusal、stop_details 提供分类和说明；仅依赖 4xx/5xx 的错误监控会漏掉这类运行结果。
+    evidence:
+    - claude-refusals-fallback
+  - id: claude-fallback-contract
+    text: Claude API 的 server-side fallback 处于 beta，可在被安全分类器拒绝时按默认推荐或显式列表重试其他模型；rate limit、overload 或 server error 不会触发这条 fallback。
+    evidence:
+    - claude-refusals-fallback
+  - id: claude-fallback-observability
+    text: fallback 响应通过顶层 model、fallback 内容块和 usage.iterations 记录每次尝试；发生 fallback 后的 sticky routing 可在约一小时内把后续请求直接路由到已接受该会话的模型，但该机制是 best-effort。
+    evidence:
+    - claude-refusals-fallback
+  limitations:
+  - server-side fallback 并非所有平台和 Batch API 都支持，跨云部署仍可能需要 SDK middleware 或自定义恢复逻辑。
+  - 不同拒绝类别可能产生不同计费，恢复链必须同时纳入成本与 rate-limit 预算。
+- id: provider-managed-tool-plane
+  layout: metrics
+  title: 工具执行正在从客户端 glue code 上移到带预算的服务端 Agent Loop
+  conclusion: 当工具由模型选择、平台执行并受统一 step budget 约束时，工具层开始具备跨模型的运行时属性；应用需要明确哪些能力交给托管工具，哪些仍由本地权限域执行。
+  facts:
+  - id: openrouter-server-tool-execution
+    text: OpenRouter Server Tools 由模型在请求中决定是否调用，由 OpenRouter 服务端执行并把结果回送模型，无需客户端实现对应工具执行器；该能力目前标记为 beta。
+    evidence:
+    - openrouter-server-tools
+  - id: openrouter-tool-catalog
+    text: 当前 Server Tools 包括 Web Search、Web Fetch、Image Generation、Apply Patch、Fusion、Advisor、Subagent 与 Tool Search 等，其中 Tool Search 可按需发现并加载 deferred tools。
+    evidence:
+    - openrouter-server-tools
+  - id: openrouter-step-budget
+    text: 使用 Server Tools 的请求会运行带 step budget 的 agent loop；顶层 max_tool_calls 默认和最大值均为 30，Fusion 与 Subagent 等带内部循环的工具另有独立预算。
+    evidence:
+    - openrouter-server-tools
+  limitations:
+  - Server Tools 的 API 与行为仍处 beta，不能把当前工具类型和预算语义视为长期稳定协议。
+  - 托管执行会改变数据流、权限边界与供应商依赖；本地敏感工具仍需要单独的沙箱和审计策略。
+- id: concurrent-live-agent-loop
+  layout: comparison
+  title: 实时 Agent 需要把“持续对话”与“后台工具执行”拆成两个并发循环
+  conclusion: 当用户界面要求语音和视觉连续存在，而工具调用又可能产生独立延迟时，Agent Runtime 应把前台 turn-taking 与后台任务状态分离，避免一次外部调用冻结整个交互。
+  facts:
+  - id: gemini-live-avatar-release
+    text: Google 于 2026-09-24 发布 Gemini 3.8 Live with Live Avatar，把低延迟流式视频与实时对话结合，并在 Gemini Enterprise 中提供该能力。
+    evidence:
+    - gemini-live-avatar
+  - id: gemini-live-avatar-multimodal-loop
+    text: Live Avatar 同时处理视觉与音频输入，并生成近实时的语音和视频响应，用于保持连续的多模态对话体验。
+    evidence:
+    - gemini-live-avatar
+  - id: gemini-async-tool-calling
+    text: Google 表示 Live Avatar 支持异步工具调用，可在后台触发工具和获取数据的同时继续前台对话，并以酒店入住等任务展示不中断的交互流程。
+    evidence:
+    - gemini-live-avatar
+  limitations:
+  - 当前能力首先面向 Gemini Enterprise，自定义 Avatar 还需要 enterprise allowlisting。
+  - 连续对话并不等于后台任务一定成功；产品仍需要显示工具执行、失败、取消和最终一致性状态。
+- id: multi-agent-evaluation-environments
+  layout: timeline
+  title: 多 Agent 能力评测正在从“会不会聊天”转向共享规则、共享状态和真实结果
+  conclusion: 市场协商与共享世界模拟说明，多 Agent 系统不能只测单体模型分数；更关键的是偏好理解、规则约束、可见状态、竞争协作和最终结果是否能被重复测量。
+  facts:
+  - id: swap-measured-preference-representation
+    text: Anthropic 的 Project Swap 让 201 名参与者通过短对话向 Claude 表达阅读偏好，并用参与者对 10 本书的独立排序作为 ground truth；项目报告 Agent 从约五分钟对话构造的排序在成对比较上与参与者排序匹配 61%。
+    evidence:
+    - anthropic-project-swap
+  - id: swap-model-vs-instruction-result
+    text: Project Swap 对交易场景进行多次重跑，并报告所用模型对谈判结果的影响大于 ruthless 或 prosocial 指令差异；更强模型组成的市场整体更高效。
+    evidence:
+    - anthropic-project-swap
+  - id: agora-shared-world-state
+    text: Odyssey 的 Agora-2 research preview 支持最多 20 名人类和 Agent 在同一实时生成环境中互动，并维护显式共享世界状态，使各参与者的动作共同影响同一模拟。
+    evidence:
+    - odyssey-agora-2
+  - id: agora-interaction-training-loop
+    text: Agora-2 中的 Agent 使用强化学习学习追逐、导航和脱困；项目还提出让协调与竞争产生持续变化的训练课程，并把交互失败作为改进世界模型的数据来源。
+    evidence:
+    - odyssey-agora-2
+  limitations:
+  - Project Swap 是受控书籍交换实验，不能直接外推到金融、医疗或招聘等高风险市场。
+  - Agora-2 仍是研究预览，且基于游戏环境训练；真实世界的安全、物理一致性和长期因果关系需要独立验证。
+projects:
+- action: TEST
+  name: DeepSeek Harness
+  summary: 重点验证定时任务持久化、后台任务生命周期、会话内热启工具与人工审批恢复，并记录 Windows 桌面端的失败和退出语义。
+  maturity: early
+  url: https://github.com/deepseek-ai/deepseek-harness
+radar:
+- label: Persistent local agent runtime
+  impact: 96
+  horizon: 4
+  note: 定时、后台运行、会话恢复与运行记录正在从附加功能变成桌面 Agent 的基础生命周期能力。
+- label: Refusal-aware model routing
+  impact: 92
+  horizon: 5
+  note: HTTP 成功码已不能代表任务成功，Runtime 需要把 refusal、fallback、实际 serving model 与计费尝试纳入统一观测。
+- label: Provider-managed tool loops
+  impact: 89
+  horizon: 8
+  note: 托管工具减少客户端 glue code，但 step budget、权限、数据流和供应商依赖必须显式治理。
+- label: Concurrent conversational agents
+  impact: 91
+  horizon: 8
+  note: 实时语音视觉交互要求前台 turn loop 与后台 tool loop 解耦，并把进展与失败重新投影到用户界面。
+- label: Multi-agent evaluation environments
+  impact: 94
+  horizon: 12
+  note: 共享市场和共享世界让代理间协调、竞争、偏好理解与系统级结果可以被更接近真实任务地测量。
+actions:
+- title: 给 Agent Task 建立可恢复生命周期
+  description: 至少持久化 queued、running、waiting、failed、completed 与取消状态，并验证窗口关闭、进程重启和工具热更新时任务如何恢复。
+- title: 把 refusal 独立于 transport error 监控
+  description: 记录 stop_reason、refusal category、实际 serving model、fallback attempts 与每次成本，避免只看 HTTP 状态和最终文本。
+- title: 为工具层增加统一 step 与 spend budget
+  description: 无论工具在本地、MCP 还是服务端执行，都给每个 run 设置最大调用次数、耗时和费用，并记录预算耗尽原因。
+- title: 拆分前台对话循环与后台执行循环
+  description: 实时交互场景中让对话、任务进展和工具执行使用独立状态通道，明确 pending、partial、cancelled 与最终完成如何同步给用户。
+- title: 用共享环境测试多 Agent 系统
+  description: 设计一个带明确规则、可重放状态和结果指标的小型多人任务，分别测偏好理解、协商策略、冲突处理与整体效率，而不是只统计单 Agent 成功率。
+references:
+- id: deepseek-harness-017-rc2
+  title: DeepSeek Harness v0.1.7-rc.2
+  url: https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.1.7-rc.2
+  source: github
+  supports: DeepSeek Harness 的定时任务持久化、后台任务生命周期、会话内启用新工具、自动审阅后的人工审批，以及该版本的候选发布状态。
+  accessedAt: '2026-09-26'
+- id: claude-refusals-fallback
+  title: Claude Platform Docs — Refusals and fallback
+  url: https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback
+  supports: Claude refusal 的 HTTP/stop_reason 语义、server-side 与 client-side fallback、usage.iterations、sticky routing、计费与工具调用边界。
+  accessedAt: '2026-09-26'
+- id: openrouter-server-tools
+  title: OpenRouter Server Tools
+  url: https://openrouter.ai/docs/guides/features/server-tools
+  supports: OpenRouter 托管工具的执行模型、当前工具目录、Server Tools 与用户工具差异、step budget 和 usage tracking。
+  accessedAt: '2026-09-26'
+- id: gemini-live-avatar
+  title: Introducing Gemini 3.8 Live with Live Avatar
+  url: https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-8-live-with-live-avatar/
+  supports: Gemini Live Avatar 的发布日期、近实时音视频交互、企业可用性、异步工具调用和多语言实时体验。
+  accessedAt: '2026-09-26'
+- id: anthropic-project-swap
+  title: Project Swap — What happens when agents trade for us?
+  url: https://www.anthropic.com/research/project-swap
+  supports: Project Swap 的 201 人受控市场实验、偏好估计 ground truth、61% 成对匹配结果，以及模型和指令对交易结果的重跑比较。
+  accessedAt: '2026-09-26'
+- id: odyssey-agora-2
+  title: Introducing Agora-2 — Advancing Multi-Agent World Simulation
+  url: https://odyssey.systems/introducing-agora-2
+  supports: Agora-2 的最多 20 人/Agent 实时共享环境、显式共享世界状态、RL Agent 训练和交互驱动的多 Agent 学习方向。
+  accessedAt: '2026-09-26'
+archivePicks: []
+corrections: []
+presentation:
+  enabled: true
+  template: daily-v1
