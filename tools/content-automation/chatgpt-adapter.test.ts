@@ -39,4 +39,9 @@ assert.match(adapter, /must not.*Production Pages|不得.*Production Pages|do no
 assert.match(adapter, /XiaoDaoJiang\/ai-frontier/, 'Adapter must explicitly prohibit the retired ai-frontier repository')
 assert.doesNotMatch(adapter, /Mid-Century Modern|固定 11 页|docs\/latest\/|docs\/archive\.json/, 'Thin adapter must not duplicate the retired/editorial HTML publishing contract')
 
+
+assert.match(adapter, /automation:daily:serialize/, 'Adapter must use the safe serializer')
+assert.match(adapter, /JSON is valid YAML/, 'Non-executable fallback must avoid raw YAML interpolation')
+assert.match(adapter, /do not upload unvalidated candidate bytes/, 'Adapter must fail closed without parsing')
+
 console.log('ChatGPT Scheduled Daily adapter contract passed')

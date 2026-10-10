@@ -29,7 +29,7 @@
     "test:presentation-scope": "tsx tools/presentation-scope-check/index.ts",
     "test:multi-presentation": "tsx tools/multi-presentation-check/index.ts",
     "test:path-guard": "tsx tools/path-guard/change-set.test.ts && tsx tools/path-guard/policy.test.ts && tsx tools/path-guard/change-set.integration.test.ts",
-    "test:content-automation": "tsx tools/content-automation/daily-target.test.ts && tsx tools/content-automation/daily-decision.test.ts && tsx tools/content-automation/daily-guard-policy.test.ts && tsx tools/content-automation/pr-metadata.test.ts && tsx tools/content-automation/preview-workflow.test.ts && tsx tools/content-automation/prompt-contract.test.ts && tsx tools/content-automation/chatgpt-adapter.test.ts",
+    "test:content-automation": "tsx tools/content-automation/daily-target.test.ts && tsx tools/content-automation/daily-decision.test.ts && tsx tools/content-automation/daily-guard-policy.test.ts && tsx tools/content-automation/pr-metadata.test.ts && tsx tools/content-automation/preview-workflow.test.ts && tsx tools/content-automation/prompt-contract.test.ts && tsx tools/content-automation/chatgpt-adapter.test.ts && tsx tools/content-automation/daily-serialization.test.ts",
     "test:pages-promotion": "tsx tools/pages-promotion/eligibility.test.ts && tsx tools/pages-promotion/workflow-contract.test.ts",
     "test:evidence-integrity": "tsx tools/evidence-integrity/daily-evidence.test.ts && tsx tools/evidence-integrity/renderer-contract.test.ts && tsx tools/evidence-integrity/ui-contract.test.ts && tsx tools/evidence-integrity/correction-policy.test.ts && tsx tools/evidence-integrity/correction-legacy.test.ts && tsx tools/evidence-integrity/correction-guard.integration.test.ts",
     "test:evidence-ui-artifact": "tsx tools/evidence-integrity/ui-artifact-check.ts",
@@ -53,7 +53,8 @@
     "build:prepare": "pnpm validate && pnpm test:multi-presentation",
     "build:web-artifacts": "pnpm build:web && pnpm test:seo-web",
     "build:site-artifacts": "pnpm assemble && pnpm test:site && pnpm test:evidence-ui-artifact && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact && pnpm test:knowledge-lifecycle-ui-artifact && pnpm test:native-slidev-artifact",
-    "build": "pnpm build:prepare && pnpm generate:slides && pnpm build:web-artifacts && pnpm build:slides && pnpm build:site-artifacts"
+    "build": "pnpm build:prepare && pnpm generate:slides && pnpm build:web-artifacts && pnpm build:slides && pnpm build:site-artifacts",
+    "automation:daily:serialize": "tsx tools/content-automation/serialize-daily-cli.ts"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",
