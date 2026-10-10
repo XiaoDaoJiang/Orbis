@@ -89,6 +89,22 @@ references:
 
 旧已发布 Daily 的 legacy shape 只用于冻结迁移兼容，不允许新 Scheduled Daily 继续使用。
 
+## Safe YAML serialization
+
+Treat source titles and all other free text as data, never as interpolated YAML syntax. In particular, `: `, ` #`, quotes, backslashes, multiline text, YAML indicators and strings resembling dates, numbers or booleans must survive unchanged.
+
+When repository execution is available, generate a JSON object first, then use the repository serializer:
+
+```bash
+pnpm --silent automation:daily:serialize YYYY-MM-DD /tmp/candidate.json > /tmp/candidate.yaml && cp /tmp/candidate.yaml content/briefs/YYYY-MM-DD.yaml
+```
+
+`automation:daily:serialize` validates Evidence V1 and target identity, serializes with the pinned `yaml` library, then parses the result and verifies exact value/type round-trip preservation before emitting any YAML. Use a temporary file; never redirect over the candidate before validation succeeds. Do not commit the intermediate JSON or temporary YAML.
+
+If repository execution is unavailable, use a real YAML serializer when available; otherwise serialize the entire candidate as JSON (JSON is valid YAML) into the `.yaml` file. Use JSON string escaping, never concatenate unquoted external text into YAML. Parse the exact final bytes and compare every value/type with the source object before GitHub mutation. If no parser can run, stop and report serialization validation as blocked; do not upload unvalidated candidate bytes or count GitHub CI as producer-local validation.
+
+This is serialization validation only. It does not replace `pnpm validate`, the Scheduled Daily guard, full build, evidence review or publication authorization.
+
 ## 必须执行
 
 - 第一项外部信息读取动作必须是读取 `feeds.yaml` 中所有 `enabled: true` 的 RSS；

@@ -203,6 +203,22 @@ Evidence V1 的每个 `facts[]` 项是对象而不是字符串：
 
 Agent 不手写页面，也不改变模板布局、视觉系统、导航或交互。Evidence V1 不增加第 12 页。
 
+## Safe YAML serialization
+
+Treat source titles and all other free text as data, never as interpolated YAML syntax. In particular, `: `, ` #`, quotes, backslashes, multiline text, YAML indicators and strings resembling dates, numbers or booleans must survive unchanged.
+
+When repository execution is available, generate a JSON object first, then use the repository serializer:
+
+```bash
+pnpm --silent automation:daily:serialize YYYY-MM-DD /tmp/candidate.json > /tmp/candidate.yaml && cp /tmp/candidate.yaml content/briefs/YYYY-MM-DD.yaml
+```
+
+`automation:daily:serialize` validates Evidence V1 and target identity, serializes with the pinned `yaml` library, then parses the result and verifies exact value/type round-trip preservation before emitting any YAML. Use a temporary file; never redirect over the candidate before validation succeeds. Do not commit the intermediate JSON or temporary YAML.
+
+If repository execution is unavailable, use a real YAML serializer when available; otherwise serialize the entire candidate as JSON (JSON is valid YAML) into the `.yaml` file. Use JSON string escaping, never concatenate unquoted external text into YAML. Parse the exact final bytes and compare every value/type with the source object before GitHub mutation. If no parser can run, stop and report serialization validation as blocked; do not upload unvalidated candidate bytes or count GitHub CI as producer-local validation.
+
+This is serialization validation only. It does not replace `pnpm validate`, the Scheduled Daily guard, full build, evidence review or publication authorization.
+
 ## 9. 写入与校验
 
 完成 YAML 后：

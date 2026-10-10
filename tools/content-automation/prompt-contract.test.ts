@@ -5,6 +5,9 @@ const daily = await readFile('config/daily-task-prompt.md', 'utf8')
 const scheduled = await readFile('config/scheduled-task-prompt.md', 'utf8')
 
 for (const [name, text] of [['daily-task-prompt', daily], ['scheduled-task-prompt', scheduled]] as const) {
+  assert.match(text, /automation:daily:serialize/, `${name} must use the safe serializer`)
+  assert.match(text, /round-trip/, `${name} must require exact round-trip validation`)
+  assert.match(text, /do not upload unvalidated candidate bytes/, `${name} must fail closed without validation`)
   assert.match(text, /targetDate/, `${name} must require an explicit targetDate`)
   assert.match(text, /Asia\/Shanghai/, `${name} must keep Asia/Shanghai date semantics explicit`)
   assert.match(text, /automation\/daily\/YYYY-MM-DD/, `${name} must document the deterministic automation branch`)
