@@ -1,8 +1,21 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
+import { parse } from 'yaml'
 
 const workflow = await readFile('.github/workflows/pr-preview-build.yml', 'utf8')
+const previewEvents = parse(workflow).on.pull_request.types
+const gateWorkflow = parse(await readFile('.github/workflows/scheduled-daily-gate.yml', 'utf8'))
+
+assert.ok(
+  gateWorkflow.on.pull_request_target.types.includes('ready_for_review'),
+  'Daily gate must reconsider a draft candidate when it becomes ready for review',
+)
+assert.deepEqual(
+  previewEvents,
+  ['opened', 'reopened', 'synchronize', 'ready_for_review'],
+  'PR Preview Build must refresh trusted preview after ready_for_review resets the Daily gate',
+)
 
 assert.match(
   workflow,
@@ -42,5 +55,9 @@ assert.doesNotMatch(workflow, /id-token:\s*write/)
 
 // Keep dependency-free trusted gate regressions in the existing validate/build chain.
 execFileSync(process.execPath, ['--test', 'tools/content-automation/daily-auto-merge.test.mjs'], { stdio: 'inherit' })
+
+
+// Exercise the trusted publisher's bounded cache-propagation wait with fake time.
+await import('./preview-smoke.test.ts')
 
 console.log('Scheduled Daily and correction PR Preview workflow contract passed')

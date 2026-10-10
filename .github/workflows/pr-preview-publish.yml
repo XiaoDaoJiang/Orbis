@@ -64,24 +64,41 @@ jobs:
           force_orphan: true
           enable_jekyll: false
       - name: Verify public preview availability
+        timeout-minutes: 7
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
         run: |
           set -euo pipefail
           preview_root="${PREVIEW_URL%/index.html}"
-          for attempt in $(seq 1 12); do
-            if proof="$(curl --fail --silent --show-error --location --max-time 15 "$preview_root/orbis-preview-provenance.json?run=$GITHUB_RUN_ID&attempt=$GITHUB_RUN_ATTEMPT")" \
+          # raw.githack caches by origin/path, ignores query strings for its origin
+          # cache, and may serve stale content while refreshing. Allow propagation
+          # without exceeding its hot-file polling threshold or the job timeout.
+          deadline=$(( $(date +%s) + 360 ))
+          fetch() {
+            local remaining timeout
+            remaining=$(( deadline - $(date +%s) ))
+            if (( remaining <= 0 )); then return 1; fi
+            timeout=15
+            if (( remaining < timeout )); then timeout="$remaining"; fi
+            curl --fail --silent --show-error --location --max-time "$timeout" "$1"
+          }
+          while (( $(date +%s) < deadline )); do
+            if proof="$(fetch "$preview_root/orbis-preview-provenance.json?run=$GITHUB_RUN_ID&attempt=$GITHUB_RUN_ATTEMPT")" \
               && jq -e --slurpfile expected preview/orbis-preview-provenance.json '. == $expected[0]' <<< "$proof" > /dev/null \
-              && rss="$(curl --fail --silent --show-error --location --max-time 15 "$preview_root/rss.xml")" \
+              && rss="$(fetch "$preview_root/rss.xml")" \
               && grep -q '<rss' <<< "$rss" \
-              && curl --fail --silent --show-error --location --max-time 15 "$preview_root/favicon.svg" > /dev/null; then
+              && fetch "$preview_root/favicon.svg" > /dev/null; then
               echo "Exact public preview is reachable: $PREVIEW_URL"
               exit 0
             fi
-            echo "Exact preview not visible yet (attempt $attempt/12)"
-            sleep 5
+            remaining=$(( deadline - $(date +%s) ))
+            if (( remaining <= 0 )); then break; fi
+            delay=10
+            if (( remaining < delay )); then delay="$remaining"; fi
+            echo "Exact preview not visible yet ($remaining seconds remaining)"
+            sleep "$delay"
           done
-          echo "Current preview did not become reachable: $PREVIEW_URL" >&2
+          echo "Current preview did not become reachable within 360 seconds: $PREVIEW_URL" >&2
           exit 1
       - name: Comment preview URL
         env:
