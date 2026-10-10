@@ -39,7 +39,7 @@ function fixture(mode = 'verify') {
     if (path.startsWith(`/pulls/${pr.number}/files?`)) return copy(state.files)
     if (path === '/git/ref/heads/main') return { object: { sha: state.mainSha } }
     if (path.startsWith('/contents/')) { assert.equal(options.missing, true); return state.existing }
-    if (path === '/actions/runs/10') return copy(state.run)
+    if (path === `/actions/runs/${state.run.id}`) return copy(state.run)
     if (path.startsWith(`/commits/${sha}/statuses?`)) return copy(state.statuses)
     if (path === '') return state.repository
     if (path === '/rules/branches/main') return state.rules
@@ -92,6 +92,29 @@ test('preview must bind exact source, attempt, branch, workflow and PR', () => {
 test('initializer waits; it never merges', async () => {
   const f = fixture('initialize'); assert.equal((await f.execute()).reason, 'waiting-for-current-trusted-preview')
   assert.equal(f.state.writes.at(-1).state, 'pending'); assert.equal(f.state.merges.length, 0)
+})
+test('draft-to-ready transition waits for and accepts a fresh trusted preview', async () => {
+  const f = fixture()
+  f.state.pr.draft = true
+  assert.equal((await f.execute()).reason, 'pr-is-draft')
+  assert.equal(f.state.writes.at(-1).state, 'failure')
+
+  f.state.pr.draft = false
+  f.options.mode = 'initialize'
+  f.options.env.GITHUB_EVENT_NAME = 'pull_request_target'
+  f.options.event.action = 'ready_for_review'
+  f.options.event.pull_request = copy(f.state.pr)
+  assert.equal((await f.execute()).reason, 'waiting-for-current-trusted-preview')
+  assert.equal(f.state.writes.at(-1).state, 'pending')
+
+  f.options.mode = 'verify'
+  f.options.env.GITHUB_EVENT_NAME = 'workflow_run'
+  f.state.run.id = 11
+  f.options.event.workflow_run = copy(f.state.run)
+  assert.equal((await f.execute()).reason, 'preview-verified')
+  assert.equal(f.state.writes.at(-1).state, 'success')
+  assert.equal(f.state.writes.at(-1).description, 'daily-preview-ok:pr-60:run-11:attempt-1')
+  assert.equal(f.state.merges.length, 0)
 })
 test('late initializer does not overwrite this PR verified status', async () => {
   const f = fixture('initialize'); f.state.statuses = [copy(proof)]

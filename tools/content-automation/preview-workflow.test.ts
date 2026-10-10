@@ -1,8 +1,21 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
+import { parse } from 'yaml'
 
 const workflow = await readFile('.github/workflows/pr-preview-build.yml', 'utf8')
+const previewEvents = parse(workflow).on.pull_request.types
+const gateWorkflow = parse(await readFile('.github/workflows/scheduled-daily-gate.yml', 'utf8'))
+
+assert.ok(
+  gateWorkflow.on.pull_request_target.types.includes('ready_for_review'),
+  'Daily gate must reconsider a draft candidate when it becomes ready for review',
+)
+assert.deepEqual(
+  previewEvents,
+  ['opened', 'reopened', 'synchronize', 'ready_for_review'],
+  'PR Preview Build must refresh trusted preview after ready_for_review resets the Daily gate',
+)
 
 assert.match(
   workflow,
