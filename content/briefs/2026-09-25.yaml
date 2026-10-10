@@ -176,7 +176,7 @@ references:
     supports: Logics-Parsing-V3 的 0.8B 模型定位、跨页结构状态、长文档解析方式、输出格式与官方 benchmark 描述。
     accessedAt: '2026-09-25'
   - id: nvidia-nemotron-diarization
-    title: Know Who Spoke When: Build Real-Time, Multi-Speaker AI with NVIDIA Nemotron 3 Diarization
+    title: "Know Who Spoke When: Build Real-Time, Multi-Speaker AI with NVIDIA Nemotron 3 Diarization"
     url: https://huggingface.co/blog/nvidia/nemotron-diarization
     supports: Nemotron 3 Diarization 的模型规模、八说话者支持、流式缓存、延迟配置、DER 结果和部署限制。
     accessedAt: '2026-09-25'
