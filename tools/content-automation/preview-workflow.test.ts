@@ -56,4 +56,8 @@ assert.doesNotMatch(workflow, /id-token:\s*write/)
 // Keep dependency-free trusted gate regressions in the existing validate/build chain.
 execFileSync(process.execPath, ['--test', 'tools/content-automation/daily-auto-merge.test.mjs'], { stdio: 'inherit' })
 
+
+// Exercise the trusted publisher's bounded cache-propagation wait with fake time.
+await import('./preview-smoke.test.ts')
+
 console.log('Scheduled Daily and correction PR Preview workflow contract passed')
