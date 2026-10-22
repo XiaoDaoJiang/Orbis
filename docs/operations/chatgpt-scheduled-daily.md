@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This runbook covers the first Orbis Scheduled Daily provider adapter: the existing ChatGPT Scheduled Task named `Agent 前沿资讯`.
+This runbook covers the first Orbis Scheduled Daily provider adapter: the existing ChatGPT Scheduled Task named `Orbis AI Frontier Daily`.
 
 The provider adapter is intentionally thin. Repository contracts remain authoritative.
 
@@ -57,6 +57,22 @@ Inspect in this order:
 8. Trusted Preview publish/public smoke.
 
 Do not resolve failures by expanding the task's repository or production authority.
+
+### Separate discovery, production, integration and publication
+
+- **Feed Discovery:** inspect `Orbis Feed Discovery Snapshot` and `runtime/feed-discovery/latest.json`. Workflow success proves snapshot refresh only. Check snapshot age (at most six hours at producer execution), `meetsMinimumFeeds`, non-empty items, per-feed transport and raw RSS status; inspect extracted links as well as counts.
+- **Scheduled Producer:** inspect the existing ChatGPT task's enabled state, next run and recorded result. A task marked `completed` can still contain an Orbis `failed` outcome. Compare the result run ID and timestamps with the recorded run before attributing a failure. A working GitHub connector in an interactive conversation does not prove availability in Scheduled Runtime.
+- **Candidate / PR:** inspect the exact deterministic branch, its target file and all PR states for that head. A committed candidate without a PR narrows the gap to after commit / before PR completion; it does not prove which transport request failed. Preserve it until ownership and current preflight state are verified.
+- **Integration:** inspect individual Preview Publish jobs. A successful public preview and gate can coexist with a failed native Auto Merge request. Re-read the PR's merged state, exact head and merge commit before diagnosing a publication failure; another actor can merge while the request is in flight.
+- **Publication:** inspect the exact merged-main SHA's Site Build and Pages Promote jobs, including deployed-route smoke checks. A YAML `status: published` alone is not deployment evidence.
+
+### Recovery after a paused or transport-blocked producer
+
+Open the existing `Orbis AI Frontier Daily` task and its linked run conversation. Check the pause state and the actual run result; provider metadata may not expose who paused it, why, or the full historical execution trace. If unavailable, request those records from the task owner rather than infer a historical cause from GitHub alone.
+
+Before resuming the existing task, confirm its Scheduled Runtime can read the current repository contracts and snapshot and has the required branch/file/PR transport operations. Do not infer this from an interactive run or start a second scheduler.
+
+Once runtime capability is restored, resolve a fresh explicit Asia/Shanghai `targetDate` and repeat normal preflight. Do not automatically backfill a gap, overwrite an old candidate, or regenerate a published Daily. Any preserved orphan candidate needs explicit review under its original identity.
 
 ## Disable / pause
 
