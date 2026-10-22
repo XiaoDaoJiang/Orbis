@@ -45,6 +45,24 @@ assert.equal(atomItems.length, 1)
 assert.equal(atomItems[0].url, 'https://atom.example/posts/1')
 assert.deepEqual(atomItems[0].externalLinks, ['https://docs.example/spec'])
 
+// RSS descriptions and Atom HTML may XML-escape the HTML instead of using CDATA.
+// Decode the XML envelope before reading attributes or stripping HTML, exactly once.
+const html = '<p>Read <a href="https://primary.example/release?a=1&amp;b=2">the release</a>.</p>'
+  + '<p>Literal &lt;keep&gt;; see https://docs.example/spec</p>'
+  + '<a href="https://feed.example/internal">internal</a>'
+const escapedHtml = html.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+for (const content of [`<![CDATA[${html}]]>`, escapedHtml]) {
+  for (const [tag, envelope] of [
+    ['description', (body: string) => `<rss><channel><item><title>Item</title><link>https://feed.example/items/1</link><pubDate>2026-09-11T01:00:00Z</pubDate>${body}</item></channel></rss>`],
+    ['content:encoded', (body: string) => `<rss><channel><item><title>Item</title><link>https://feed.example/items/1</link><pubDate>2026-09-11T01:00:00Z</pubDate>${body}</item></channel></rss>`],
+    ['summary', (body: string) => `<feed><entry><title>Item</title><link href="https://feed.example/items/1"/><updated>2026-09-11T01:00:00Z</updated>${body}</entry></feed>`],
+  ] as const) {
+    const [item] = parseFeedXml(envelope(`<${tag}>${content}</${tag}>`), 'encoded-html', 'https://feed.example/rss.xml')
+    assert.deepEqual(item.externalLinks, ['https://primary.example/release?a=1&b=2', 'https://docs.example/spec'])
+    assert.equal(item.summary, 'Read the release . Literal <keep>; see https://docs.example/spec internal')
+  }
+}
+
 function response(body: string, status = 200, contentType = 'application/rss+xml'): Response {
   return new Response(body, { status, headers: { 'content-type': contentType } })
 }

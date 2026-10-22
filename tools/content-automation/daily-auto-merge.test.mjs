@@ -245,3 +245,25 @@ test('native merge error is not reported as success', async () => {
   f.options.merge = async () => { throw new Error('permission-denied') }
   await assert.rejects(f.execute(), /permission-denied/); assert.equal(f.state.writes.at(-1).state, 'error')
 })
+
+test('concurrent merge of the exact head is confirmed after native merge reports an error', async () => {
+  const f = fixture('merge'); f.state.statuses = [copy(proof)]
+  f.options.merge = async () => {
+    f.state.pr.state = 'closed'; f.state.pr.merged = true; f.state.pr.merge_commit_sha = mainSha
+    throw new Error('Pull Request is not mergeable')
+  }
+  assert.deepEqual(await f.execute(), { eligible: true, reason: 'merged', pr: 60, sha, mergeSha: mainSha })
+  assert.equal(f.state.writes.length, 0, 'A confirmed concurrent merge must not overwrite the trusted preview proof with an error')
+})
+
+for (const [name, mutate] of [
+  ['closed without merge', p => { p.state = 'closed' }],
+  ['different merged head', p => { p.head.sha = mainSha; p.merged = true; p.merge_commit_sha = mainSha }],
+  ['missing merge SHA', p => { p.merged = true }],
+  ['only auto-merge armed', p => { p.auto_merge = { merge_method: 'squash' } }],
+]) test(`native merge error still fails closed: ${name}`, async () => {
+  const f = fixture('merge'); f.state.statuses = [copy(proof)]
+  f.options.merge = async () => { mutate(f.state.pr); throw new Error('native-merge-failed') }
+  await assert.rejects(f.execute(), /native-merge-failed/)
+  assert.equal(f.state.writes.at(-1).state, 'error')
+})

@@ -168,9 +168,20 @@ export async function runGate({ mode, event, api, env = {}, merge = () => { thro
       await post('failure', 'main-moved')
       return result(false, 'main-moved')
     }
-    await merge(number, sha)
+    let mergeError
+    try {
+      await merge(number, sha)
+    } catch (error) {
+      // Another actor may merge this exact head while the native request is in flight.
+      // Reconcile with GitHub before replacing a successful preview proof with error.
+      mergeError = error
+    }
     const after = await api(`/pulls/${number}`)
-    if (after.merged === true) return result(true, 'merged', { pr: number, sha, mergeSha: after.merge_commit_sha })
+    if (after.head?.sha === sha && after.merged === true && shaPattern.test(after.merge_commit_sha ?? '')) {
+      return result(true, 'merged', { pr: number, sha, mergeSha: after.merge_commit_sha })
+    }
+    if (mergeError) throw mergeError
+    if (after.head?.sha !== sha) throw new Error('merge-result-head-moved')
     if (after.auto_merge) return result(true, 'auto-merge-enabled', { pr: number, sha })
     throw new Error('merge-result-unconfirmed')
   } catch (error) {
