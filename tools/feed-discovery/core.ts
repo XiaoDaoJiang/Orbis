@@ -370,7 +370,7 @@ function parseRssItem(block: string, feedId: string, sourceUrl: string): Omit<Di
   const publishedAt = normalizeDate(textFromTag(block, ['pubDate', 'date', 'published', 'updated']))
   if (!url || !publishedAt) return undefined
 
-  const contentRaw = rawFromTag(block, ['encoded', 'description', 'content']) ?? ''
+  const contentRaw = rawFromTag(block, ['encoded', 'description', 'content'], true) ?? ''
   const title = textFromTag(block, ['title']) || url
   const summary = stripMarkup(contentRaw).slice(0, 1200) || undefined
 
@@ -389,7 +389,7 @@ function parseAtomEntry(block: string, feedId: string, sourceUrl: string): Omit<
   const publishedAt = normalizeDate(textFromTag(block, ['published', 'updated', 'date']))
   if (!url || !publishedAt) return undefined
 
-  const contentRaw = rawFromTag(block, ['content', 'summary']) ?? ''
+  const contentRaw = rawFromTag(block, ['content', 'summary'], true) ?? ''
   const title = textFromTag(block, ['title']) || url
 
   return {
@@ -426,7 +426,7 @@ function extractBlocks(xml: string, localName: string): string[] {
   return [...xml.matchAll(pattern)].map((match) => match[1])
 }
 
-function rawFromTag(xml: string, localNames: string[]): string | undefined {
+function rawFromTag(xml: string, localNames: string[], decodeXml = false): string | undefined {
   for (const localName of localNames) {
     const name = escapeRegExp(localName)
     const pattern = new RegExp(
@@ -434,7 +434,12 @@ function rawFromTag(xml: string, localNames: string[]): string | undefined {
       'i',
     )
     const match = xml.match(pattern)
-    if (match) return unwrapCdata(match[1]).trim()
+    if (match) {
+      // Escaped HTML has an XML envelope; CDATA already contains the HTML bytes.
+      // Preserve HTML entities until attributes/text are parsed at the next layer.
+      const value = decodeXml && !match[1].includes('<![CDATA[') ? decodeEntities(match[1]) : unwrapCdata(match[1])
+      return value.trim()
+    }
   }
   return undefined
 }
