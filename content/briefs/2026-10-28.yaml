@@ -1,0 +1,204 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-10-28",
+  "status": "published",
+  "title": "Agent 工程正从任务成功转向可交付、可隔离、可跨语言验证",
+  "summary": "FrontierCode 2.0 把编码 Agent 评测推向真实合并质量；MAI Cyber 1.1 Flash 展示专用安全模型与 Harness 的系统级成本优化；BabelArena 揭示多语言 Agent 的工具调用差距；Cloudflare 的 KV cache 事件说明长上下文租户隔离也是 Runtime 正确性的一部分。Cursor Design Mode 则把视觉反馈纳入编码 Agent 修改循环。",
+  "topics": [
+    "agent-harness",
+    "coding-agent"
+  ],
+  "signals": [
+    {
+      "title": "Coding Agent 评测正转向可合并质量",
+      "summary": "FrontierCode 2.0 扩大任务规模并提高正确性要求；Cursor 视觉标注把运行中界面的反馈带回代码修改循环。",
+      "impact": "high"
+    },
+    {
+      "title": "专用模型要按完整 Harness 衡量",
+      "summary": "Microsoft 报告 MAI Cyber 1.1 Flash 在内部 MDASH 评测中每次扫描成本降低 18%。",
+      "impact": "high"
+    },
+    {
+      "title": "多语言 Agent 差距会表现为工具与控制流错误",
+      "summary": "BabelArena 扩展到 23 种语言，并报告低资源语言的工具使用与语言一致性问题。",
+      "impact": "high"
+    },
+    {
+      "title": "KV cache 隔离必须纳入长上下文测试",
+      "summary": "Cloudflare 披露的 GLM-5.3 事件显示，缓存配置与超长请求缺陷曾让少量响应混入其他请求数据。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coding-agent-evaluation",
+      "layout": "metrics",
+      "title": "Coding Agent Benchmark 正把合并质量纳入验收",
+      "conclusion": "真实工程任务还要求理解隐含约束、控制改动范围并维持设计一致性；评测应以可审查交付质量而不只是任务通过率为门槛。",
+      "facts": [
+        {
+          "id": "frontiercode-scope",
+          "text": "Cognition 于 2026-10-27 发布 FrontierCode 2.0，扩展仓库和任务类别，纳入安全补丁与性能优化，并提高正确性和设计要求。",
+          "evidence": [
+            "cognition-frontiercode-2"
+          ]
+        },
+        {
+          "id": "frontiercode-scale",
+          "text": "相较 FrontierCode 1.1，参考解答平均修改文件数增加 67%、代码行数增加 89%，代码库规模增加 25%；最高模型得分为 45.5%。",
+          "evidence": [
+            "cognition-frontiercode-2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "visual-feedback-ui-agents",
+      "layout": "architecture",
+      "title": "视觉标注让 UI 需求变成带上下文的修改指令",
+      "conclusion": "把选中位置、截图和注释一起交给 Agent，可缩短需求表达与代码定位距离，但仍需运行时验证。",
+      "facts": [
+        {
+          "id": "cursor-annotate",
+          "text": "Cursor Design Mode 可标注运行中应用的元素、区域或文字，并将目标上下文和截图随注释传给 Agent。",
+          "evidence": [
+            "cursor-design-mode-docs"
+          ]
+        },
+        {
+          "id": "cursor-version",
+          "text": "Cursor 官方文档注明，Annotate 在 Cursor 3.24.18 或更新版本中可用。",
+          "evidence": [
+            "cursor-design-mode-docs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "security-model-harness",
+      "layout": "system-map",
+      "title": "安全扫描的优化单位是模型、数据与 Harness",
+      "conclusion": "漏洞扫描由模型、工具流程、安全数据和策略共同决定；成本与质量应按完整工作流衡量。",
+      "facts": [
+        {
+          "id": "mai-cyber-cost",
+          "text": "Microsoft AI 于 2026-10-27 发布 MAI Cyber 1.1 Flash，并称内部 MDASH 评测中每次扫描成本降低 18%，表现与上一版本相近。",
+          "evidence": [
+            "microsoft-mai-cyber-11"
+          ]
+        },
+        {
+          "id": "mai-cyber-mdash",
+          "text": "Microsoft 将 MDASH 描述为结合专用安全模型、安全数据与多 Agent 漏洞识别和修复 Harness 的系统。",
+          "evidence": [
+            "microsoft-mai-cyber-11"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "multilingual-agent-parity",
+      "layout": "comparison",
+      "title": "多语言 Agent 评测必须覆盖工具、环境和评分器",
+      "conclusion": "语言变化会影响工具参数、环境文本和评分流程；只翻译用户提示会把任务差异误当成模型能力差异。",
+      "facts": [
+        {
+          "id": "babelarena-scale",
+          "text": "BabelArena 汇总 699 个规范任务、13 个领域，扩展到 23 种语言和 16,077 个实例，并保留一致的任务身份与评估标准。",
+          "evidence": [
+            "qwen-babelarena"
+          ]
+        },
+        {
+          "id": "babelarena-gap",
+          "text": "BabelArena 报告低资源语言的工具使用和控制流错误更多，输入 token 最多约为英语的两倍，也更容易切换回英语。",
+          "evidence": [
+            "qwen-babelarena"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inference-tenant-isolation",
+      "layout": "architecture",
+      "title": "KV Cache 状态边界是多租户推理安全的一部分",
+      "conclusion": "缓存池、超长请求拒绝路径和 prefill/decode 状态交接必须一起测试，避免读取其他请求遗留的缓存。",
+      "facts": [
+        {
+          "id": "cloudflare-impact",
+          "text": "Cloudflare 于 2026-10-26 披露，GLM-5.3 Workers AI 有 155 个响应受跨请求数据暴露影响，相关提示均超过 681,280 tokens；未发现蓄意利用证据。",
+          "evidence": [
+            "cloudflare-kv-cache-report"
+          ]
+        },
+        {
+          "id": "cloudflare-cause",
+          "text": "上下文窗口为 1,048,576 tokens，而 prefill GPU 的 KV cache 池仅容纳 681,280 tokens；超长请求处理缺陷使 decode 阶段可能使用先前请求的缓存页。",
+          "evidence": [
+            "cloudflare-kv-cache-report"
+          ]
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立可合并性基准",
+      "description": "从真实仓库抽取任务，评分覆盖正确性、设计、隐含约束、改动范围、安全和性能，并记录成本与人工返工。"
+    },
+    {
+      "title": "增加多语言工具调用回归",
+      "description": "固定任务身份与评分器，覆盖工具参数、环境文本和模拟用户语言，测量成功率、token 消耗与语言一致性。"
+    },
+    {
+      "title": "执行长上下文租户隔离测试",
+      "description": "覆盖 KV cache 容量边界、超长请求拒绝、prefill/decode 交接与并发请求，并用跨租户 canary 验证响应隔离。"
+    }
+  ],
+  "references": [
+    {
+      "id": "cognition-frontiercode-2",
+      "title": "FrontierCode 2.0",
+      "url": "https://cognition.com/blog/frontier-code-2.0",
+      "supports": "任务覆盖、mergeability Rubric、任务规模和官方评分结果。",
+      "accessedAt": "2026-10-28"
+    },
+    {
+      "id": "cursor-design-mode-docs",
+      "title": "Design Mode | Cursor Docs",
+      "url": "https://cursor.com/docs/agent/design-mode",
+      "supports": "运行中应用标注、截图上下文传递和 Annotate 版本要求。",
+      "accessedAt": "2026-10-28"
+    },
+    {
+      "id": "microsoft-mai-cyber-11",
+      "title": "MAI Cyber 1.1 Flash: Sharper findings and fewer tokens inside MDASH",
+      "url": "https://microsoft.ai/news/mai-cyber-1-1-flash/",
+      "supports": "内部扫描成本结果及专用模型与 MDASH Harness 的组合方式。",
+      "accessedAt": "2026-10-28"
+    },
+    {
+      "id": "qwen-babelarena",
+      "title": "BabelArena: A Large-Scale Multilingual Benchmark for LLM Agents",
+      "url": "https://github.com/QwenLM/BabelArena",
+      "supports": "任务数量、语言覆盖和低资源语言评测结果。",
+      "accessedAt": "2026-10-28"
+    },
+    {
+      "id": "cloudflare-kv-cache-report",
+      "title": "Cross-request KV cache exposure in the GLM-5.3 Workers AI model, and our remediation with SGLang",
+      "url": "https://blog.cloudflare.com/kv-cache-exposure-remediation",
+      "supports": "跨请求 KV cache 暴露事件的影响范围、根因和时间线。",
+      "accessedAt": "2026-10-28"
+    }
+  ],
+  "archivePicks": [],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
