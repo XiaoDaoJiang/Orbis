@@ -60,6 +60,13 @@
           "evidence": [
             "flashprove-report"
           ]
+        },
+        {
+          "id": "flashprove-maintenance-status",
+          "text": "Anthropic 的 GitHub 仓库将 FlashProve 标注为研究原型、未维护且不接受贡献，因此更适合作为密码学推理验证的技术样例，而非直接采用的生产依赖。",
+          "evidence": [
+            "flashprove-repo"
+          ]
         }
       ],
       "limitations": [
@@ -301,6 +308,14 @@
       "title": "WeVisOne-VL: Unified Visual Perception from Objects to Pixels",
       "url": "https://tencent.github.io/WeVisOne-VL/",
       "supports": "视觉任务范围、pixel decoder 架构、训练规模和项目方 benchmark 报告。",
+      "accessedAt": "2026-11-04"
+    },
+    {
+      "id": "flashprove-repo",
+      "title": "Anthropic FlashProve research prototype repository",
+      "url": "https://github.com/anthropics/FlashProve",
+      "source": "github",
+      "supports": "仓库将 FlashProve 标注为研究原型、未维护且不接受贡献。",
       "accessedAt": "2026-11-04"
     }
   ],
