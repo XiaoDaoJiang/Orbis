@@ -1,0 +1,313 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-04",
+  "status": "published",
+  "title": "Agent 进入可验证执行阶段：推理证明、身份委派、运行时安全与真实任务评测补齐信任链",
+  "summary": "Anthropic 的 FlashProve 探索用零知识证明验证推理是否符合承诺的模型权重；Claude Enterprise Managed Auth 与 MiniMax BYOB Table 将组织身份和跨 Agent 行动授权纳入协议；OpenAI 推进真实生活工作流评测与生成时 activation probes；腾讯 WeVisOne-VL 将视觉理解扩展到坐标、分割和像素级结果。Agent 工程正从能调用工具转向谁在执行、执行了什么、如何证明和评估。",
+  "topics": [
+    "agent-harness",
+    "coding-agent",
+    "mcp"
+  ],
+  "signals": [
+    {
+      "title": "模型推理开始具备可独立验证的密码学证明路径",
+      "summary": "FlashProve 将模型权重承诺与推理证明组合，让客户端检查输出是否符合指定模型计算；但当前证明成本和覆盖范围仍有限。",
+      "impact": "high"
+    },
+    {
+      "title": "Agent 连接与协作协议显式表达身份和行动授权",
+      "summary": "Enterprise Managed Auth 将组织身份映射为 MCP 访问令牌；BYOB Table 将签名能力卡、所有者审批和执行回执纳入多 Agent 协作。",
+      "impact": "high"
+    },
+    {
+      "title": "Agent 评测从聊天质量转向真实工作流完成度",
+      "summary": "LifeVal 以照护、财务、教育、购物和政府服务等日常任务衡量个人 Agent 的行动能力，强调完成工作流而不只是生成建议。",
+      "impact": "high"
+    },
+    {
+      "title": "运行时安全与视觉感知向结构化能力下沉",
+      "summary": "Activation probes 在生成中逐 token 监测潜在违规行为；WeVisOne-VL 以统一输出覆盖定位、OCR、分割和 matting。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "provable-model-inference",
+      "layout": "architecture",
+      "title": "推理来源验证开始从服务商声明走向可验证计算",
+      "conclusion": "模型托管场景不仅需要知道服务商声称运行了哪个模型，还需要验证输出是否来自预先承诺的权重。零知识推理证明提供了新方向，但当前成本更适合高价值或抽样审计场景。",
+      "facts": [
+        {
+          "id": "flashprove-zk",
+          "text": "FlashProve 使用零知识简洁证明验证推理结果符合模型权重承诺，同时不泄露权重；其技术报告描述了基于哈希的协议，并将安全分析形式化到 Lean。",
+          "evidence": [
+            "flashprove-report"
+          ]
+        },
+        {
+          "id": "flashprove-demo",
+          "text": "技术报告展示对 400B 参数 Llama 4 Maverick 的实验：单张 H100、24 个 CPU 核、232 GB 主机内存；每个 1,024-token 请求窗口只证明提示后的一个 greedy token。",
+          "evidence": [
+            "flashprove-report"
+          ]
+        },
+        {
+          "id": "flashprove-cost",
+          "text": "报告中的 24 请求批次约需 223 秒、每份证明约 18.78 MB；按 GPU 计算，证明过程约比普通 prefill 慢 72 倍。",
+          "evidence": [
+            "flashprove-report"
+          ]
+        }
+      ],
+      "limitations": [
+        "FlashProve 是未维护的研究原型；证明输出符合指定权重计算，不代表回答在语义上真实或正确。",
+        "当前演示只验证指定 token 的 greedy 选择，不等于整段生成或工具执行链的端到端证明。"
+      ]
+    },
+    {
+      "id": "agent-identity-governance",
+      "layout": "system-map",
+      "title": "MCP 身份委派与多 Agent 协作把所有权变成协议字段",
+      "conclusion": "Agent 连接还需回答组织如何授予身份、机器人能代表谁行动、能力范围由谁批准，以及跨 Agent 副作用如何留下记录。Claude 与 BYOB 分别从身份断言和行动账本切入。",
+      "facts": [
+        {
+          "id": "claude-ema-jwt",
+          "text": "Claude Enterprise Managed Auth 允许组织通过 IdP 或 Claude 签发的 JWT 身份断言授权 MCP connector；授权服务器验证 issuer、audience、client_id、过期时间和 jti 后再签发访问令牌。",
+          "evidence": [
+            "claude-ema"
+          ]
+        },
+        {
+          "id": "claude-ema-plan",
+          "text": "Anthropic 文档说明 Enterprise Managed Auth 面向 Claude Team 与 Enterprise；IdP-managed 已普遍可用，Claude-issued 方式仍处于 beta。",
+          "evidence": [
+            "claude-ema"
+          ]
+        },
+        {
+          "id": "byob-approval",
+          "text": "MiniMax BYOB Table Protocol v0.1 使用 append-only ledger、所有者签名 capability cards 和拓扑策略；Agent 提议、受影响所有者批准、所有者自己的 Agent 执行、另一个 seat 验证。",
+          "evidence": [
+            "minimax-byob"
+          ]
+        }
+      ],
+      "limitations": [
+        "免交互 OAuth 不等于免授权，connector 服务端仍须正确验证 JWT。",
+        "BYOB 是早期 v0.1 参考实现，协议设计值得研究，但生产成熟度尚待验证。"
+      ]
+    },
+    {
+      "id": "real-world-agent-evaluation",
+      "layout": "metrics",
+      "title": "个人 Agent 的评测单位从回答转向跨工具工作流",
+      "conclusion": "真实个人助理任务涉及多步骤检索、比较、规划和外部操作；单轮回答正确率会漏掉工具执行、状态维护、约束遵循和交付确认。",
+      "facts": [
+        {
+          "id": "lifeval-survey",
+          "text": "OpenAI LifeVal 以美国和国际时间使用调查为基础，并补充覆盖 3,995 名受访者的代表性调查，识别个人助理最值得协助的日常任务。",
+          "evidence": [
+            "openai-lifeval"
+          ]
+        },
+        {
+          "id": "lifeval-domains",
+          "text": "LifeVal 覆盖照护、健康、教育、家庭事务、个人财务、购物和政府服务，强调用户需要的不只是建议或聊天回复，而是实际完成任务。",
+          "evidence": [
+            "openai-lifeval"
+          ]
+        }
+      ],
+      "limitations": [
+        "LifeVal 由 OpenAI 构建并用于跟踪自家模型进展，结果应结合任务分布和独立复测理解。",
+        "完成率还需与授权、外部副作用正确性、失败恢复和人工接管成本一起衡量。"
+      ]
+    },
+    {
+      "id": "generation-time-safety",
+      "layout": "architecture",
+      "title": "安全控制开始进入生成循环，而不只在输入和输出端过滤",
+      "conclusion": "对具备工具调用能力的 Agent，事后扫描完整回复可能太晚。基于模型内部 activation 的 probes 能在生成中途介入，但需要针对模型版本持续训练。",
+      "facts": [
+        {
+          "id": "activation-streaming",
+          "text": "OpenAI 报告其部署 activation classifiers，利用模型内部 activations 逐 token 监测生成，可中途打断回复、阻止工具调用，或暂停生成交由推理模型审查。",
+          "evidence": [
+            "openai-activation"
+          ]
+        },
+        {
+          "id": "activation-jailbreak",
+          "text": "OpenAI 表示，在其测试中 probes 对已测试 jailbreak 的鲁棒性高于文本分类器，并能跨多个 post-training checkpoint 迁移。",
+          "evidence": [
+            "openai-activation"
+          ]
+        },
+        {
+          "id": "activation-limits",
+          "text": "该方法依赖被监测模型的内部 activations，监督信号只能覆盖明确训练过的行为；更换基础模型或权重变化后可能需要重新训练。",
+          "evidence": [
+            "openai-activation"
+          ]
+        }
+      ],
+      "limitations": [
+        "Activation probes 不能替代最小权限、工具沙箱、外部策略检查和事后审计。",
+        "实际效果取决于训练覆盖、模型版本和阈值，仍需针对真实工具调用回归。"
+      ]
+    },
+    {
+      "id": "fine-grained-visual-perception",
+      "layout": "comparison",
+      "title": "视觉模型把像素级感知变成 Agent 可消费的结构化接口",
+      "conclusion": "UI 操作、视觉检索和具身任务需要坐标、区域和像素级对象。WeVisOne-VL 将目标定位、OCR、分割和 matting 统一到结构化输出，有机会减少语言模型与专用视觉工具之间的接口转换。",
+      "facts": [
+        {
+          "id": "wevisone-tasks",
+          "text": "腾讯 WeChat Vision 的 WeVisOne-VL 支持目标检测、指代表达定位、计数、pointing、OCR、分割和 matting，可按需求输出点、框、mask 或 alpha matte。",
+          "evidence": [
+            "wevisone"
+          ]
+        },
+        {
+          "id": "wevisone-architecture",
+          "text": "项目页介绍其通过特殊 OBJ token 接入 9.6M 参数 pixel decoder，并以约 100M 张图像训练，报告在 30 多个 object-level 与 pixel-level benchmark 上领先。",
+          "evidence": [
+            "wevisone"
+          ]
+        }
+      ],
+      "limitations": [
+        "30 多项 benchmark 的领先表现来自项目方报告，应在目标图像分布和真实交互任务上独立复测。",
+        "模型部署仍需核对显存、分辨率、依赖和推理吞吐。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "READ",
+      "name": "FlashProve",
+      "summary": "研究零知识证明如何绑定模型权重与推理输出；仓库标注为未维护研究原型。",
+      "maturity": "experimental",
+      "url": "https://github.com/anthropics/FlashProve"
+    },
+    {
+      "action": "TEST",
+      "name": "BYOB Table Protocol",
+      "summary": "试验 append-only ledger、签名能力卡、owner approval 与 MCP 多 Agent 协作边界。",
+      "maturity": "experimental",
+      "url": "https://github.com/MiniMax-AI/mcode-agent-table"
+    },
+    {
+      "action": "TEST",
+      "name": "WeVisOne-VL",
+      "summary": "评估坐标定位、OCR、分割和 matting 输出能否直接驱动 UI 与视觉 Agent 工具。",
+      "maturity": "early",
+      "url": "https://tencent.github.io/WeVisOne-VL/"
+    }
+  ],
+  "radar": [
+    {
+      "label": "Provable inference",
+      "impact": 94,
+      "horizon": 18,
+      "note": "高保证模型服务需要验证权重承诺和推理输出，但当前证明成本较高。"
+    },
+    {
+      "label": "Enterprise agent identity",
+      "impact": 92,
+      "horizon": 6,
+      "note": "组织身份继承和工具授权将成为 MCP connector 的基础设施。"
+    },
+    {
+      "label": "Real-world agent evaluation",
+      "impact": 96,
+      "horizon": 4,
+      "note": "工作流完成度比单轮回答质量更接近个人 Agent 的真实价值。"
+    },
+    {
+      "label": "Generation-time safety probes",
+      "impact": 98,
+      "horizon": 3,
+      "note": "在工具调用前中断危险生成可降低外部副作用风险。"
+    },
+    {
+      "label": "Structured visual perception",
+      "impact": 86,
+      "horizon": 8,
+      "note": "坐标与像素级输出能让视觉模型更直接进入工具执行链。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "为关键模型调用设计推理 provenance",
+      "description": "在高价值场景记录模型版本、权重承诺、请求与响应摘要，评估抽样证明的成本和验证延迟。"
+    },
+    {
+      "title": "把 MCP 身份和工具权限分开建模",
+      "description": "分别定义用户身份、组织身份、connector token、agent capability 与每次外部副作用的审批者。"
+    },
+    {
+      "title": "用真实工作流替代单轮问答评测",
+      "description": "选取跨系统任务，记录成功率、步骤数、工具错误、用户确认点、失败恢复和人工接管成本。"
+    },
+    {
+      "title": "建立生成时安全与视觉结构输出回归",
+      "description": "测试 tool-call 中断策略、probe 漏报/误报，以及点框、OCR、mask 输出在真实 UI 操作中的定位准确率。"
+    }
+  ],
+  "references": [
+    {
+      "id": "flashprove-report",
+      "title": "FlashProve: an open-source library for provable inference",
+      "url": "https://www.anthropic.com/document/flashprove-technical-report",
+      "supports": "零知识推理证明、权重承诺、400B 模型实验设置、证明大小与性能成本。",
+      "accessedAt": "2026-11-04"
+    },
+    {
+      "id": "claude-ema",
+      "title": "Enterprise Managed Auth for connectors",
+      "url": "https://claude.com/docs/connectors/building/enterprise-managed-auth",
+      "supports": "MCP connector 的企业身份断言、JWT 验证步骤与适用计划。",
+      "accessedAt": "2026-11-04"
+    },
+    {
+      "id": "minimax-byob",
+      "title": "BYOB Table Protocol",
+      "url": "https://github.com/MiniMax-AI/mcode-agent-table",
+      "source": "github",
+      "supports": "append-only ledger、签名 capability cards、owner approval、执行与验证分工。",
+      "accessedAt": "2026-11-04"
+    },
+    {
+      "id": "openai-lifeval",
+      "title": "LifeVal",
+      "url": "https://openai.com/index/lifeval/",
+      "supports": "日常任务评测的调查来源、任务领域和个人 Agent 行动能力定位。",
+      "accessedAt": "2026-11-04"
+    },
+    {
+      "id": "openai-activation",
+      "title": "Training activation classifiers for safety and alignment",
+      "url": "https://alignment.openai.com/training-activation-classifiers/",
+      "supports": "activation probes 的逐 token 监测、工具调用拦截、实验观察与模型版本限制。",
+      "accessedAt": "2026-11-04"
+    },
+    {
+      "id": "wevisone",
+      "title": "WeVisOne-VL: Unified Visual Perception from Objects to Pixels",
+      "url": "https://tencent.github.io/WeVisOne-VL/",
+      "supports": "视觉任务范围、pixel decoder 架构、训练规模和项目方 benchmark 报告。",
+      "accessedAt": "2026-11-04"
+    }
+  ],
+  "archivePicks": [],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
