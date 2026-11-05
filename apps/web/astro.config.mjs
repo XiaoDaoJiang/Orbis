@@ -22,6 +22,12 @@ export default defineConfig({
   base,
   cacheDir,
   output: 'static',
+  markdown: {
+    shikiConfig: {
+      themes: { light: 'github-light', dark: 'github-dark' },
+      defaultColor: false,
+    },
+  },
   experimental: {
     incrementalBuild: true,
   },

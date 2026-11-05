@@ -9,10 +9,13 @@ import {
   sortDiscoveryNewestFirst,
   toBriefDiscoveryItem,
   toEssayDiscoveryItem,
+  toKnowledgeDiscoveryItem,
+  getRelatedContent,
 } from '../lib/content-discovery'
 import { buildWebSiteJsonLd } from '../lib/json-ld'
 import { buildPublicPresentations } from '../lib/presentation-discovery'
 import { webSiteConfig } from '../lib/site-config'
+import { buildKnowledgeLifecycleViews } from '../lib/knowledge-lifecycle'
 
 const [briefEntries, essayEntries, knowledgeEntries, topicEntries, presentationEntries, nativePresentationEntries] = await Promise.all([
   getCollection('briefs'),
@@ -46,115 +49,89 @@ const latestBrief = briefs[0]
 const latestEssay = essays[0]
 const latestPresentation = presentations[0]
 const jsonLd = buildWebSiteJsonLd(webSiteConfig)
+
+const topicNames = new Map(topics.map((topic) => [topic.id, topic.data.name]))
+const knowledge = knowledgeEntries.filter(isPublicKnowledge).map((entry) => toKnowledgeDiscoveryItem(entry, base))
+const related = latestBrief ? [
+  ...getRelatedContent(latestBrief, essays, 1),
+  ...getRelatedContent(latestBrief, knowledge, 1),
+] : []
+const relatedIds = new Set(related.map((entry) => `${entry.kind}:${entry.id}`))
+const lifecycle = new Map(buildKnowledgeLifecycleViews(knowledgeEntries.map((entry) => ({
+  id: entry.id, status: entry.data.status, reviewAt: entry.data.reviewAt, supersededBy: entry.data.supersededBy,
+}))).map((view) => [view.id, view]))
+const sharedTopics = (entry: { topics: string[] }) => entry.topics.filter((topic) => latestBrief?.topics.includes(topic)).map((topic) => topicNames.get(topic) ?? topic)
+const reviewLabel = (id: string) => {
+  const view = lifecycle.get(id)
+  if (!view?.reviewAt) return '持续维护 · 未设复查日期'
+  const label = view.reviewHealth === 'overdue' ? '复查已到期' : view.reviewHealth === 'due-soon' ? '即将复查' : '计划复查'
+  return `${label} · ${view.reviewAt}`
+}
 ---
 <BaseLayout jsonLd={jsonLd}>
-  <section class="hero">
-    <div>
-      <div class="eyebrow">Essays · Briefs · Slides · Knowledge</div>
-      <h1>ORBIS</h1>
-      <p class="lead">Git-native、Agent-native 的结构化技术知识发布系统：从研究与信号出发，持续形成可阅读、可演示、可聚合、可归档的长期知识。</p>
-      <div class="discovery-links hero-actions" aria-label="Primary discovery links">
-        <a class="pill" href={`${base}/archive/`}>Browse Archive</a>
-        <a class="pill" href={`${base}/briefs/daily/`}>Daily Briefs</a>
-        <a class="pill" href={`${base}/slides/`}>Presentations</a>
-        <a class="pill" href={`${base}/rss.xml`}>RSS</a>
-      </div>
-    </div>
-    <div class="starburst" aria-hidden="true"></div>
-  </section>
-
-  {latestBrief && (
-    <section class="home-section" data-home-section="latest-brief">
-      <div class="section-title"><h2>Latest Brief</h2><a href={`${base}/briefs/`}>All briefs →</a></div>
-      <article class="home-feature" data-home-id={`brief:${latestBrief.id}`}>
-        <div>
-          <small>Brief · {latestBrief.cadence} · {latestBrief.publishedAt}</small>
-          <h3><a href={latestBrief.href}>{latestBrief.title}</a></h3>
-          <p>{latestBrief.summary}</p>
-          <div class="pills">{latestBrief.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
-        </div>
-        <div class="home-feature-actions">
-          <a href={latestBrief.href}>Read →</a>
-          {latestBrief.presentationHref && <a href={latestBrief.presentationHref}>Slides →</a>}
+  {latestBrief ? (
+    <section class="orbital-hero" data-home-section="latest-brief">
+      <article class="issue-lead" data-home-id={`brief:${latestBrief.id}`}>
+        <div class="issue-meta"><span>{latestBrief.publishedAt}</span><span>{latestBrief.cadence}</span><span>本期信号</span></div>
+        <h1>{latestBrief.title}</h1>
+        <p class="lead issue-summary">{latestBrief.summary}</p>
+        <div class="discovery-links hero-actions">
+          <a class="button button-primary" href={latestBrief.href}>阅读本期 <span aria-hidden="true">→</span></a>
+          {latestBrief.presentationHref && <a class="button button-quiet" href={latestBrief.presentationHref}>演示版 <span aria-hidden="true">↗</span></a>}
         </div>
       </article>
+      <aside class="issue-context" aria-label="本期主题">
+        <div class="orbit-illustration" aria-hidden="true"></div>
+        <div class="context-caption"><span class="eyebrow">本期主题</span><p>从信号出发，沿主题深入。</p></div>
+        <div class="topic-links">{latestBrief.topics.filter((id) => topicNames.has(id)).map((id) => <a href={`${base}/topics/${id}/`}>{topicNames.get(id)}</a>)}</div>
+      </aside>
     </section>
-  )}
+  ) : <section><h1>Orbis</h1><p class="lead">从信号出发，沿主题深入。</p><a class="button button-primary" href={`${base}/archive/`}>浏览全部内容</a></section>}
 
-  {latestEssay && (
-    <section class="home-section" data-home-section="latest-essay">
-      <div class="section-title"><h2>Latest Essay</h2><a href={`${base}/essays/`}>All essays →</a></div>
-      <article class="home-feature" data-home-id={`essay:${latestEssay.id}`}>
-        <div>
-          <small>Essay · {latestEssay.publishedAt}</small>
-          <h3><a href={latestEssay.href}>{latestEssay.title}</a></h3>
-          <p>{latestEssay.summary}</p>
-          <div class="pills">{latestEssay.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
-        </div>
-        <div class="home-feature-actions"><a href={latestEssay.href}>Read →</a></div>
-      </article>
-    </section>
-  )}
-
-  {latestPresentation && (
-    <section class="home-section" data-home-section="latest-presentation">
-      <div class="section-title"><h2>Latest Presentation</h2><a href={`${base}/slides/`}>All presentations →</a></div>
-      <article class="home-feature home-feature-presentation" data-home-id={`presentation:${latestPresentation.id}`} data-presentation-source={latestPresentation.sourceKind}>
-        <div>
-          <small>
-            {latestPresentation.sourceKind === 'brief'
-              ? `Brief presentation · ${latestPresentation.cadence} · ${latestPresentation.publishedAt}`
-              : latestPresentation.sourceKind === 'native'
-                ? `Native Slidev · ${latestPresentation.publishedAt}`
-                : `Standalone presentation · ${latestPresentation.publishedAt}`}
-          </small>
-          <h3><a href={latestPresentation.presentationHref}>{latestPresentation.title}</a></h3>
-          <p>{latestPresentation.summary}</p>
-        </div>
-        <div class="home-feature-actions">
-          <a href={latestPresentation.presentationHref}>Open Slides →</a>
-          {latestPresentation.readingHref && <a href={latestPresentation.readingHref}>Reading →</a>}
-        </div>
-      </article>
-    </section>
-  )}
-
-  <section class="home-section" data-home-section="knowledge-updates">
-    <div class="section-title"><h2>Knowledge Updates</h2><a href={`${base}/knowledge/`}>All knowledge →</a></div>
-    {knowledgeUpdates.length > 0 ? (
-      <div class="grid home-knowledge-grid">
-        {knowledgeUpdates.map((entry) => (
-          <a class="card" data-home-id={`knowledge:${entry.id}`} href={`${base}/knowledge/${entry.id}/`}>
-            <small>Knowledge · updated {entry.data.updatedAt ?? entry.data.publishedAt}</small>
-            <h3>{entry.data.title}</h3>
-            <p>{entry.data.summary}</p>
-          </a>
-        ))}
-      </div>
-    ) : (
-      <div class="empty-state">No public Knowledge entries yet.</div>
-    )}
-  </section>
-
-  <section class="home-section" data-home-section="active-topics">
-    <div class="section-title"><h2>Active Topics</h2><a href={`${base}/topics/`}>{topics.length} topics →</a></div>
-    <div class="pills home-topics">
-      {topics.map((topic) => (
-        <a class="pill" data-home-topic={topic.id} href={`${base}/topics/${topic.id}/`}>{topic.data.name}</a>
-      ))}
+  {related.length > 0 && <section class="reading-path" aria-labelledby="reading-path-title">
+    <div class="section-title"><h2 id="reading-path-title">沿主题深入</h2><span>按共同主题关联</span></div>
+    <div class="reading-entries">
+      {related.map((item) => <article class="reading-entry" data-home-id={`${item.kind}:${item.id}`} data-home-section={item.kind === 'essay' ? 'latest-essay' : 'knowledge-updates'} data-related-topics={sharedTopics(item).join(', ')}>
+        <div class="entry-meta"><span>{item.kind}</span><time datetime={item.publishedAt}>{item.publishedAt}</time></div>
+        <div><h3><a href={item.href}>{item.title}</a></h3><p>{item.summary}</p><div class="entry-relation">共同主题：{sharedTopics(item).join(' · ')}</div>{item.kind === 'knowledge' && <p class="review-note">{reviewLabel(item.id)}</p>}</div>
+      </article>)}
     </div>
+  </section>}
+
+  {latestEssay && !relatedIds.has(`essay:${latestEssay.id}`) && <section data-home-section="latest-essay" class="recent-writing">
+    <div class="section-title"><h2>最近的长文</h2><a href={`${base}/essays/`}>全部 Essays</a></div>
+    <article class="reading-entry" data-home-id={`essay:${latestEssay.id}`}><div class="entry-meta">Essay · {latestEssay.publishedAt}</div><div><h3><a href={latestEssay.href}>{latestEssay.title}</a></h3><p>{latestEssay.summary}</p></div></article>
+  </section>}
+
+  <section class="orbis-map" data-home-section="explore" aria-labelledby="orbis-map-title">
+    <div class="section-title"><h2 id="orbis-map-title">信号不是终点</h2><span>Orbis · 有来源的阅读，持续维护的知识</span></div>
+    <div class="content-paths">
+      <a href={`${base}/briefs/`}><small>01 / Briefs</small><h3>观察信号</h3><p>从 Daily 与 Weekly 进入事实、判断和引用。</p></a>
+      <a href={`${base}/essays/`}><small>02 / Essays</small><h3>展开思考</h3><p>围绕一个问题，读完整的论述与上下文。</p></a>
+      <a href={`${base}/knowledge/`}><small>03 / Knowledge</small><h3>持续复查</h3><p>知识有维护状态、复查日期，也可能被更新替代。</p></a>
+    </div>
+    <div class="map-footnote"><span>沿时间观察，围绕主题连接。</span><div><a href={`${base}/briefs/daily/`}>Daily</a><a href={`${base}/briefs/weekly/`}>Weekly</a><a href={`${base}/archive/`}>完整档案</a></div></div>
   </section>
 
-  <section class="home-section" data-home-section="explore">
-    <div class="section-title"><h2>Explore Orbis</h2><span>Find the right entry point</span></div>
-    <div class="explore-grid">
-      <a class="explore-card" href={`${base}/archive/`}><strong>Archive</strong><span>按类型、cadence 与 Topic 浏览全部公开内容。</span></a>
-      <a class="explore-card" href={`${base}/slides/`}><strong>Slides</strong><span>进入全部已发布演示。</span></a>
-      <a class="explore-card" href={`${base}/briefs/daily/`}><strong>Daily</strong><span>按时间浏览 Daily Brief。</span></a>
-      <a class="explore-card" href={`${base}/briefs/weekly/`}><strong>Weekly</strong><span>稳定的 Weekly 发现入口。</span></a>
-      <a class="explore-card" href={`${base}/essays/`}><strong>Essays</strong><span>阅读深度技术写作。</span></a>
-      <a class="explore-card" href={`${base}/knowledge/`}><strong>Knowledge</strong><span>进入长期维护的知识条目。</span></a>
-      <a class="explore-card" href={`${base}/rss.xml`}><strong>RSS</strong><span>通过标准阅读器订阅公开更新。</span></a>
-    </div>
-  </section>
+  <div class="home-index">
+    <section data-home-section="active-topics">
+      <div class="section-title"><h2>主题是连接</h2><a href={`${base}/topics/`}>全部 Topics</a></div>
+      <p class="index-note">跨越不同内容形式，继续追踪同一个问题。</p>
+      <div class="topic-index">{topics.map((topic) => <a data-home-topic={topic.id} href={`${base}/topics/${topic.id}/`}><strong>{topic.data.name}</strong><span>{topic.data.description}</span></a>)}</div>
+    </section>
+    <section data-home-section="latest-presentation">
+      <div class="section-title"><h2>另一种表达</h2><a href={`${base}/slides/`}>全部 Slides</a></div>
+      {latestPresentation && <article class="presentation-note" data-home-id={`presentation:${latestPresentation.id}`} data-presentation-source={latestPresentation.sourceKind}>
+        <small>{latestPresentation.sourceKind === 'brief' ? 'Brief presentation' : latestPresentation.sourceKind === 'native' ? 'Native Slidev' : 'Standalone presentation'} · {latestPresentation.publishedAt}</small>
+        <h3><a href={latestPresentation.presentationHref}>{latestPresentation.title}</a></h3>
+        <p>{latestPresentation.sourceKind === 'brief' ? '同一份内容，切换为演示视图。' : latestPresentation.summary}</p>
+        <div class="link-row"><a href={latestPresentation.presentationHref}>打开演示</a>{latestPresentation.readingHref && <a href={latestPresentation.readingHref}>阅读原文</a>}</div>
+      </article>}
+    </section>
+  </div>
+
+  {knowledgeUpdates.some((entry) => !relatedIds.has(`knowledge:${entry.id}`)) && <section data-home-section="knowledge-updates">
+    <div class="section-title"><h2>知识维护</h2><a href={`${base}/knowledge/`}>全部 Knowledge</a></div>
+    {knowledgeUpdates.filter((entry) => !relatedIds.has(`knowledge:${entry.id}`)).map((entry) => <article class="reading-entry" data-home-id={`knowledge:${entry.id}`}><div class="entry-meta">Knowledge<br />{reviewLabel(entry.id)}</div><div><h3><a href={`${base}/knowledge/${entry.id}/`}>{entry.data.title}</a></h3><p>{entry.data.summary}</p></div></article>)}
+  </section>}
 </BaseLayout>

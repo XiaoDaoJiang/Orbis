@@ -24,7 +24,7 @@ const entries = sortDiscoveryNewestFirst(
     {entries.map((entry) => (
       <a class="card" href={entry.href}>
         <small>{entry.cadence} · {entry.publishedAt}</small>
-        <h3>{entry.title}</h3>
+        <h2>{entry.title}</h2>
         <p>{entry.summary}</p>
       </a>
     ))}

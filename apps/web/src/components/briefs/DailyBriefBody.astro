@@ -21,6 +21,17 @@ const referenceById = new Map(evidenceBrief?.references.map((reference) => [refe
 const corrections = evidenceBrief ? buildCorrectionHistory(evidenceBrief) : []
 const latestCorrection = evidenceBrief ? resolveLatestCorrection(evidenceBrief) : undefined
 ---
+<nav class="reading-toc" aria-label="文章目录">
+  <details>
+    <summary>本篇导航 <span>{brief.sections.length + 3} 个章节 · Contents</span></summary>
+    <ol>
+      <li><a href="#daily-signals">Four signals</a></li>
+      {brief.sections.map((section) => <li><a href={`#section-${section.id}`}>{section.title}</a></li>)}
+      <li><a href="#daily-actions">From signals to action</a></li>
+      <li><a href="#daily-references">References</a></li>
+    </ol>
+  </details>
+</nav>
 <div class="article-body">
   {latestCorrection && (
     <aside class="correction-notice" data-evidence-correction data-correction-count={corrections.length}>
@@ -39,11 +50,11 @@ const latestCorrection = evidenceBrief ? resolveLatestCorrection(evidenceBrief) 
     </aside>
   )}
 
-  <h2>Four signals</h2>
+  <h2 id="daily-signals">Four signals</h2>
   <ul class="signal-list">{brief.signals.map((signal) => <li><strong>{signal.title}</strong><p>{signal.summary}</p></li>)}</ul>
   {brief.sections.map((section) => (
     <section>
-      <h2>{section.title}</h2>
+      <h2 id={`section-${section.id}`}>{section.title}</h2>
       <p><strong>{section.conclusion}</strong></p>
       <ul>{section.facts.map((fact) => typeof fact === 'string'
         ? <li>{fact}</li>
@@ -70,7 +81,7 @@ const latestCorrection = evidenceBrief ? resolveLatestCorrection(evidenceBrief) 
     </section>
   ))}
 
-  <h2>From signals to action</h2>
+  <h2 id="daily-actions">From signals to action</h2>
   <ul class="action-list">{brief.actions.map((action) => <li><strong>{action.title}</strong><p>{action.description}</p></li>)}</ul>
 
   {corrections.length > 0 && (
@@ -95,6 +106,6 @@ const latestCorrection = evidenceBrief ? resolveLatestCorrection(evidenceBrief) 
     </section>
   )}
 
-  <h2>References</h2>
+  <h2 id="daily-references">References</h2>
   <ReferenceList references={brief.references} sourceIndex={sourceIndex} />
 </div>

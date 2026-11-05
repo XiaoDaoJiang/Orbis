@@ -1,5 +1,8 @@
 ---
 import '@orbis/design-tokens/tokens.css'
+import '@orbis/design-tokens/appearance.css'
+import { appearanceBootstrap } from '@orbis/design-tokens/appearance'
+import AppearanceControl from '../components/AppearanceControl.astro'
 import '../styles/global.css'
 import { serializeJsonLd, type JsonLdValue } from '../lib/json-ld'
 import { buildSeoMetadata } from '../lib/seo'
@@ -25,6 +28,11 @@ const {
 } = Astro.props
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const href = (path: string) => `${base}${path}`
+const navigation = [
+  ['Essays', '/essays/'], ['Briefs', '/briefs/'], ['Slides', '/slides/'],
+  ['Topics', '/topics/'], ['Knowledge', '/knowledge/'], ['Archive', '/archive/'],
+]
+const currentPath = Astro.url.pathname.replace(new RegExp(`^${base}(?=/|$)`), '') || '/'
 const seo = await buildSeoMetadata({
   pathname: Astro.url.pathname,
   runtimeBase: import.meta.env.BASE_URL,
@@ -40,6 +48,7 @@ const seo = await buildSeoMetadata({
 <html lang={seo.locale}>
   <head>
     <meta charset="utf-8" />
+    <script is:inline set:html={appearanceBootstrap}></script>
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={seo.description} />
     <meta name="robots" content={seo.robots} />
@@ -61,22 +70,21 @@ const seo = await buildSeoMetadata({
     <title>{title === 'Orbis' ? title : `${title} · Orbis`}</title>
   </head>
   <body>
+    <a class="skip-link" href="#main-content">跳至主要内容</a>
     <header class="site-header">
-      <a class="wordmark" href={href('/')}>ORBIS</a>
+      <div class="brand-lockup"><a class="wordmark" href={href('/')} aria-label="Orbis 首页">ORBIS<span class="wordmark-dot" aria-hidden="true">.</span></a><span class="brand-edition">轨道笔记<span>Orbital Notes</span></span></div>
       <nav aria-label="主导航">
-        <a href={href('/essays/')}>Essays</a>
-        <a href={href('/briefs/')}>Briefs</a>
-        <a href={href('/slides/')}>Slides</a>
-        <a href={href('/topics/')}>Topics</a>
-        <a href={href('/knowledge/')}>Knowledge</a>
-        <a href={href('/archive/')}>Archive</a>
-        <a href={href('/rss.xml')}>RSS</a>
+        {navigation.map(([label, path]) => (
+          <a href={href(path)} aria-current={currentPath.startsWith(path) ? 'page' : undefined}>{label}</a>
+        ))}
+        <a class="nav-rss" href={href('/rss.xml')} aria-label="通过 RSS 订阅">RSS <span aria-hidden="true">↗</span></a>
       </nav>
+      <AppearanceControl />
     </header>
-    <main><slot /></main>
+    <main id="main-content" tabindex="-1"><slot /></main>
     <footer>
-      <span>Orbis · Signals, systems and durable knowledge.</span>
-      <a href={href('/rss.xml')}>Subscribe via RSS</a>
+      <span><strong>ORBIS · 轨道笔记</strong><br />Signals, systems and durable knowledge.</span>
+      <div class="footer-links"><a href={href('/topics/')}>Topics</a><a href={href('/archive/')}>Archive</a><a href={href('/rss.xml')}>RSS</a></div>
     </footer>
   </body>
 </html>

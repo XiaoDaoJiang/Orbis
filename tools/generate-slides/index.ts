@@ -9,6 +9,7 @@ import {
 } from '../shared/presentation-scope.ts'
 import { discoverPresentationDescriptors } from './discover-presentations.ts'
 import { buildPresentationSeoManifest } from './presentation-seo.ts'
+import { renderPresentationAppearance } from './appearance.ts'
 
 const root = resolve(import.meta.dirname, '../..')
 const config = await loadSiteConfig()
@@ -33,7 +34,12 @@ for (const descriptor of selected) {
     await cp(resolve(root, descriptor.nativeSourceDir), directory, { recursive: true })
     await cp(resolve(root, 'apps/web/public/favicon.svg'), resolve(directory, 'favicon.svg'), { force: false })
   } else {
+    // Orbis appearance belongs only to generated templates. Native authors keep
+    // their own themes, styles, setup hooks and framework color preferences.
     await cp(resolve(root, 'apps/slides/style.css'), resolve(directory, 'style.css'))
+    await cp(resolve(root, 'apps/slides/setup'), resolve(directory, 'setup'), { recursive: true })
+    await cp(resolve(root, 'apps/slides/global-top.vue'), resolve(directory, 'global-top.vue'))
+    await writeFile(resolve(directory, 'index.html'), renderPresentationAppearance(descriptor), 'utf8')
     await cp(resolve(root, 'apps/slides/layouts'), resolve(directory, 'layouts'), { recursive: true })
     await writeFile(
       resolve(directory, 'slides.md'),
