@@ -34,7 +34,7 @@ export function renderDailyV1(brief: DailyBrief, context: DailyV1RenderContext) 
   const pages: string[] = []
   const favicon = `${context.siteBase}/favicon.svg`.replace(/^\/\//, '/')
 
-  pages.push(`---\ntheme: default\ntitle: ${JSON.stringify(brief.title)}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: light\naspectRatio: 16/9\nfavicon: ${JSON.stringify(favicon)}\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nhtmlAttrs:\n  lang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · ${brief.publishedAt}</div>\n\n# ${brief.title}\n\n${brief.summary}\n\n<a class="reading-link" href="${escapeHtml(context.readingHref)}">阅读版 ↗</a>\n`)
+  pages.push(`---\ntheme: default\ntitle: ${JSON.stringify(brief.title)}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: auto\naspectRatio: 16/9\nfavicon: ${JSON.stringify(favicon)}\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nlang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · ${brief.publishedAt}</div>\n\n# ${brief.title}\n\n${brief.summary}\n\n<a class="reading-link" href="${escapeHtml(context.readingHref)}">阅读版 ↗</a>\n`)
 
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">FOUR SIGNALS</div>\n\n## 四个关键信号\n\n<div class="signal-grid">\n${brief.signals.map((signal) => `<div class="signal-card"><h3>${escapeHtml(signal.title)}</h3><p>${escapeHtml(signal.summary)}</p><small>${signal.impact.toUpperCase()}</small></div>`).join('\n')}\n</div>\n`)
 

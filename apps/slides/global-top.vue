@@ -1,0 +1,40 @@
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
+
+type Appearance = 'light' | 'dark' | 'system'
+const appearance = () => (window as Window & {
+  orbisAppearance?: { get: () => Appearance; set: (mode: Appearance) => void }
+}).orbisAppearance
+const mode = ref<Appearance>('system')
+const ready = ref(false)
+const readingUrl = ref('')
+const sync = () => { mode.value = appearance()?.get() ?? 'system' }
+function change(event: Event) {
+  appearance()?.set((event.target as HTMLSelectElement).value as Appearance)
+  sync()
+}
+onMounted(() => {
+  readingUrl.value = document.querySelector<HTMLMetaElement>('meta[name="orbis:reading-url"]')?.content ?? ''
+  sync()
+  ready.value = Boolean(appearance())
+  window.addEventListener('orbis:appearance', sync)
+})
+onUnmounted(() => window.removeEventListener('orbis:appearance', sync))
+</script>
+
+<template>
+  <!-- Escape Slidev's scaled canvas so links and controls remain 44 CSS pixels. -->
+  <Teleport to="body">
+    <div v-if="ready || readingUrl" class="orbis-slide-tools">
+      <a v-if="readingUrl" :href="readingUrl" class="orbis-slide-reading" @keydown.stop>阅读版 ↗</a>
+      <label v-if="ready" class="orbis-slide-appearance">
+        <span>外观</span>
+        <select :value="mode" aria-label="演示外观" @change="change" @keydown.stop>
+          <option value="light">浅色</option>
+          <option value="dark">深色</option>
+          <option value="system">跟随设备</option>
+        </select>
+      </label>
+    </div>
+  </Teleport>
+</template>
