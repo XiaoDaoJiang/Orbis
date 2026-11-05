@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { parse } from 'yaml'
 
@@ -13,8 +15,8 @@ assert.ok(
 )
 assert.deepEqual(
   previewEvents,
-  ['opened', 'reopened', 'synchronize', 'ready_for_review'],
-  'PR Preview Build must refresh trusted preview after ready_for_review resets the Daily gate',
+  ['opened', 'reopened', 'synchronize', 'ready_for_review', 'edited'],
+  'PR Preview Build must refresh trusted preview after ready_for_review or edited resets the Daily gate',
 )
 
 assert.match(
@@ -54,10 +56,31 @@ assert.doesNotMatch(workflow, /pages:\s*write/)
 assert.doesNotMatch(workflow, /id-token:\s*write/)
 
 // Keep dependency-free trusted gate regressions in the existing validate/build chain.
-execFileSync(process.execPath, ['--test', 'tools/content-automation/daily-auto-merge.test.mjs'], { stdio: 'inherit' })
+execFileSync(process.execPath, ['--test', 'tools/content-automation/daily-automation-contract.test.mjs', 'tools/content-automation/daily-auto-merge.test.mjs'], { stdio: 'inherit' })
 
 
 // Exercise the trusted publisher's bounded cache-propagation wait with fake time.
 await import('./preview-smoke.test.ts')
 
 console.log('Scheduled Daily and correction PR Preview workflow contract passed')
+
+// Test each actual sparse checkout as an isolated, dependency-free Node runtime.
+// A full checkout can hide a missing transitive import in a privileged job.
+const publishWorkflow = parse(await readFile('.github/workflows/pr-preview-publish.yml', 'utf8'))
+for (const job of [gateWorkflow.jobs['initialize-gate'], publishWorkflow.jobs['verify-daily-gate'], publishWorkflow.jobs['auto-merge-daily']]) {
+  const checkout = job.steps.find((step: { uses?: string }) => step.uses?.startsWith('actions/checkout@'))
+  assert.equal(checkout.with.ref, 'refs/heads/main')
+  assert.equal(checkout.with['persist-credentials'], false)
+  const sparsePaths: string[] = checkout.with['sparse-checkout'].trim().split(/\r?\n/)
+  assert.ok(sparsePaths.includes('tools/content-automation/daily-automation-contract.mjs'))
+  const directory = await mkdtemp(join(tmpdir(), 'orbis-trusted-gate-'))
+  try {
+    for (const path of sparsePaths) {
+      const target = join(directory, path)
+      await mkdir(dirname(target), { recursive: true }); await copyFile(path, target)
+    }
+    execFileSync(process.execPath, ['--input-type=module', '-e',
+      "const { eligibility } = await import('./tools/content-automation/daily-auto-merge.mjs'); if (typeof eligibility !== 'function') process.exit(1)"],
+    { cwd: directory, stdio: 'inherit' })
+  } finally { await rm(directory, { recursive: true, force: true }) }
+}

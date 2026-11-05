@@ -63,3 +63,15 @@ assert.throws(
 )
 
 console.log('Scheduled Daily PR metadata contract passed')
+
+// Regression for #71: feed the actual producer output to the privileged consumer,
+// rather than recreating a marker string in the gate fixture.
+const { parseDailyAutomationReport } = await import('./daily-automation-contract.mjs')
+const { eligibility, policy } = await import('./daily-auto-merge.mjs')
+assert.deepEqual(parseDailyAutomationReport(rendered.body), report)
+assert.equal(eligibility({
+  number: 71, state: 'open', draft: false, merged: false, changed_files: 1,
+  body: rendered.body, user: { id: policy.producerIds[0] },
+  base: { ref: policy.baseBranch, repo: { id: policy.repositoryId } },
+  head: { ref: report.branch, sha: 'a'.repeat(40), repo: { id: policy.repositoryId } },
+}, [{ filename: report.contentPath, status: 'added' }]).eligible, true)

@@ -136,6 +136,7 @@ jobs:
           sparse-checkout: |
             config/daily-auto-merge.json
             tools/content-automation/daily-auto-merge.mjs
+            tools/content-automation/daily-automation-contract.mjs
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v6
         with:
@@ -169,6 +170,7 @@ jobs:
           sparse-checkout: |
             config/daily-auto-merge.json
             tools/content-automation/daily-auto-merge.mjs
+            tools/content-automation/daily-automation-contract.mjs
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v6
         with:

@@ -2,12 +2,19 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { eligibility, policy, previewMatches, requiredGateConfigured, runGate } from './daily-auto-merge.mjs'
+import { renderDailyAutomationPrMetadata } from './daily-automation-contract.mjs'
 
 const sha = 'a'.repeat(40)
 const mainSha = 'b'.repeat(40)
+const report = {
+  version: 1, kind: 'daily', targetDate: '2026-09-21', branch: 'automation/daily/2026-09-21',
+  contentPath: 'content/briefs/2026-09-21.yaml', outcome: 'candidate-created',
+  sourceCount: 8, primarySourceCount: 8, validation: 'not-run', fullBuild: 'not-run',
+  unverified: ['Producer did not run repository checks; trusted CI must validate this head.'],
+}
 const pr = {
   number: 60, state: 'open', draft: false, merged: false, changed_files: 1,
-  body: '<!-- orbis-content-automation:v1 -->', user: { id: 38294800 },
+  body: renderDailyAutomationPrMetadata(report).body, user: { id: 38294800 },
   base: { ref: 'main', repo: { id: policy.repositoryId } },
   head: { ref: 'automation/daily/2026-09-21', sha, repo: { id: policy.repositoryId } },
 }
@@ -266,4 +273,48 @@ for (const [name, mutate] of [
   f.options.merge = async () => { mutate(f.state.pr); throw new Error('native-merge-failed') }
   await assert.rejects(f.execute(), /native-merge-failed/)
   assert.equal(f.state.writes.at(-1).state, 'error')
+})
+
+for (const outcome of ['candidate-created', 'candidate-updated']) test(`canonical producer ${outcome} can qualify`, () => {
+  const p = { ...copy(pr), body: renderDailyAutomationPrMetadata({ ...report, outcome }).body }
+  assert.equal(eligibility(p, files).eligible, true)
+})
+for (const [name, body, expected] of [
+  ['bare marker', '<!-- orbis-content-automation:v1 -->', 'invalid-automation-report'],
+  ['malformed report', '<!-- orbis-content-automation:v1\n{broken}\n-->', 'invalid-automation-report'],
+  ['duplicate report', pr.body + '\n' + pr.body, 'invalid-automation-report'],
+  ['other valid date', renderDailyAutomationPrMetadata({ ...report, targetDate: '2026-09-22',
+    branch: 'automation/daily/2026-09-22', contentPath: 'content/briefs/2026-09-22.yaml' }).body, 'automation-report-identity-mismatch'],
+  ...['blocked', 'failed', 'already-published'].map(outcome => [outcome,
+    renderDailyAutomationPrMetadata({ ...report, outcome }).body, 'automation-report-not-ready']),
+  ...[{ validation: 'failed' }, { fullBuild: 'failed' }, { failureStage: 'verification' }].map(patch => [JSON.stringify(patch),
+    renderDailyAutomationPrMetadata({ ...report, ...patch }).body, 'automation-report-not-ready']),
+]) test(`reject unsafe metadata: ${name}`, async () => {
+  assert.equal(eligibility({ ...copy(pr), body }, files).reason, expected)
+  for (const mode of ['initialize', 'verify', 'merge']) {
+    const f = fixture(mode); f.state.pr.body = body; f.state.statuses = [copy(proof)]
+    assert.equal((await f.execute()).reason, expected)
+    assert.equal(f.state.writes.at(-1).state, 'failure')
+    assert.equal(f.state.merges.length, 0)
+  }
+})
+for (const [mode, read] of [['verify', 2], ['merge', 3]]) test(`report mutation at ${mode} reread fails closed`, async () => {
+  const f = fixture(mode); f.state.statuses = [copy(proof)]; const api = f.options.api; let reads = 0
+  f.options.api = async (...args) => {
+    if (args[0] === '/pulls/60' && ++reads === read) f.state.pr.body = '<!-- orbis-content-automation:v1 -->'
+    return api(...args)
+  }
+  assert.equal((await f.execute()).reason, 'invalid-automation-report')
+  assert.equal(f.state.writes.at(-1).state, 'failure'); assert.equal(f.state.merges.length, 0)
+})
+test('corrected metadata waits for a fresh preview after edited event', async () => {
+  const f = fixture('initialize'); f.state.pr.body = '<!-- orbis-content-automation:v1 -->'
+  assert.equal((await f.execute()).reason, 'invalid-automation-report')
+  f.state.pr.body = pr.body; f.options.event.action = 'edited'
+  assert.equal((await f.execute()).reason, 'waiting-for-current-trusted-preview')
+  assert.equal(f.state.writes.at(-1).state, 'pending'); assert.equal(f.state.merges.length, 0)
+  f.options.mode = 'verify'; f.options.env.GITHUB_EVENT_NAME = 'workflow_run'
+  f.state.run.id = 11; f.options.event.workflow_run = copy(f.state.run)
+  assert.equal((await f.execute()).reason, 'preview-verified')
+  assert.equal(f.state.writes.at(-1).state, 'success'); assert.equal(f.state.merges.length, 0)
 })
