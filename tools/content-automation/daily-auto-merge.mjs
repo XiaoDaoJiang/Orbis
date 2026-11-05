@@ -1,9 +1,9 @@
 import { appendFileSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
+import { parseDailyAutomationReport, resolveDailyTarget } from './daily-automation-contract.mjs'
 
 export const policy = JSON.parse(readFileSync(new URL('../../config/daily-auto-merge.json', import.meta.url), 'utf8'))
-const marker = '<!-- orbis-content-automation:v1 -->'
 const shaPattern = /^[a-f0-9]{40}$/
 const isDaily = pr => pr.head?.ref?.startsWith('automation/daily/') === true
 
@@ -12,15 +12,20 @@ export function eligibility(pr, files, repositoryPolicy = policy) {
   const no = reason => ({ eligible: false, reason })
   if (!isDaily(pr)) return no('manual-only')
   const date = /^automation\/daily\/(\d{4}-\d{2}-\d{2})$/.exec(pr.head.ref)?.[1]
-  const parsed = new Date(`${date}T00:00:00.000Z`)
-  if (!date || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) return no('invalid-date')
+  try { resolveDailyTarget(date) } catch { return no('invalid-date') }
   if (pr.base?.ref !== repositoryPolicy.baseBranch) return no('unexpected-base')
   if (pr.base?.repo?.id !== repositoryPolicy.repositoryId || pr.head?.repo?.id !== repositoryPolicy.repositoryId) return no('foreign-repository')
   if (pr.state !== 'open' || pr.merged) return no('pr-not-open')
   if (pr.draft !== false) return no('pr-is-draft')
   if (!repositoryPolicy.producerIds.includes(pr.user?.id)) return no('untrusted-producer')
   if (!shaPattern.test(pr.head.sha ?? '')) return no('invalid-head')
-  if (typeof pr.body !== 'string' || !pr.body.includes(marker)) return no('missing-automation-marker')
+  let report
+  try { report = parseDailyAutomationReport(pr.body) } catch { return no('invalid-automation-report') }
+  if (!report) return no('missing-automation-marker')
+  if (report.targetDate !== date || report.branch !== pr.head.ref
+    || report.contentPath !== `content/briefs/${date}.yaml`) return no('automation-report-identity-mismatch')
+  if (!['candidate-created', 'candidate-updated'].includes(report.outcome)
+    || report.failureStage || report.validation === 'failed' || report.fullBuild === 'failed') return no('automation-report-not-ready')
   if (pr.changed_files !== 1 || !Array.isArray(files) || files.length !== 1) return no('unexpected-file-count')
   const path = `content/briefs/${date}.yaml`
   if (files[0].filename !== path) return no('unexpected-file')

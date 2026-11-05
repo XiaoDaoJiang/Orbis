@@ -12,11 +12,36 @@ Scheduled Daily Producer 仍只创建/更新唯一 `automation/daily/YYYY-MM-DD`
 
 Preview 发布、状态验证、合并是隔离的 jobs。只有最后的合并 job 使用 `daily-auto-merge` Environment；该 job 不下载预览 artifact。缺少配置或权限时不回退默认 Token，不使用 `--admin`，不自动批准 Review。
 
+## 元数据合同与前置检查
+
+生产者与可信门禁共同使用无依赖的 `tools/content-automation/daily-automation-contract.mjs`。`pr-metadata.ts` 保留原有类型接口；所有 privileged jobs 只从 main 的 sparse checkout 加载共享合同，不安装依赖或执行 PR 代码。
+
+PR 正文必须有且仅有一个标准 `orbis-content-automation:v1` 多行 JSON 注释块，由 `renderDailyAutomationPrMetadata` 生成。空标记、分离的旧 `DailyAutomationReport:v1` 块、无效 JSON、重复块、未知版本/字段、缺字段及身份不一致均拒绝。不要手工补一个空标记绕过检查。旧格式候选需要用标准渲染器重新生成正文，并重新验证预览。
+
+每次资格判断及合并前重读都检查：
+
+1. 同仓库、目标 main、开放且非 Draft、可信生产者、有效 head SHA、唯一 Daily PR。
+2. 分支日期、报告 `targetDate` / `branch` / `contentPath` 一致；仅新增对应的一个 YAML，当前 main 不含同日文件。
+3. 报告通过共享 schema，outcome 为 `candidate-created` 或 `candidate-updated`，无 `failureStage`，validation/fullBuild 不得为 `failed`。生产者的 `not-run` 如实保留；必须由当前 head 的 GitHub Build、Daily guard 和可信预览证明检查通过，不能把自报 `passed` 当作授权。
+4. Preview Build 成功，源 workflow/repository/PR/head/branch/run/attempt 精确匹配；公网 provenance、RSS、favicon smoke 成功。
+5. `scheduled-daily-merge-gate` 的成功证明属于同一个 PR、head、run 和 attempt，发布者为 GitHub Actions；提交与 main 在检查期间未移动。
+6. main 有 PR 规则及两个绑定 GitHub Actions 的必需检查，仓库允许 Auto Merge 和 Squash；repository variable、Environment 和专用 Token 按下文配置。GitHub 仍执行讨论解决、review 和 Environment 审批要求。
+
+`opened`、`reopened`、`synchronize`、`ready_for_review`、`edited` 均触发 Preview Build。正文修复或目标分支编辑会重新构建，不会留下只有 pending 状态却没有预览事件的死锁。`converted_to_draft` 只关闭资格，不授权合并。
+
+### 2026-11-05 故障与验证边界
+
+[PR #71](https://github.com/XiaoDaoJiang/Orbis/pull/71) 的标准生产者正文包含 JSON 注释，但旧门禁只识别空注释。其 [Preview Build](https://github.com/XiaoDaoJiang/Orbis/actions/runs/41945654547) 与 [Trusted Publish / 公网 smoke](https://github.com/XiaoDaoJiang/Orbis/actions/runs/41946158648) 已通过，commit status 明确为 `missing-automation-marker`，合并 job 被跳过。工作流 job 自身绿色只代表策略成功执行，不代表 `eligible=true`；必须检查 head 上的 commit status 和输出 reason。
+
+当时核实 [main Ruleset](https://github.com/XiaoDaoJiang/Orbis/rules/21895300) 为 active，包含 `build-preview` 和 `scheduled-daily-merge-gate`，来源 integration ID 均为 `15368`，无 bypass，要求讨论解决；仓库 Auto Merge/Squash 开关开启。Token 有效性、变量值及 Environment 设置须由管理员或授权验收另行核实，代码测试不能证明这些配置。
+
+修复 PR 需要独立人工审查合并后才成为可信 main 策略。不要直接修改 #71、重跑其 Build/Publish 或开启 Auto Merge 来测试代码；这些动作可能立即合并并触发生产发布，必须先取得目标 PR 的明确授权。也不要将本地模拟的 merge 回调称为真实合并验收。
+
 ## 一次性启用顺序
 
 ### 1. 先合并基础设施 PR
 
-审查并合并 #59；新工作流只有进入 main 后才作为受信任策略运行。不要为此移除现有 `build-preview` 或讨论解决要求。此时 `ORBIS_DAILY_AUTO_MERGE` 尚未设为 `true`，不会自动合并内容。
+先审查基础设施/修复 PR；新工作流只有进入 main 后才作为受信任策略运行。首次启用源自 #59，后续修复同样需要审查。不要为此移除现有 `build-preview` 或讨论解决要求。首次启用时先不要将 `ORBIS_DAILY_AUTO_MERGE` 设为 `true`；已有运行环境不能假定开关关闭。
 
 ### 2. 让门禁生成真实状态，再加入 main Ruleset
 
@@ -57,7 +82,7 @@ gh api repos/XiaoDaoJiang/Orbis --jq '.allow_auto_merge'
 
 ## 验收与重试
 
-代码进入 main、设置就绪后，在 Actions 重跑目标 Daily PR 的 **Orbis PR Preview Build**，让其触发一个使用最新 main 合同的 Preview Publish。不要重跑合并 #59 之前创建的旧 Publish run 来验证新工作流，因为 rerun 使用原始运行版本。
+代码进入 main、设置就绪且已明确授权目标 Daily PR 自动合并后，在 Actions 重跑该 PR 的 **Orbis PR Preview Build**，让其触发一个使用最新 main 合同的 Preview Publish。不要重跑修复合并之前创建的旧 Publish run 来验证新工作流，因为 rerun 使用原始运行版本。此操作可能立即合并并经 main push 发布，不是只读测试。
 
 确认同一个 PR 的：新增 Daily 唯一文件 → Preview Build 成功 → 公网 `orbis-preview-provenance.json` 与本次 source SHA/run/attempt、publisher run/attempt 完全匹配 → SHA 上的门禁成功 → merge job 输出 `auto-merge-enabled` 或 `merged` → PR 最终 Merged → merge commit 对应的 main Site Build → Pages Promote / 公网验收成功。不要把 `auto-merge-enabled` 说成已经发布。
 
@@ -72,6 +97,10 @@ gh api repos/XiaoDaoJiang/Orbis --jq '.allow_auto_merge'
 | `stale-preview` / `head-moved` / `stale-run-attempt` | 旧结果不得授权新版本；等待或重跑当前 PR Build |
 | `daily-already-on-main` / `not-new-daily` | 不是新一期；不得自动进入修正流程 |
 | `preview-not-verified` | Build / Publish / 精确版本公网 smoke 不满足 |
+| `missing-automation-marker` | 没有标准自动化报告块；通过生产者渲染器生成正文 |
+| `invalid-automation-report` | 报告结构、版本、字段或唯一性不合法；不能靠补空标记放行 |
+| `automation-report-identity-mismatch` | 报告的日期/分支/路径不属于当前 PR |
+| `automation-report-not-ready` | 非候选 outcome、明确失败或带 failureStage；先修复根因 |
 | `missing-merge-token` | Environment Secret 未配置或未提供，不回退默认 Token |
 | `repository-auto-merge-unavailable` | 仓库 Auto Merge 或 Squash 开关未开启 |
 | `required-gates-not-configured` | 必需状态或 GitHub Actions 来源绑定未设置 |
@@ -93,12 +122,12 @@ gh pr merge <PR_NUMBER> --repo XiaoDaoJiang/Orbis --disable-auto
 ## 测试
 
 ```powershell
-node --test tools/content-automation/daily-auto-merge.test.mjs
+node --test tools/content-automation/daily-automation-contract.test.mjs tools/content-automation/daily-auto-merge.test.mjs
 pnpm test:content-automation
 pnpm build
 ```
 
-无依赖 Node 测试覆盖资格、分页数据、SHA/attempt/元数据并发、API 错误、同 SHA 多 PR、来源绑定、缺少凭据和配置、明确的 merge 结果及工作流权限合同。真实 Secret、Ruleset 与发布链只能通过上述端到端验收验证，不能由单元测试替代。
+无依赖 Node 测试覆盖 schema/解析/转义、真实生产者正文、资格、分页数据、SHA/attempt/元数据并发、API 错误、同 SHA 多 PR、来源绑定、缺少凭据和配置、明确的 merge 结果及工作流权限合同。`pr-metadata.test.ts` 覆盖生产者到消费者的真实交接；`preview-workflow.test.ts` 同时执行这些 Node 测试、事件合同、三个无依赖 sparse runtime 导入，以及公网 smoke 的假时钟回归。它们都经 `test:content-automation` 进入 `validate` / `build`。真实 Secret、Ruleset 与发布链只能通过上述获授权的端到端验收验证，不能由单元测试替代。
 
 ## 上游依据
 

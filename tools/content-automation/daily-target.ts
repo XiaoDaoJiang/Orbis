@@ -1,34 +1,7 @@
 import { evidenceDailyBriefSchema, type EvidenceDailyBrief } from '@orbis/content-schema'
-import type { DailyTarget } from './contracts.ts'
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-
-export function assertTargetDate(targetDate: string): string {
-  if (!DATE_PATTERN.test(targetDate)) {
-    throw new Error(`Invalid targetDate: expected YYYY-MM-DD, got ${targetDate || '<empty>'}`)
-  }
-
-  const [year, month, day] = targetDate.split('-').map(Number)
-  const value = new Date(Date.UTC(year, month - 1, day))
-  if (
-    value.getUTCFullYear() !== year
-    || value.getUTCMonth() !== month - 1
-    || value.getUTCDate() !== day
-  ) {
-    throw new Error(`Invalid targetDate calendar date: ${targetDate}`)
-  }
-
-  return targetDate
-}
-
-export function resolveDailyTarget(targetDate: string): DailyTarget {
-  const date = assertTargetDate(targetDate)
-  return {
-    targetDate: date,
-    contentPath: `content/briefs/${date}.yaml`,
-    branch: `automation/daily/${date}`,
-  }
-}
+import { assertTargetDate } from './daily-automation-contract.mjs'
+export { assertTargetDate, resolveDailyTarget } from './daily-automation-contract.mjs'
 
 export function assertDailyCandidateIdentity(targetDate: string, source: unknown): EvidenceDailyBrief {
   const date = assertTargetDate(targetDate)
