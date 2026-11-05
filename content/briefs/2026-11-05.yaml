@@ -1,0 +1,348 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-05",
+  "status": "published",
+  "title": "Agent 基础设施正转向可验证推理、轻量上下文与受控执行",
+  "summary": "Anthropic FlashProve 把模型身份验证推进到可运行的密码学研究原型，Claude message threads 则降低长会话往返负担；OpenAI Pando 显示多 Agent 并发会反向改变 Git 基础设施，activation classifiers 将执行中拦截纳入模型服务防线。WeVisOne-VL 提供从目标定位到像素级输出的开源视觉组件。工程重点是把可信、时延、隔离和可复现实验分开验证。",
+  "topics": [
+    "agent-harness",
+    "coding-agent"
+  ],
+  "signals": [
+    {
+      "title": "模型来源开始能被证明，但不能据此证明回答正确",
+      "summary": "Anthropic 发布 FlashProve 零知识推理证明研究原型，公开实现标注为不维护；身份可验证性不等于事实正确性或生产可用性。",
+      "impact": "high"
+    },
+    {
+      "title": "长上下文优化先减少传输，而非减少计费 Token",
+      "summary": "Claude Messages API 的 message threads 公测将历史保留在服务端以缩小后续请求；官方明确每轮仍读取完整会话，且不适用零数据保留。",
+      "impact": "high"
+    },
+    {
+      "title": "Agent 并发已进入 Git 存储与协商架构设计",
+      "summary": "OpenAI 公布 Pando 后端的分层 pack 压实与选择性 refs 广告策略，并报告内部中位 push 延迟下降近 80%。",
+      "impact": "high"
+    },
+    {
+      "title": "执行时安全监控和细粒度视觉感知成为独立组件",
+      "summary": "OpenAI 通过 activation probes 流式检测并阻断风险输出；腾讯 WeVisOne-VL 以结构化 token 和像素解码器统一定位、分割与抠图。",
+      "impact": "medium"
+    }
+  ],
+  "sections": [
+    {
+      "id": "provable-model-identity",
+      "layout": "architecture",
+      "title": "FlashProve 将模型身份承诺与推理结果绑定",
+      "conclusion": "对高信任模型路由场景，证明服务商实际使用的模型可以成为独立控制项；但原型的 GPU 开销、形式化覆盖与维护状态仍阻止直接生产化。",
+      "facts": [
+        {
+          "id": "flashprove-protocol",
+          "text": "Anthropic 于 2026-11-02 介绍 FlashProve：提供方对模型权重作加密承诺，并通过 zkSNARK 为指定模型推理结果生成可验证证明，避免公开模型权重。",
+          "evidence": [
+            "anthropic-provable-inference"
+          ]
+        },
+        {
+          "id": "flashprove-measurement",
+          "text": "Anthropic 报告：对 4-bit Llama 4 Maverick MoE，在单张 H100 上生成证明约 110 token/s，每个 1,024-token 请求证明约 19 MB；这仍比原生推理消耗约 70–95 倍 GPU 时间。",
+          "evidence": [
+            "anthropic-provable-inference"
+          ]
+        },
+        {
+          "id": "flashprove-prototype",
+          "text": "Anthropic 的 FlashProve GitHub 仓库将其标为 zero-knowledge inference 的 research prototype，并注明 Not maintained。",
+          "evidence": [
+            "github-flashprove"
+          ]
+        }
+      ],
+      "limitations": [
+        "证明计算符合被承诺模型的推理关系，不保证回答内容真实，也不覆盖完整服务链安全。",
+        "官方指出快速可执行代码与 Lean 形式化协议之间尚无完全一致性保证。"
+      ]
+    },
+    {
+      "id": "message-threads-transport",
+      "layout": "comparison",
+      "title": "Message threads 优化请求传输，而不是上下文语义",
+      "conclusion": "对持续活跃的 Agent loop，可将网络负载与首次 token 延迟单独优化；必须保留线程过期后的完整重放与数据治理策略。",
+      "facts": [
+        {
+          "id": "threads-api-beta",
+          "text": "Anthropic 于 2026-11-02 公布 Claude Messages API message threads 公测：首次请求上传历史，后续请求只发送新消息与前一次响应 ID。",
+          "evidence": [
+            "claude-message-threads-article",
+            "claude-message-threads-docs"
+          ]
+        },
+        {
+          "id": "threads-latency-measurement",
+          "text": "Anthropic 称在 Claude Code 的 500k–1M token 请求上，中位首 token 时间降低约 35%；服务端每轮仍读取完整会话，token 用量不因此下降。",
+          "evidence": [
+            "claude-message-threads-article"
+          ]
+        },
+        {
+          "id": "threads-retention-boundary",
+          "text": "官方文档规定线程空闲 5 分钟后过期、最后使用后至多 1 小时删除；message threads 不符合 Zero Data Retention 条件。",
+          "evidence": [
+            "claude-message-threads-docs"
+          ]
+        }
+      ],
+      "limitations": [
+        "35% 为厂商针对特定长上下文请求的观测，不可推广为所有 Agent 的延迟收益。",
+        "需要处理线程过期、续接失败、隐私合规与重新上传完整上下文。"
+      ]
+    },
+    {
+      "id": "agent-scale-git-backend",
+      "layout": "system-map",
+      "title": "Pando 把高并发 Git 读写变成可扩展服务",
+      "conclusion": "多 Agent 同时推送和拉取的瓶颈可能出现在 refs 协商、pack 复用和元数据一致性；可借鉴分层压实与确定性仿真，不必立即替换现有 Git 服务。",
+      "facts": [
+        {
+          "id": "pando-architecture",
+          "text": "OpenAI 于 2026-11-02 公开 Pando 架构：使用可复用 packfile、L0 到 L4 层级压实与选择性 refs 广告，应对海量分支及并发 Git 操作。",
+          "evidence": [
+            "openai-scaling-git"
+          ]
+        },
+        {
+          "id": "pando-production-result",
+          "text": "OpenAI 表示 Pando 已在其 monorepo 生产运行，中位 push 延迟降低近 80%，并改善合并可靠性；数据属于 OpenAI 自有生产环境。",
+          "evidence": [
+            "openai-scaling-git"
+          ]
+        },
+        {
+          "id": "pando-verification",
+          "text": "OpenAI 介绍 Pando 开发中使用 Git 行为一致性测试、确定性仿真，以及 Lean 和 TLA+ 形式化分析寻找并发与协商边界问题。",
+          "evidence": [
+            "openai-scaling-git"
+          ]
+        }
+      ],
+      "limitations": [
+        "Pando 的规模与收益来自单一组织的超大型 monorepo，不应直接推定普通 Git 托管场景也有同等提升。",
+        "开发者仍需评估实际 refs 规模、对象复用率、兼容性和迁移成本。"
+      ]
+    },
+    {
+      "id": "runtime-activation-safety",
+      "layout": "architecture",
+      "title": "安全护栏从文本后验分类推进到执行中监测",
+      "conclusion": "Agent Runtime 可借鉴流式、分层的风险拦截模型，尤其在工具调用之前配置独立决策点；probe 不是可取代策略控制的完整防线。",
+      "facts": [
+        {
+          "id": "probe-runtime-hook",
+          "text": "OpenAI 于 2026-11-02 披露其 activation classifiers 使用模型内部激活信号按 token 监控生成过程，可在生成中打断响应、阻止工具调用，并触发进一步审查。",
+          "evidence": [
+            "openai-activation-classifiers"
+          ]
+        },
+        {
+          "id": "probe-deployment",
+          "text": "OpenAI 说明自 GPT-5.6 起已在所有 assistant completions 上增加 activation classifiers，并在其测试中观察到对所测 jailbreak 的鲁棒性优于文本分类器。",
+          "evidence": [
+            "openai-activation-classifiers"
+          ]
+        },
+        {
+          "id": "probe-limitations",
+          "text": "OpenAI 指出 probes 依赖监督训练，只能识别已纳入训练的目标，且在更换基础模型或模型权重变化时可能需要重训。",
+          "evidence": [
+            "openai-activation-classifiers"
+          ]
+        }
+      ],
+      "limitations": [
+        "厂商测试不等于公开的跨模型安全保证，不能替代权限最小化、沙箱和人工审批。",
+        "第三方 Agent 应用通常无法直接访问托管模型内部激活值，需另设外部监控与工具执行网关。"
+      ]
+    },
+    {
+      "id": "visual-agent-perception",
+      "layout": "metrics",
+      "title": "WeVisOne-VL 将目标定位与像素感知收束进同一接口",
+      "conclusion": "视觉 Agent 可评估统一感知输出是否减少传统检测、分割和抠图串联误差；落地前应在自身截图、界面元素和拒答集上复测。",
+      "facts": [
+        {
+          "id": "wevisone-task-surface",
+          "text": "腾讯 WeChat Vision Team 的 WeVisOne-VL 项目支持检测、指代表达定位、计数、点选、OCR、分割和 alpha matting，公开 2B/4B 模型及推理示例。",
+          "evidence": [
+            "github-wevisone"
+          ]
+        },
+        {
+          "id": "wevisone-decoder",
+          "text": "项目 README 描述通过结构化坐标 token 与 9.6M 参数的像素解码器，输出目标框、mask 或 alpha matte；目标不存在时可返回 None。",
+          "evidence": [
+            "github-wevisone"
+          ]
+        },
+        {
+          "id": "wevisone-open-model",
+          "text": "腾讯在 Hugging Face 发布 WeVisOne-VL-4B 模型卡和权重，页面标识 Apache-2.0 许可。",
+          "evidence": [
+            "hf-wevisone"
+          ]
+        }
+      ],
+      "limitations": [
+        "模型 README 中的性能对比属于官方自报结果，不能视为独立复现。",
+        "官方 GitHub 新闻栏将技术报告、权重和代码发布标注为 2026-10，本期是由近期聚合来源重新发现，不应写成 11 月首次发布。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "READ",
+      "name": "anthropics/FlashProve",
+      "summary": "研读 zkSNARK 推理证明的信任边界及代价；原型仓库注明不维护。",
+      "maturity": "experimental",
+      "url": "https://github.com/anthropics/FlashProve"
+    },
+    {
+      "action": "TEST",
+      "name": "Tencent/WeVisOne-VL",
+      "summary": "对 UI 截图与物体缺失场景复测检测、分割、抠图及拒绝行为。",
+      "maturity": "early",
+      "url": "https://github.com/Tencent/WeVisOne-VL"
+    }
+  ],
+  "radar": [
+    {
+      "label": "长会话传输优化",
+      "impact": 84,
+      "horizon": 86,
+      "note": "API 公测可快速做上下文重放与延迟 A/B。"
+    },
+    {
+      "label": "工具调用前的安全门禁",
+      "impact": 90,
+      "horizon": 82,
+      "note": "可先用外部策略网关分层拦截，不依赖内部激活值。"
+    },
+    {
+      "label": "可证明模型身份",
+      "impact": 86,
+      "horizon": 32,
+      "note": "值得跟踪研究进展，证明生成开销仍高。"
+    },
+    {
+      "label": "高并发 Git 对象服务",
+      "impact": 74,
+      "horizon": 47,
+      "note": "先用仓库规模和 push/fetch 指标判断是否需要架构升级。"
+    },
+    {
+      "label": "统一视觉感知组件",
+      "impact": 70,
+      "horizon": 66,
+      "note": "适合先做工具级验收而非直接替换全部 CV 链路。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "基准化长 Agent 会话",
+      "description": "构造 100+ 轮包含 tool result 的 Agent loop，对比请求体积、TTFT、token 用量和过期重放错误；区分传输收益与推理成本。"
+    },
+    {
+      "title": "定义证据与执行双层审计",
+      "description": "将模型身份、事实证据、工具调用授权、执行日志设为独立审计字段；对 FlashProve 暂以研究验证而非生产背书。"
+    },
+    {
+      "title": "为 Agent 并发写入建立 Git 压测",
+      "description": "模拟多工作树并发 push/fetch，记录 refs 协商、合并冲突、幂等性与 packfile 传输时间，先找实际瓶颈。"
+    },
+    {
+      "title": "搭建视觉 Agent 任务回归集",
+      "description": "采集界面元素、遮挡、多目标及不存在目标案例，比较 WeVisOne-VL 的定位、mask、OCR 与拒绝输出。"
+    }
+  ],
+  "references": [
+    {
+      "id": "anthropic-provable-inference",
+      "title": "Anthropic Research — Progress on provable inference for large language models",
+      "url": "https://www.anthropic.com/research/provable-inference",
+      "supports": "FlashProve 方案、厂商报告的证明性能与原型限制。",
+      "accessedAt": "2026-11-05"
+    },
+    {
+      "id": "github-flashprove",
+      "title": "anthropics/FlashProve — source repository",
+      "url": "https://github.com/anthropics/FlashProve",
+      "source": "github",
+      "supports": "研究原型实现及官方仓库不维护声明。",
+      "accessedAt": "2026-11-05"
+    },
+    {
+      "id": "claude-message-threads-article",
+      "title": "Anthropic — Make long-running agents faster with message threads",
+      "url": "https://claude.com/resources/articles/message-threads",
+      "supports": "公测发布日期、传输方式、500k–1M token 场景的官方时延结果及计费边界。",
+      "accessedAt": "2026-11-05"
+    },
+    {
+      "id": "claude-message-threads-docs",
+      "title": "Claude Platform Docs — Message threads",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/message-threads",
+      "supports": "Beta API 合同、线程过期时效和 ZDR 数据治理限制。",
+      "accessedAt": "2026-11-05"
+    },
+    {
+      "id": "openai-scaling-git",
+      "title": "OpenAI Engineering — Scaling Git at OpenAI",
+      "url": "https://openai.com/index/scaling-git-at-openai/",
+      "supports": "Pando 架构、测试策略及内部生产 push 性能数据。",
+      "accessedAt": "2026-11-05"
+    },
+    {
+      "id": "openai-activation-classifiers",
+      "title": "OpenAI Alignment — Training activation classifiers for safety and alignment",
+      "url": "https://alignment.openai.com/training-activation-classifiers/",
+      "supports": "内部激活 probes 的运行机制、测试观测与训练依赖。",
+      "accessedAt": "2026-11-05"
+    },
+    {
+      "id": "github-wevisone",
+      "title": "Tencent/WeVisOne-VL — official repository",
+      "url": "https://github.com/Tencent/WeVisOne-VL",
+      "source": "github",
+      "supports": "官方源码、模型任务、轻量 decoder、发布月份及厂商评测。",
+      "accessedAt": "2026-11-05"
+    },
+    {
+      "id": "hf-wevisone",
+      "title": "Tencent — WeVisOne-VL-4B model card",
+      "url": "https://huggingface.co/tencent/WeVisOne-VL-4B",
+      "supports": "官方模型卡、可获取模型及许可元数据。",
+      "accessedAt": "2026-11-05"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-10-28 — Agent 工程可交付与验证",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-10-28.yaml",
+      "supports": "延伸比较 coding agent 评测、Harness 成本与 KV cache 隔离。",
+      "publishedAt": "2026-10-28"
+    },
+    {
+      "title": "Orbis · 2026-09-25 — Agent 工程的推理与感知瓶颈",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-09-25.yaml",
+      "supports": "回看推理预算、结构化感知和领域 Rubric 的长期工程权衡。",
+      "publishedAt": "2026-09-25"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
