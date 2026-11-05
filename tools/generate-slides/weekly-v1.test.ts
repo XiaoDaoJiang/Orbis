@@ -55,8 +55,8 @@ assert.equal(
 )
 
 const slideCount = (markdown.match(/^---$/gm) ?? []).length / 2
-assert.equal(slideCount, weekly.sections.length + 5, 'weekly-v1 slide count must equal sections + 5')
-assert.equal(slideCount, 8, 'Current real Weekly has 3 sections and must render exactly 8 slides')
+assert.ok(slideCount >= weekly.sections.length + 5, 'Weekly must retain every section and its distinct editorial stages')
+assert.ok(slideCount <= weekly.sections.length + 9, 'Focused Weekly cards should not create an excessive slide sequence')
 
 for (const marker of ['ORBIS · WEEKLY', 'WEEKLY THESIS', 'TREND MOVEMENTS', 'NEXT PERIOD WATCH', 'REFERENCES']) {
   assert.ok(markdown.includes(marker), `Weekly presentation must contain semantic marker: ${marker}`)
@@ -79,8 +79,10 @@ const maxWeekly = weeklyBriefSchema.parse({ ...weekly, sections: maxSections })
 
 const minMarkdown = weeklyRenderer.renderWeeklyV1(minWeekly, { siteBase, readingHref: readingUrl })
 const maxMarkdown = weeklyRenderer.renderWeeklyV1(maxWeekly, { siteBase, readingHref: readingUrl })
-assert.equal((minMarkdown.match(/^---$/gm) ?? []).length / 2, 7, 'Two Weekly sections must render 7 slides')
-assert.equal((maxMarkdown.match(/^---$/gm) ?? []).length / 2, 11, 'Six Weekly sections must render 11 slides')
+const minSlideCount = (minMarkdown.match(/^---$/gm) ?? []).length / 2
+const maxSlideCount = (maxMarkdown.match(/^---$/gm) ?? []).length / 2
+assert.ok(minSlideCount >= 7, 'Two Weekly sections must preserve all editorial stages')
+assert.equal(maxSlideCount - minSlideCount, 4, 'Four additional ordinary sections must add four focused conclusion pages')
 
 const unsafeWeekly = weeklyBriefSchema.parse({
   ...weekly,

@@ -235,7 +235,13 @@ for (const file of briefFiles) {
 
     if (brief.presentation.template === 'daily-v1') {
       const frontmatterMarkers = slideSource.match(/^---$/gm) ?? []
-      assert.equal(frontmatterMarkers.length, 22, `${slug} daily-v1 must contain exactly 11 slides`)
+      assert.equal(frontmatterMarkers.length % 2, 0, `${slug} must keep valid slide boundaries`)
+      assert.ok(frontmatterMarkers.length / 2 >= brief.sections.length + 4, `${slug} must preserve the Daily reading path while allowing focused pagination`)
+      for (const index of brief.sections.keys()) {
+        assert.ok(slideSource.includes(`data-content-id="section.${index}.conclusion"`), `${slug} must retain section ${index + 1}'s authored conclusion`)
+        assert.ok(slideSource.includes(`class="detail-limitations"`), `${slug} must retain an explicit limitations detail section`)
+      }
+      assert.match(slideSource, /<SlideDetails\b/, `${slug} must expose complete evidence outside the scaled canvas`)
       assert.match(slideSource, /FOUR SIGNALS/)
       assert.match(slideSource, /FROM SIGNALS TO ACTION/)
       assert.match(slideSource, /EXTENDED READING/)

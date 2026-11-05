@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useNav } from '@slidev/client'
+
+const { isPrintMode } = useNav()
+// Slidev 52 leaves html.print behind after SPA navigation away from /print.
+// Reconcile it with the public route state for generated decks only.
+watch(isPrintMode, (printing) => {
+  if (typeof document !== 'undefined') document.documentElement.classList.toggle('print', printing)
+}, { immediate: true, flush: 'post' })
 
 type Appearance = 'light' | 'dark' | 'system'
 const appearance = () => (window as Window & {

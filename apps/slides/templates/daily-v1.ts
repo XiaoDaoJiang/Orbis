@@ -1,58 +1,29 @@
 import type { DailyBrief } from '@orbis/content-schema'
+import { finishDeck, renderCover, renderCards, renderSection, renderReferences, page, escapeHtml, detailsMarkup, detailText, exportNotice, splitText, markedText } from './content-layout.ts'
 
-export type DailyV1RenderContext = {
-  siteBase: string
-  readingHref: string
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;')
-}
-
-function factText(fact: string | { text: string }) {
-  return typeof fact === 'string' ? fact : fact.text
-}
-
-function sectionPrimaryReferenceUrl(section: DailyBrief['sections'][number], brief: DailyBrief) {
-  if ('references' in section && Array.isArray(section.references)) {
-    return section.references[0]?.url ?? brief.references[0].url
-  }
-
-  const firstFact = section.facts[0]
-  if (!firstFact || typeof firstFact === 'string') return brief.references[0].url
-  const firstEvidenceId = firstFact.evidence[0]
-  const resolved = brief.references.find((reference) => 'id' in reference && reference.id === firstEvidenceId)
-  return resolved?.url ?? brief.references[0].url
-}
+export type DailyV1RenderContext = { siteBase: string; readingHref: string }
 
 export function renderDailyV1(brief: DailyBrief, context: DailyV1RenderContext) {
-  const pages: string[] = []
-  const favicon = `${context.siteBase}/favicon.svg`.replace(/^\/\//, '/')
-
-  pages.push(`---\ntheme: default\ntitle: ${JSON.stringify(brief.title)}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: auto\naspectRatio: 16/9\nfavicon: ${JSON.stringify(favicon)}\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nlang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · ${brief.publishedAt}</div>\n\n# ${brief.title}\n\n${brief.summary}\n\n<a class="reading-link" href="${escapeHtml(context.readingHref)}">阅读版 ↗</a>\n`)
-
-  pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">FOUR SIGNALS</div>\n\n## 四个关键信号\n\n<div class="signal-grid">\n${brief.signals.map((signal) => `<div class="signal-card"><h3>${escapeHtml(signal.title)}</h3><p>${escapeHtml(signal.summary)}</p><small>${signal.impact.toUpperCase()}</small></div>`).join('\n')}\n</div>\n`)
-
-  for (const section of brief.sections) {
-    pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">${section.layout.toUpperCase()}</div>\n\n## ${section.title}\n\n**${section.conclusion}**\n\n<ul class="topic-facts">\n${section.facts.map((fact) => `<li>${escapeHtml(factText(fact))}</li>`).join('\n')}\n</ul>\n\n${section.limitations.length ? `<small>限制：${escapeHtml(section.limitations.join('；'))}</small>` : ''}\n\n[原始来源 ↗](${sectionPrimaryReferenceUrl(section, brief)})\n`)
+  const pages = renderCover({ title: brief.title, summary: brief.summary, eyebrow: `ORBIS · ${brief.publishedAt}`, ...context })
+  pages.push(...renderCards({ title: '四个关键信号', eyebrow: 'FOUR SIGNALS', prefix: 'signals', cards: brief.signals.map((signal) => ({ title: signal.title, text: signal.summary, label: signal.impact.toUpperCase() })), readingHref: context.readingHref }))
+  brief.sections.forEach((section, index) => {
+    const references = 'references' in section && Array.isArray(section.references) ? section.references : brief.references.filter((reference) => 'id' in reference && typeof reference.id === 'string' && section.facts.some((fact) => typeof fact !== 'string' && fact.evidence.includes(reference.id as string)))
+    pages.push(...renderSection({ ...section, references, facts: section.facts.map((fact) => typeof fact === 'string' ? { text: fact } : { text: fact.text, links: fact.evidence.flatMap((id) => { const reference = brief.references.find((reference) => 'id' in reference && reference.id === id); return reference ? [{ url: reference.url, label: `证据 ${id}` }] : [] }) }) }, index, section.layout.toUpperCase(), context.readingHref))
+  })
+  pages.push(...renderCards({ title: '值得 Clone / Read / Test 的项目', eyebrow: 'OPEN SOURCE RADAR', prefix: 'projects', cards: brief.projects.map((project) => ({ title: project.name, text: project.summary, label: project.action, url: project.url })), readingHref: context.readingHref }))
+  const radarRows = brief.radar.flatMap((item, index) => {
+    const parts = splitText(item.label, 30)
+    return parts.map((label, part) => ({ item, index, label, part: part + 1, parts: parts.length }))
+  })
+  for (let start = 0; start < radarRows.length; start += 3) {
+    const batch = radarRows.slice(start, start + 3)
+    const originals = [...new Map(batch.map((row) => [row.index, row.item])).entries()]
+    const rows = batch.map(({ item, index, label, part, parts }) => `<div class="radar-item"><strong>${parts > 1 ? `<span class="radar-continuation">标签 ${part}/${parts} · ${index + 1}</span>` : ''}${markedText(`radar.${index}.label`, label, part, parts)}</strong><div class="radar-track"><span style="width:${item.impact}%"></span></div><small>影响 ${item.impact}/100<br>采用周期 ${item.horizon}/100</small></div>`).join('')
+    const details = `<p>Impact 与 Adoption Horizon 均为原文的 0–100 指标。</p><ul>${originals.map(([index, item]) => `<li>${detailText(`radar.${index}.full`, item.label)} · 影响 ${item.impact}/100 · 采用周期 ${item.horizon}/100<p>${detailText(`radar.${index}.note`, item.note)}</p></li>`).join('')}</ul>`
+    pages.push(page('IMPACT × ADOPTION HORIZON', '技术投入判断', `<div class="radar-list">${rows}</div>${detailsMarkup('技术投入判断', `展开 ${originals.length} 项判断`, details, context.readingHref)}${exportNotice(context.readingHref)}`, `${Math.floor(start / 3) + 1} / ${Math.ceil(radarRows.length / 3)}`))
   }
-
-  pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">OPEN SOURCE RADAR</div>\n\n## 值得 Clone / Read / Test 的项目\n\n<div class="project-grid">\n${brief.projects.map((project) => `<div class="project-card"><h3>${project.action} · ${escapeHtml(project.name)}</h3><p>${escapeHtml(project.summary)}</p><p><a href="${escapeHtml(project.url)}">GitHub ↗</a></p></div>`).join('\n')}\n</div>\n`)
-
-  pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">IMPACT × ADOPTION HORIZON</div>\n\n## 技术投入判断\n\n<div class="radar-list">\n${brief.radar.map((item) => `<div class="radar-item"><strong>${escapeHtml(item.label)}</strong><div class="radar-track"><span style="width:${item.impact}%"></span></div><small>${item.horizon}</small></div>`).join('\n')}\n</div>\n`)
-
-  pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">FROM SIGNALS TO ACTION</div>\n\n## 从信号到行动\n\n把值得关注的变化，转化为可验证的工程选择。\n\n<div class="action-grid">\n${brief.actions.map((action) => `<div class="action-card"><h3>${escapeHtml(action.title)}</h3><p>${escapeHtml(action.description)}</p></div>`).join('\n')}\n</div>\n`)
-
-  const archive = brief.archivePicks.length
-    ? `\n\n### PART 02 · ARCHIVE PICKS / 往期推荐\n\n<ol class="reference-list">\n${brief.archivePicks.map((reference) => `<li>${reference.publishedAt ? `${reference.publishedAt} · ` : ''}<a href="${escapeHtml(reference.url)}">${escapeHtml(reference.title)}</a> — ${escapeHtml(reference.supports)}</li>`).join('\n')}\n</ol>`
-    : ''
-
-  pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">EXTENDED READING</div>\n\n## 扩展阅读\n\n### PART 01 · REFERENCES / 参考资源引用\n\n<ol class="reference-list">\n${brief.references.map((reference) => `<li><a href="${escapeHtml(reference.url)}">${escapeHtml(reference.title)}</a> — ${escapeHtml(reference.supports)}</li>`).join('\n')}\n</ol>${archive}\n\n<a class="reading-link" href="${escapeHtml(context.readingHref)}">返回阅读版 ↗</a>\n`)
-
-  return pages.join('\n\n')
+  pages.push(...renderCards({ title: '从信号到行动', eyebrow: 'FROM SIGNALS TO ACTION', prefix: 'actions', cards: brief.actions.map((action) => ({ title: action.title, text: action.description })), readingHref: context.readingHref }))
+  pages.push(...renderReferences('参考资源引用', brief.references, 'references', context.readingHref))
+  pages.push(...renderReferences('往期推荐', brief.archivePicks, 'archivePicks', context.readingHref))
+  return finishDeck(pages, context.readingHref)
 }
