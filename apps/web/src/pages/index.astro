@@ -52,20 +52,18 @@ const jsonLd = buildWebSiteJsonLd(webSiteConfig)
     <div>
       <div class="eyebrow">Essays · Briefs · Slides · Knowledge</div>
       <h1>ORBIS</h1>
-      <p class="lead">Git-native、Agent-native 的结构化技术知识发布系统：从研究与信号出发，持续形成可阅读、可演示、可聚合、可归档的长期知识。</p>
+      <p class="lead">从每日技术信号出发，沉淀值得反复阅读的研究、演示与长期知识。</p>
       <div class="discovery-links hero-actions" aria-label="Primary discovery links">
-        <a class="pill" href={`${base}/archive/`}>Browse Archive</a>
-        <a class="pill" href={`${base}/briefs/daily/`}>Daily Briefs</a>
-        <a class="pill" href={`${base}/slides/`}>Presentations</a>
-        <a class="pill" href={`${base}/rss.xml`}>RSS</a>
+        <a class="button button-primary" href={latestBrief?.href ?? `${base}/briefs/`}>阅读最新 Brief <span aria-hidden="true">→</span></a>
+        <a class="button button-secondary" href={`${base}/archive/`}>浏览全部内容</a>
       </div>
     </div>
-    <div class="starburst" aria-hidden="true"></div>
+    <div class="hero-mark" aria-hidden="true"><div class="starburst"></div><span>Signals → Systems → Knowledge</span></div>
   </section>
 
   {latestBrief && (
     <section class="home-section" data-home-section="latest-brief">
-      <div class="section-title"><h2>Latest Brief</h2><a href={`${base}/briefs/`}>All briefs →</a></div>
+      <div class="section-title"><h2>Latest Brief<span class="section-subtitle">最新信号</span></h2><a href={`${base}/briefs/`}>All briefs →</a></div>
       <article class="home-feature" data-home-id={`brief:${latestBrief.id}`}>
         <div>
           <small>Brief · {latestBrief.cadence} · {latestBrief.publishedAt}</small>
@@ -74,13 +72,14 @@ const jsonLd = buildWebSiteJsonLd(webSiteConfig)
           <div class="pills">{latestBrief.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
         </div>
         <div class="home-feature-actions">
-          <a href={latestBrief.href}>Read →</a>
-          {latestBrief.presentationHref && <a href={latestBrief.presentationHref}>Slides →</a>}
+          <a class="button button-primary" href={latestBrief.href} aria-label={`阅读全文：${latestBrief.title}`}>阅读全文 →</a>
+          {latestBrief.presentationHref && <a class="button button-secondary" href={latestBrief.presentationHref} aria-label={`演示版：${latestBrief.title}`}>演示版 ↗</a>}
         </div>
       </article>
     </section>
   )}
 
+  <div class="home-secondary">
   {latestEssay && (
     <section class="home-section" data-home-section="latest-essay">
       <div class="section-title"><h2>Latest Essay</h2><a href={`${base}/essays/`}>All essays →</a></div>
@@ -91,7 +90,7 @@ const jsonLd = buildWebSiteJsonLd(webSiteConfig)
           <p>{latestEssay.summary}</p>
           <div class="pills">{latestEssay.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
         </div>
-        <div class="home-feature-actions"><a href={latestEssay.href}>Read →</a></div>
+        <div class="home-feature-actions"><a href={latestEssay.href} aria-label={`Read: ${latestEssay.title}`}>Read →</a></div>
       </article>
     </section>
   )}
@@ -109,16 +108,19 @@ const jsonLd = buildWebSiteJsonLd(webSiteConfig)
                 : `Standalone presentation · ${latestPresentation.publishedAt}`}
           </small>
           <h3><a href={latestPresentation.presentationHref}>{latestPresentation.title}</a></h3>
-          <p>{latestPresentation.summary}</p>
+          <p>{latestPresentation.readingHref === latestBrief?.href ? '将最新 Brief 的关键判断与证据，切换为演示视图。' : latestPresentation.summary}</p>
         </div>
         <div class="home-feature-actions">
-          <a href={latestPresentation.presentationHref}>Open Slides →</a>
-          {latestPresentation.readingHref && <a href={latestPresentation.readingHref}>Reading →</a>}
+          <a href={latestPresentation.presentationHref} aria-label={`Open Slides: ${latestPresentation.title}`}>Open Slides →</a>
+          {latestPresentation.readingHref && <a href={latestPresentation.readingHref} aria-label={`Reading: ${latestPresentation.title}`}>Reading →</a>}
         </div>
       </article>
     </section>
   )}
 
+  </div>
+
+  <div class="home-context">
   <section class="home-section" data-home-section="knowledge-updates">
     <div class="section-title"><h2>Knowledge Updates</h2><a href={`${base}/knowledge/`}>All knowledge →</a></div>
     {knowledgeUpdates.length > 0 ? (
@@ -144,6 +146,8 @@ const jsonLd = buildWebSiteJsonLd(webSiteConfig)
       ))}
     </div>
   </section>
+
+  </div>
 
   <section class="home-section" data-home-section="explore">
     <div class="section-title"><h2>Explore Orbis</h2><span>Find the right entry point</span></div>

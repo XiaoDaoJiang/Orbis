@@ -26,7 +26,7 @@ export function renderWeeklyV1(brief: WeeklyBrief, context: WeeklyV1RenderContex
   const favicon = `${context.siteBase}/favicon.svg`.replace(/^\/\//, '/')
   const period = `${escapeHtml(brief.period.from)} → ${escapeHtml(brief.period.to)}`
 
-  pages.push(`---\ntheme: default\ntitle: ${JSON.stringify(escapeHtml(brief.title))}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: light\naspectRatio: 16/9\nfavicon: ${JSON.stringify(favicon)}\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nhtmlAttrs:\n  lang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · WEEKLY · ${escapeHtml(brief.publishedAt)}</div>\n\n# ${escapeHtml(brief.title)}\n\n${escapeHtml(brief.summary)}\n\n<div class="weekly-period">${period}</div>\n\n[阅读版 ↗](${context.readingHref})\n`)
+  pages.push(`---\ntheme: default\ntitle: ${JSON.stringify(escapeHtml(brief.title))}\nlayout: orbis-cover\ntransition: fade-out\ncolorSchema: light\naspectRatio: 16/9\nfavicon: ${JSON.stringify(favicon)}\nfonts:\n  provider: none\n  sans: 'Noto Sans CJK SC, PingFang SC, Microsoft YaHei, Inter, system-ui, sans-serif'\n  mono: 'Noto Sans Mono CJK SC, ui-monospace, monospace'\nhtmlAttrs:\n  lang: zh-CN\n---\n\n<div class="eyebrow">ORBIS · WEEKLY · ${escapeHtml(brief.publishedAt)}</div>\n\n# ${escapeHtml(brief.title)}\n\n${escapeHtml(brief.summary)}\n\n<div class="weekly-period">${period}</div>\n\n<a class="reading-link" href="${escapeHtml(context.readingHref)}">阅读版 ↗</a>\n`)
 
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">WEEKLY THESIS</div>\n\n## 本周期最重要的变化\n\n<div class="weekly-period">${period}</div>\n\n**${escapeHtml(brief.weeklyThesis)}**\n`)
 
@@ -45,7 +45,7 @@ export function renderWeeklyV1(brief: WeeklyBrief, context: WeeklyV1RenderContex
 
   pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">NEXT PERIOD WATCH</div>\n\n## 下一周期继续观察\n\n<div class="action-grid">\n${brief.nextPeriodWatch.map((watch) => `<div class="action-card"><h3>${escapeHtml(watch.title)}</h3><p>${escapeHtml(watch.reason)}</p></div>`).join('\n')}\n</div>\n`)
 
-  pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">REFERENCES</div>\n\n## References\n\n<ol class="reference-list">\n${brief.references.map((reference) => `<li><a href="${escapeHtml(reference.url)}">${escapeHtml(reference.title)}</a> — ${escapeHtml(reference.supports)}</li>`).join('\n')}\n</ol>\n\n[返回阅读版 ↗](${context.readingHref})\n`)
+  pages.push(`---\nlayout: orbis-default\n---\n\n<div class="eyebrow">REFERENCES</div>\n\n## References\n\n<ol class="reference-list">\n${brief.references.map((reference) => `<li><a href="${escapeHtml(reference.url)}">${escapeHtml(reference.title)}</a> — ${escapeHtml(reference.supports)}</li>`).join('\n')}\n</ol>\n\n<a class="reading-link" href="${escapeHtml(context.readingHref)}">返回阅读版 ↗</a>\n`)
 
   return pages.join('\n\n')
 }

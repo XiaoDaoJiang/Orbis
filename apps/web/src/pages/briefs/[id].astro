@@ -81,6 +81,11 @@ const jsonLd = buildBriefJsonLd(webSiteConfig, {
 })
 ---
 <BaseLayout title={entry.data.title} description={entry.data.summary} type="article" jsonLd={jsonLd}>
+  <nav class="breadcrumbs" aria-label="当前位置">
+    <a href={`${base}/`}>首页</a><span aria-hidden="true">/</span>
+    <a href={`${base}/briefs/`}>Briefs</a><span aria-hidden="true">/</span>
+    <span>{entry.data.publishedAt}</span>
+  </nav>
   <article class="article">
     <header class="article-header">
       <div class="eyebrow">Brief · {entry.data.cadence} · {entry.data.publishedAt}</div>

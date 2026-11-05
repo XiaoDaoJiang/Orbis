@@ -25,6 +25,11 @@ const {
 } = Astro.props
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const href = (path: string) => `${base}${path}`
+const navigation = [
+  ['Essays', '/essays/'], ['Briefs', '/briefs/'], ['Slides', '/slides/'],
+  ['Topics', '/topics/'], ['Knowledge', '/knowledge/'], ['Archive', '/archive/'],
+]
+const currentPath = Astro.url.pathname.replace(new RegExp(`^${base}(?=/|$)`), '') || '/'
 const seo = await buildSeoMetadata({
   pathname: Astro.url.pathname,
   runtimeBase: import.meta.env.BASE_URL,
@@ -61,21 +66,19 @@ const seo = await buildSeoMetadata({
     <title>{title === 'Orbis' ? title : `${title} · Orbis`}</title>
   </head>
   <body>
+    <a class="skip-link" href="#main-content">跳至主要内容</a>
     <header class="site-header">
-      <a class="wordmark" href={href('/')}>ORBIS</a>
+      <a class="wordmark" href={href('/')} aria-label="Orbis 首页">ORBIS<span class="wordmark-dot" aria-hidden="true">.</span></a>
       <nav aria-label="主导航">
-        <a href={href('/essays/')}>Essays</a>
-        <a href={href('/briefs/')}>Briefs</a>
-        <a href={href('/slides/')}>Slides</a>
-        <a href={href('/topics/')}>Topics</a>
-        <a href={href('/knowledge/')}>Knowledge</a>
-        <a href={href('/archive/')}>Archive</a>
-        <a href={href('/rss.xml')}>RSS</a>
+        {navigation.map(([label, path]) => (
+          <a href={href(path)} aria-current={currentPath.startsWith(path) ? 'page' : undefined}>{label}</a>
+        ))}
+        <a class="nav-rss" href={href('/rss.xml')} aria-label="通过 RSS 订阅">RSS <span aria-hidden="true">↗</span></a>
       </nav>
     </header>
-    <main><slot /></main>
+    <main id="main-content" tabindex="-1"><slot /></main>
     <footer>
-      <span>Orbis · Signals, systems and durable knowledge.</span>
+      <span><strong>ORBIS</strong><br />Signals, systems and durable knowledge.</span>
       <a href={href('/rss.xml')}>Subscribe via RSS</a>
     </footer>
   </body>
