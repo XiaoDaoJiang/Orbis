@@ -7,6 +7,8 @@ import { renderWeeklyV1 } from '../../apps/slides/templates/weekly-v1.ts'
 import { listFiles, readYaml } from '../shared/content.ts'
 
 const root = resolve(import.meta.dirname, '../..')
+const slideBuild = await readFile(resolve(root, 'tools/build-slides/index.ts'), 'utf8')
+assert.match(slideBuild, /'--router-mode',\s*'hash'/, 'Static presentations must use the supported hash router for refreshable page links')
 const layout = await readFile(resolve(root, 'apps/web/src/layouts/BaseLayout.astro'), 'utf8')
 assert.ok(layout.includes('class="skip-link" href="#main-content"'))
 assert.ok(layout.includes('id="main-content" tabindex="-1"'))

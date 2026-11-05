@@ -77,6 +77,9 @@ for (const slug of selected) {
     '--out',
     out,
     '--without-notes',
+    // Static hosts cannot resolve history-mode page paths on a fresh request.
+    '--router-mode',
+    'hash',
   ])
   await injectSeo(slug, out)
   console.log(`Built Slidev deck: ${slug} -> ${base}`)
