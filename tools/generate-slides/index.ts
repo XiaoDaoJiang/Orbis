@@ -1,7 +1,7 @@
 import { cp, mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { renderPresentation } from '../../apps/slides/templates/registry.ts'
-import { loadSiteConfig, runtimeSiteBase } from '../shared/site-config.ts'
+import { loadSiteConfig, runtimeSiteBase, runtimeSiteUrl } from '../shared/site-config.ts'
 import {
   parsePresentationScope,
   preparePresentationOutput,
@@ -38,12 +38,13 @@ for (const descriptor of selected) {
     // their own themes, styles, setup hooks and framework color preferences.
     await cp(resolve(root, 'apps/slides/style.css'), resolve(directory, 'style.css'))
     await cp(resolve(root, 'apps/slides/setup'), resolve(directory, 'setup'), { recursive: true })
+    await cp(resolve(root, 'apps/slides/components'), resolve(directory, 'components'), { recursive: true })
     await cp(resolve(root, 'apps/slides/global-top.vue'), resolve(directory, 'global-top.vue'))
     await writeFile(resolve(directory, 'index.html'), renderPresentationAppearance(descriptor), 'utf8')
     await cp(resolve(root, 'apps/slides/layouts'), resolve(directory, 'layouts'), { recursive: true })
     await writeFile(
       resolve(directory, 'slides.md'),
-      renderPresentation(descriptor, { siteBase }),
+      renderPresentation(descriptor, { siteBase, presentationHref: runtimeSiteUrl(config, `${config.presentation.publicPath}/${descriptor.slug}/`) }),
       'utf8',
     )
   }

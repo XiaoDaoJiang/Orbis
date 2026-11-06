@@ -50,7 +50,7 @@ const rendered = renderDailyV1(brief, {
   readingHref: '/Orbis/briefs/2026-09-08/',
 })
 
-assert.equal((rendered.match(/^---$/gm) ?? []).length / 2, 11, 'Evidence V1 Daily must remain exactly 11 slides')
+assert.equal((rendered.match(/^---$/gm) ?? []).length / 2, 11, 'This short Evidence V1 fixture keeps a focused 11-slide path')
 assert.match(rendered, /Evidence-aware factual claim 1\./)
 assert.match(rendered, /https:\/\/example\.com\/primary-evidence/)
 assert.doesNotMatch(rendered, /\[object Object\]/)

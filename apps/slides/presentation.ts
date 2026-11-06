@@ -15,4 +15,6 @@ export type PresentationDescriptor = {
 
 export type PresentationRenderContext = {
   siteBase: string
+  /** Runtime public URL used by summary-only exports with no reading source. */
+  presentationHref?: string
 }
