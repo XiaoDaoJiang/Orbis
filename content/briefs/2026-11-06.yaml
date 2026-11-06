@@ -1,0 +1,343 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-06",
+  "status": "published",
+  "title": "Agent 工程进入效率、可复现训练与可信交付的协同竞争",
+  "summary": "Cognition SWE-2 Flash 将日常编码 Agent 的成本和吞吐放到台前；Axion 1.0 公开简化的工具型 Agent 训练配方，Kimi K3.1 Pro 则扩大长上下文开放权重选择。OpenAI 的 Linux 漏洞研究说明安全 Agent 需要可复现验证和人工补丁审核。Antigravity CLI 的 ACP 接口与 Pierre 并购计划提示：多 Agent 时代，协议、版本控制和审查体验同样重要。",
+  "topics": [
+    "agent-harness",
+    "coding-agent"
+  ],
+  "signals": [
+    {
+      "title": "Coding Agent 优化应按任务经济性评估",
+      "summary": "SWE-2 Flash 的官方测试强调速度与价格；真实部署仍要同时计入任务完成率、复核成本和重试。",
+      "impact": "high"
+    },
+    {
+      "title": "Agent 基座训练可复现性成为研究资产",
+      "summary": "Axion 开放数据构造、验证与训练配方；Kimi K3.1 Pro 提供另一种长上下文开放权重方案。",
+      "impact": "high"
+    },
+    {
+      "title": "自动化漏洞研究必须有人工验收边界",
+      "summary": "OpenAI 报告的 Linux 漏洞流水线能大规模复现问题并生成候选补丁，但不等于修复已获上游接受。",
+      "impact": "high"
+    },
+    {
+      "title": "Agent 协作基础设施趋向协议与代码审查",
+      "summary": "Antigravity CLI 加入 ACP 服务端；OpenAI 拟收购 Pierre，强调 Git、Diff 与多人 Agent 工作流。",
+      "impact": "medium"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coding-agent-task-economics",
+      "layout": "metrics",
+      "title": "SWE-2 Flash：性能必须与单位任务成本一起看",
+      "conclusion": "将代码 Agent 的选型指标从模型分数扩展到完成任务的时间、花费及人工返工率。",
+      "facts": [
+        {
+          "id": "swe-flash-benchmark",
+          "text": "Cognition 2026-11-04 发布 SWE-2 Flash；其官方 FrontierCode 2.0 得分为 24.0，基座 Inkling-Small 为 3.2。",
+          "evidence": [
+            "cognition-swe-flash"
+          ]
+        },
+        {
+          "id": "swe-flash-speed-cost",
+          "text": "Cognition 称 Flash 已在 Devin Desktop 和 CLI 提供，价格为 SWE-2 的五分之一，生成速度约为其三倍。",
+          "evidence": [
+            "cognition-swe-flash"
+          ]
+        },
+        {
+          "id": "swe-flash-training",
+          "text": "官方介绍其在强化学习前增加 mid-training，并强调 RL 任务环境与验证器的数据质量。",
+          "evidence": [
+            "cognition-swe-flash"
+          ]
+        }
+      ],
+      "limitations": [
+        "速度、价格和评测来自厂商；不应直接推断跨仓库真实任务收益。"
+      ]
+    },
+    {
+      "id": "open-agent-training-recipe",
+      "layout": "architecture",
+      "title": "Axion：开放训练配方比只开放权重更可复验",
+      "conclusion": "可重跑的数据生成、校验与环境，是研究型 Agent 能力可迁移的核心前提。",
+      "facts": [
+        {
+          "id": "axion-three-stage",
+          "text": "Axion 1.0 论文于 2026-11-02 提交，使用两阶段 SFT 加一阶段 RL，不采用专门 mid-training、DPO 或 OPD。",
+          "evidence": [
+            "axion-paper"
+          ]
+        },
+        {
+          "id": "axion-tool-reasoning",
+          "text": "论文将第二阶段用于基于真实数据与确定性计算构造可验证的工具依赖任务，再以 RL 强化长程交互。",
+          "evidence": [
+            "axion-paper"
+          ]
+        },
+        {
+          "id": "axion-open-recipe",
+          "text": "ByteDance 的 Axion 仓库公开 data generation、eval、训练代码及配套研究材料。",
+          "evidence": [
+            "axion-github"
+          ]
+        }
+      ],
+      "limitations": [
+        "论文性能是作者实验；数据、环境及预算的第三方复现仍需核查。"
+      ]
+    },
+    {
+      "id": "open-long-context-models",
+      "layout": "comparison",
+      "title": "Kimi K3.1 Pro：长上下文开放权重扩展自部署选择",
+      "conclusion": "开放权重并不意味着低资源部署；应分别测试授权、显存、推理吞吐与长任务稳定性。",
+      "facts": [
+        {
+          "id": "kimi-context-and-speed",
+          "text": "Moonshot AI 介绍 Kimi K3.1 Pro 为 3T 级开放权重模型，支持 100 万 token 上下文，并提供更快的 Highspeed 版本。",
+          "evidence": [
+            "kimi-official-blog"
+          ]
+        },
+        {
+          "id": "kimi-weights-license",
+          "text": "Moonshot AI 在 Hugging Face 提供 Kimi-K3.1-Pro 模型卡和文件，许可证标注为 kimi-k3.1-pro。",
+          "evidence": [
+            "kimi-hf-card"
+          ]
+        },
+        {
+          "id": "kimi-security-limits",
+          "text": "Moonshot 表示对开放权重版本训练过程中的网络安全相关数据做过滤，其内部 xdev-bench-hard 结果低于未过滤检查点。",
+          "evidence": [
+            "kimi-official-blog"
+          ]
+        }
+      ],
+      "limitations": [
+        "厂商长程能力分数与安全测试均为自报；专有许可证需逐条审核。"
+      ]
+    },
+    {
+      "id": "security-agent-review-boundary",
+      "layout": "system-map",
+      "title": "安全 Agent：发现、复现、补丁、审查不能跳步",
+      "conclusion": "自动生成漏洞证据应进入隔离验证和人工审批流水线，而非自动合并修复。",
+      "facts": [
+        {
+          "id": "linux-vulnerability-counts",
+          "text": "OpenAI 2026-11-04 披露：其 Linux 研究流水线分析 2308 个候选发现、动态复现 1724 项，并生成 948 个可用本地提权利用样例。",
+          "evidence": [
+            "openai-linux-security"
+          ]
+        },
+        {
+          "id": "linux-patch-human-review",
+          "text": "该流程包含静态筛选、隔离环境复现、可利用性评估和候选补丁生成；最终由人类安全研究员审查并协调报告。",
+          "evidence": [
+            "openai-linux-security"
+          ]
+        },
+        {
+          "id": "linux-api-cost",
+          "text": "OpenAI 报告一次 2026 年 10 月中旬运行耗费约 121 万美元 API 额度，约合每个本地提权利用样例 1279 美元。",
+          "evidence": [
+            "openai-linux-security"
+          ]
+        }
+      ],
+      "limitations": [
+        "948 是厂商研究环境中的利用样例数量，不代表 948 个补丁已被 Linux 上游接受。"
+      ]
+    },
+    {
+      "id": "agent-dev-workflow-infrastructure",
+      "layout": "timeline",
+      "title": "ACP 与 Git 审查组件走向 Agent 工作流核心",
+      "conclusion": "工程平台应把会话恢复、权限审批、变更 Diff 与提交来源都视为一等能力。",
+      "facts": [
+        {
+          "id": "antigravity-acp-stdio",
+          "text": "Antigravity CLI 1.5.0 的官方 CHANGELOG 新增 `agy acp`：通过 stdio 作为 ACP server，并支持会话恢复、模式切换和编辑器交互。",
+          "evidence": [
+            "antigravity-changelog"
+          ]
+        },
+        {
+          "id": "pierre-planned-acquisition",
+          "text": "OpenAI 于 2026-11-04 宣布拟收购 Pierre；其 Trees、Diffs 库已用于 Codex app 的文件浏览和变更审查。",
+          "evidence": [
+            "openai-pierre"
+          ]
+        },
+        {
+          "id": "pierre-closing-conditions",
+          "text": "OpenAI 声明 Pierre 交易仍待交割条件和监管审批，双方在完成前保持独立；Pierre 开源项目将继续开源。",
+          "evidence": [
+            "openai-pierre"
+          ]
+        }
+      ],
+      "limitations": [
+        "ACP 是 Agent Client Protocol，不能与 MCP 混为一谈；并购计划不是交易完成事实。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "READ",
+      "name": "bytedance/axion1_0",
+      "summary": "研究 data generation、验证与 RL 的可复现训练配方。",
+      "maturity": "experimental",
+      "url": "https://github.com/bytedance/axion1_0"
+    },
+    {
+      "action": "TEST",
+      "name": "google-antigravity/antigravity-cli",
+      "summary": "用 ACP 客户端试验恢复会话与权限切换。",
+      "maturity": "growing",
+      "url": "https://github.com/google-antigravity/antigravity-cli"
+    },
+    {
+      "action": "WATCH",
+      "name": "moonshotai/Kimi-K3.1-Pro",
+      "summary": "检查许可证与 1M 上下文的实际推理资源需求。",
+      "maturity": "early",
+      "url": "https://huggingface.co/moonshotai/Kimi-K3.1-Pro"
+    }
+  ],
+  "radar": [
+    {
+      "label": "编码 Agent 任务经济性",
+      "impact": 91,
+      "horizon": 91,
+      "note": "先用真实仓库测任务成功率、人工复核与成本。"
+    },
+    {
+      "label": "可复现 Agent 训练",
+      "impact": 84,
+      "horizon": 53,
+      "note": "开放配方具研究价值，第三方复现需资源。"
+    },
+    {
+      "label": "长上下文开放权重",
+      "impact": 83,
+      "horizon": 62,
+      "note": "先测许可证与部署成本再定引入策略。"
+    },
+    {
+      "label": "漏洞发现到补丁审查",
+      "impact": 94,
+      "horizon": 77,
+      "note": "优先建设沙箱和人工验收的可信链路。"
+    },
+    {
+      "label": "ACP / Git 审查协作",
+      "impact": 86,
+      "horizon": 82,
+      "note": "接口适配与审查记录可先做小规模 PoC。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立 Coding Agent 的任务成本曲线",
+      "description": "选择同一组真实 Issue，比较完成率、延迟、Token 花费、重试与人工复核工时。"
+    },
+    {
+      "title": "复跑 Axion 的可验证样本链路",
+      "description": "抽取工具依赖任务，记录数据生成、grader 判定、复现失败及训练环境差异。"
+    },
+    {
+      "title": "把安全 Agent 的候选补丁隔离审查",
+      "description": "将问题复现、补丁测试、权限隔离和人类批准设计为独立强制阶段。"
+    },
+    {
+      "title": "验证 ACP 与 Diff 审查的会话闭环",
+      "description": "用编辑器 ACP 客户端检查恢复、取消、工具权限与代码变更回溯。"
+    }
+  ],
+  "references": [
+    {
+      "id": "cognition-swe-flash",
+      "title": "Cognition — Introducing SWE-2 Flash",
+      "url": "https://cognition.com/blog/swe-2-flash",
+      "supports": "训练方式、官方评测、Devin 上线与价格速度对比。",
+      "accessedAt": "2026-11-06"
+    },
+    {
+      "id": "axion-paper",
+      "title": "Axion 1.0: Open Agent Foundation Models, Simplified",
+      "url": "https://arxiv.org/abs/2611.03233",
+      "supports": "两阶段 SFT + RL、可验证工具任务及论文时间。",
+      "accessedAt": "2026-11-06"
+    },
+    {
+      "id": "axion-github",
+      "title": "ByteDance — axion1_0 official repository",
+      "url": "https://github.com/bytedance/axion1_0",
+      "source": "github",
+      "supports": "开放 data generation、eval 和训练工程。",
+      "accessedAt": "2026-11-06"
+    },
+    {
+      "id": "kimi-official-blog",
+      "title": "Moonshot AI — Introducing Kimi K3.1 Pro",
+      "url": "https://www.kimi.ai/blog/kimi-k3-1-pro",
+      "supports": "上下文、速度与开放权重安全控制声明。",
+      "accessedAt": "2026-11-06"
+    },
+    {
+      "id": "kimi-hf-card",
+      "title": "Moonshot AI — Kimi-K3.1-Pro model card",
+      "url": "https://huggingface.co/moonshotai/Kimi-K3.1-Pro",
+      "supports": "公开模型文件、模型卡和许可标识。",
+      "accessedAt": "2026-11-06"
+    },
+    {
+      "id": "openai-linux-security",
+      "title": "OpenAI — A thousand fewer paths to root",
+      "url": "https://openai.com/index/a-thousand-fewer-paths-to-root/",
+      "supports": "Linux 研究流程、复现结果、费用和人审边界。",
+      "accessedAt": "2026-11-06"
+    },
+    {
+      "id": "antigravity-changelog",
+      "title": "Antigravity CLI — CHANGELOG",
+      "url": "https://github.com/google-antigravity/antigravity-cli/blob/main/CHANGELOG.md",
+      "source": "github",
+      "supports": "1.5.0 加入 ACP stdio 接口及会话能力。",
+      "accessedAt": "2026-11-06"
+    },
+    {
+      "id": "openai-pierre",
+      "title": "OpenAI — OpenAI to acquire Pierre",
+      "url": "https://openai.com/index/openai-to-acquire-pierre/",
+      "supports": "拟收购、Codex 使用的 Trees/Diffs 及条件。",
+      "accessedAt": "2026-11-06"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-05 — Agent 工程的可信验证基础设施",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-05.yaml",
+      "supports": "延伸理解模型身份、工具前安全护栏和 Git 扩展。",
+      "publishedAt": "2026-11-05"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
