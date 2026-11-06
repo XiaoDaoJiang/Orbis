@@ -27,6 +27,7 @@ targetDate=YYYY-MM-DD
 3. `AGENTS.md` — Agent 修改边界；
 4. `config/path-guard.yaml` — 可执行路径约束；
 5. `packages/content-schema/src/index.ts` — 最终 Schema 合同。
+6. `tools/content-automation/daily-automation-contract.mjs` 与 `tools/content-automation/render-daily-pr-metadata.mjs` — PR 报告及生产者交接合同。
 
 仓库当前版本是唯一最新规范。
 
@@ -140,7 +141,11 @@ Asia/Shanghai targetDate
 
 Producer 只能报告自己实际执行过的 validation / build。GitHub CI、Trusted Preview 与 Production 状态必须等真实系统完成后再记录，不能预先声称成功。
 
-PR metadata 使用 Repository 定义的 provider-neutral `DailyAutomationReport`；不得包含 chain-of-thought、密钥、内部 prompt 或不必要的抓取原文。
+PR metadata 使用 `tools/content-automation/daily-automation-contract.mjs` 定义的 provider-neutral `DailyAutomationReport`，按 `config/adapters/chatgpt-scheduled-daily.md` 的 PR metadata 交接流程生成。优先运行无依赖的 `tools/content-automation/render-daily-pr-metadata.mjs`；无完整 checkout 时也可从同一 current-main SHA 取回两个文件独立运行。其他运行时必须执行同等 schema/identity 检查与最终正文 JSON round-trip；没有可执行 parser 则 blocked，不创建/更新 PR。
+
+正文必须包含且仅包含一个带完整 JSON 的 canonical `orbis-content-automation:v1` 注释块，不能使用空标记或纯文字报告。创建/更新后回读 GitHub 已存正文，验证实际写入值。不得包含 chain-of-thought、密钥、内部 prompt 或不必要的抓取原文。
+
+门禁是否通过以当前 head SHA 最新 `scheduled-daily-merge-gate` commit status 及可信 `eligible` / `reason` 为准；workflow/job success 不代表资格通过。CI 尚未完成、状态缺失或失败时如实报告，不把自动化任务 completed 当成已合并或已发布。
 
 ## 发布模型
 

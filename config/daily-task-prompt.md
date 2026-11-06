@@ -23,6 +23,8 @@ Scheduled Daily 运行前必须由 Scheduler 按 **Asia/Shanghai** 解析并显�
 - `AGENTS.md`
 - `config/path-guard.yaml`
 - 最近若干 `content/briefs/*.yaml`
+- `tools/content-automation/daily-automation-contract.mjs`
+- `tools/content-automation/render-daily-pr-metadata.mjs`
 
 Schema 与模板代码优先于本说明；如果字段约束发生变化，以仓库当前代码为准。
 
@@ -233,6 +235,10 @@ This is serialization validation only. It does not replace `pnpm validate`, the 
 8. 环境具备完整 Git base 时运行 `pnpm automation:daily:guard --base <integration-base> --target-date <targetDate>`；
 9. 仅提交允许的 structured content 路径；
 10. 不提交 `apps/slides/generated/**`、`dist/**` 或任何生成 HTML。
+
+PR 元数据必须遵循 `config/adapters/chatgpt-scheduled-daily.md` 的交接步骤：使用共享 `daily-automation-contract.mjs` 和无依赖 `render-daily-pr-metadata.mjs` 生成并 round-trip 验证完整 JSON 报告块；无 checkout 时使用同一 main SHA 的文件或可执行的等价 JSON parser 检查。不能只写空标记或人工可读摘要；缺少可执行验证时停止 PR mutation。写入后回读已存正文确认报告与本次身份一致。
+
+读取当前 head 的 `scheduled-daily-merge-gate` commit status 和可信 `eligible` / `reason` 才能判断门禁；job success 不是合并资格。生产者本地未运行的检查继续记录为 `not-run`。
 
 构建系统负责自动产生阅读版、演示版、日期路由、`/latest/`、`/archive.json` 与 `/rss.xml`。
 

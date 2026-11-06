@@ -17,6 +17,8 @@ For every run:
    - `config/feeds.yaml`;
    - `AGENTS.md`;
    - `config/path-guard.yaml`;
+   - `tools/content-automation/daily-automation-contract.mjs`;
+   - `tools/content-automation/render-daily-pr-metadata.mjs`;
 3. obey those repository contracts exactly; do not rely on a copied or cached editorial prompt;
 4. never read from or write to the retired `XiaoDaoJiang/ai-frontier` repository.
 
@@ -44,7 +46,8 @@ Check:
 - whether `main` already contains `content/briefs/<targetDate>.yaml` and its publication status;
 - whether `automation/daily/<targetDate>` already exists;
 - whether an open PR already uses that exact head branch;
-- when a PR exists, whether it carries the Orbis automation marker `<!-- orbis-content-automation:v1 -->` or otherwise clearly belongs to this deterministic Daily candidate.
+- when a PR exists, independently verify its same-repository head/base, trusted author and exact deterministic branch/path before treating it as an owned candidate;
+- inspect its one canonical JSON report with `parseDailyAutomationReport`; a bare marker, prose report or schema-valid metadata alone is not ownership or merge authority. If ownership is ambiguous, stop rather than editing the PR.
 
 Apply repository decision semantics:
 
@@ -168,22 +171,55 @@ The candidate diff must contain exactly the target Daily source. Do not use the 
 
 ## PR metadata
 
-Use the provider-neutral `DailyAutomationReport` semantics defined by Orbis. The PR must identify:
+The executable source of truth is `tools/content-automation/daily-automation-contract.mjs`, not an empty HTML marker or a prose list. Read its current `main` version on every run. Build a provider-neutral `DailyAutomationReport` object with exactly the fields it permits. The report's targetDate, branch and contentPath must match the explicit run identity. Report source counts and producer-local validation/fullBuild truthfully; `not-run` is valid when a check was not executed. Put feed/RSS diagnostics and other unverified work in `unverified`, not invented schema fields.
 
-- `targetDate`;
-- canonical branch and content path;
-- outcome;
-- source and primary-source counts;
-- validation/full-build states that were actually run;
-- explicit unverified items.
+### Preferred executable handoff
 
-Use the stable marker:
+Save the report object as JSON in a temporary file. With Node available, run:
 
-```html
-<!-- orbis-content-automation:v1 -->
+```bash
+node tools/content-automation/render-daily-pr-metadata.mjs YYYY-MM-DD /tmp/daily-report.json
 ```
 
-Do not claim GitHub CI or Trusted Preview success until those systems have actually completed successfully.
+The dependency-free command validates the explicit date and report, renders the canonical title/body, parses that final body again and requires an exact report round-trip. Its stdout is one JSON object with `title` and `body`; parse that object and pass those exact values to the connected GitHub create/update-PR operation. Never substitute a hand-written title/body, add another marker, or send partial stdout after a failure. Errors produce a nonzero exit and no stdout.
+
+No full checkout or dependencies are required for this handoff. In a checkout-free runtime with Node, resolve current main once, retrieve both `.mjs` files above from that same commit through the connected GitHub transport, preserve their relative paths in a temporary directory, and run the same command there. Do not execute the candidate branch's helper or install dependencies to run this command.
+
+### Canonical wire format for other runtimes
+
+If Node is unavailable but another real JSON parser can execute, follow the same current shared schema and identity checks. This is the required single machine-readable comment, not merely an illustration of a marker:
+
+```html
+<!-- orbis-content-automation:v1
+{
+  "version": 1,
+  "kind": "daily",
+  "targetDate": "YYYY-MM-DD",
+  "branch": "automation/daily/YYYY-MM-DD",
+  "contentPath": "content/briefs/YYYY-MM-DD.yaml",
+  "outcome": "candidate-created",
+  "sourceCount": 0,
+  "primarySourceCount": 0,
+  "validation": "not-run",
+  "fullBuild": "not-run",
+  "unverified": []
+}
+-->
+```
+
+Replace every date placeholder and every example value with the actual report. Serialize the JSON with a real serializer, escaping `<` and `>` inside JSON strings as `\u003c` and `\u003e`. Human-readable prose may accompany the block, but must not contain another reserved automation comment. Never emit only the bare marker, a separate `DailyAutomationReport:v1` comment, or a prose-only report.
+
+Before any PR mutation, strictly extract exactly one complete canonical block from the exact final body, parse its JSON, validate the current shared field/type/enum/count/calendar/identity rules and deep-compare it with the source report. Reject duplicate or malformed blocks, unsupported versions, unknown/missing fields and inconsistent dates/paths. Reading the source or visually inspecting the example is not validation. If no suitable parser can execute these checks, stop and report `blocked`; do not upload unvalidated PR metadata.
+
+After create/update, re-read the stored PR body and head through GitHub and repeat the same validation against the intended report and identity. Do not claim successful metadata handoff from the mutation response alone. If stored metadata is invalid or the head moved, report the concrete blocker instead of claiming success or broadening authority.
+
+### Observe the actual gate decision
+
+Inspect the current PR head SHA's latest `scheduled-daily-merge-gate` commit status and, when available, the trusted gate output's `eligible` and `reason`. Workflow/job `conclusion=success` only means the policy code ran; it can intentionally publish `failure` or `error`. A green initializer job is not a passed merge gate.
+
+Report `pending`, `failure`/`error`, verified preview, `auto-merge-enabled` and confirmed `merged` as different states. `auto-merge-enabled` is not merged, and merged is not published. If the current-head status is missing or a later stage has not finished, say unverified. Do not replace producer-local `not-run` values with CI successes or claim Trusted Preview/production success before reading the matching actual results.
+
+Editing a Ready Daily PR body triggers `pull_request.edited` and a fresh Preview Build; passing the repository gate may immediately merge and publish it. Metadata recovery is not a read-only check. Respect the current task's authorization and restrictions on that candidate; do not repair or rerun another historical PR as a side effect.
 
 ## Hard authority boundary
 
