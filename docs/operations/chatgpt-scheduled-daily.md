@@ -12,11 +12,23 @@ The provider adapter is intentionally thin. Repository contracts remain authorit
 Repository contract   config/scheduled-task-prompt.md
 Daily editorial rules config/daily-task-prompt.md
 Provider adapter      config/adapters/chatgpt-scheduled-daily.md
+PR report contract    tools/content-automation/daily-automation-contract.mjs
+PR metadata renderer  tools/content-automation/render-daily-pr-metadata.mjs
 Repository            XiaoDaoJiang/Orbis
 Timezone              Asia/Shanghai
 ```
 
 Do not maintain a second copy of the Daily editorial prompt inside the ChatGPT task.
+
+## Validated PR metadata handoff
+
+The existing task bootstraps from the current main adapter each run. Its bootstrap chain must include the shared report contract and dependency-free metadata renderer. A prose report or bare automation marker is not the machine report expected by the merge gate.
+
+Create a JSON `DailyAutomationReport` with the actual target identity, counts and producer check outcomes, then run the adapter's documented `node tools/content-automation/render-daily-pr-metadata.mjs YYYY-MM-DD /tmp/daily-report.json` command. It emits validated `title` / `body` JSON only after a complete render/parse round-trip. A full checkout and package installation are unnecessary: copy only the renderer and shared `.mjs` module from the same current-main SHA into a temporary directory with their relative paths intact.
+
+The adapter also defines the complete canonical wire format for another executable JSON runtime. That path must perform the same current schema/identity checks and validate the final bytes before mutation; reading an example is not validation. If neither route can run, report blocked rather than create an invalid PR. Re-read and validate the body GitHub stored before declaring the metadata handoff successful.
+
+`producer-metadata-handoff.test.mjs` executes the exact documented Node command in an isolated two-file runtime, extracts the adapter's actual wire example, passes both through the real parser/gate, and exercises failure cases. This tests the repository's producer contract without creating a Daily or triggering its merge. It does not prove a particular external Scheduled Runtime's tool availability or future compliance; the next authorized real run must establish those facts.
 
 ## Deterministic run identity
 
@@ -50,11 +62,19 @@ Inspect in this order:
 1. ChatGPT Scheduled Task run result and reported `failureStage`;
 2. target `main` file state;
 3. deterministic branch state;
-4. open PR for the deterministic branch and automation marker;
+4. open PR ownership, current head and the complete canonical JSON report;
 5. PR Preview Build;
 6. Scheduled Daily guard output;
 7. full `pnpm build` result;
 8. Trusted Preview publish/public smoke.
+
+Read the current head's latest `scheduled-daily-merge-gate` commit status and trusted `eligible` / `reason` output. A workflow/job can succeed while the policy intentionally publishes failure; task `completed`, initializer success and Preview Publish success are not merge eligibility. Preserve separate outcomes for producer checks, repository checks, gate verification, an armed auto-merge request, actual merge, and production deployment.
+
+### 2026-11-06 adapter regression
+
+[#75](https://github.com/XiaoDaoJiang/Orbis/pull/75) emitted the bare marker plus prose because the provider adapter still taught that format after #72 aligned the renderer and gate around a JSON-bearing comment. Both the [initializer](https://github.com/XiaoDaoJiang/Orbis/actions/runs/42141042337) and [trusted verifier](https://github.com/XiaoDaoJiang/Orbis/actions/runs/42141426394) published `invalid-automation-report`; Preview Build and public smoke succeeded, and automatic merge was skipped. The existing adapter/prompt tests did not exercise metadata handoff.
+
+Recovery must correct the adapter and its executable handoff tests rather than loosen the gate. Review and merge the infrastructure change separately. Repairing an existing Ready Daily's body triggers a new Preview Build and may immediately merge and publish it after success, so obtain authorization for that exact candidate before doing so. Do not rerun unchanged invalid metadata, fix unrelated historical candidates, create a competing scheduler, or claim that a local test changed production.
 
 Do not resolve failures by expanding the task's repository or production authority.
 
