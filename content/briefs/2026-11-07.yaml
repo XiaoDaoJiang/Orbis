@@ -1,0 +1,351 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-07",
+  "status": "published",
+  "title": "Agent 进入受控执行时代：安全专模、托管 Harness 与可验证评测",
+  "summary": "GPT-6 Cyber 将授权范围与安全专用能力一同纳入评测；Kimi Hosted Agents 把沙箱、会话与工具权限打包为托管 Harness。METR 对 Anthropic 研发加速的评估提示需要区分证据与推断；Reflection Beam 的模型卡和 TCSExam 则推动开放模型披露与可执行验证。工程重点是受控执行、可恢复会话和可复验结果。",
+  "topics": [
+    "agent-harness",
+    "coding-agent"
+  ],
+  "signals": [
+    {
+      "title": "安全 Agent 必须验证授权边界",
+      "summary": "GPT-6 Cyber 公布能力与越界测试；高分不等于允许不受控操作。",
+      "impact": "high"
+    },
+    {
+      "title": "托管 Harness 仍需显式权限治理",
+      "summary": "Kimi 提供沙箱和会话恢复，但默认工具放行策略值得单独审查。",
+      "impact": "high"
+    },
+    {
+      "title": "研发加速应拆分证据与归因",
+      "summary": "METR 估算 Anthropic 能力增速约 1.9 倍；多项证据被删节，存在不确定性。",
+      "impact": "medium"
+    },
+    {
+      "title": "验证器比单项分数更可迁移",
+      "summary": "Beam 披露多类安全测评；TCSExam 使用 Lean 与可执行判题验证研究结果。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "cyber-scope-alignment",
+      "layout": "metrics",
+      "title": "GPT-6 Cyber：能力和权限边界一起评估",
+      "conclusion": "安全能力评测应包括越界率、可复现结果和操作许可。",
+      "facts": [
+        {
+          "id": "cyber-exploitgym",
+          "text": "OpenAI 11 月 5 日发布 GPT-6 Cyber；ExploitGym 官方得分 48.5%，前代为 32.1%。",
+          "evidence": [
+            "openai-cyber-launch"
+          ]
+        },
+        {
+          "id": "cyber-scope-tests",
+          "text": "OpenAI 称其越界服务测试通过率为 99.93%，加入部署提示后为 100%。",
+          "evidence": [
+            "openai-cyber-launch"
+          ]
+        },
+        {
+          "id": "cyber-controlled-access",
+          "text": "系统卡将访问限定于 Daybreak Red，并要求身份及组织安全控制。",
+          "evidence": [
+            "openai-cyber-card"
+          ]
+        }
+      ],
+      "limitations": [
+        "均属发布方测试；不可把基准结果视作任意真实环境的授权证明。"
+      ]
+    },
+    {
+      "id": "hosted-harness-controls",
+      "layout": "architecture",
+      "title": "托管 Harness：会话、沙箱与审批不可混为一层",
+      "conclusion": "托管并不转移企业对工具授权和敏感数据的责任。",
+      "facts": [
+        {
+          "id": "kimi-harness-service",
+          "text": "Kimi Hosted Agents 提供云沙箱、持久化会话事件和执行失败恢复。",
+          "evidence": [
+            "kimi-hosted-overview"
+          ]
+        },
+        {
+          "id": "kimi-permission-default",
+          "text": "官方权限文档定义 always_allow 与 always_ask；未配置时默认自动放行工具。",
+          "evidence": [
+            "kimi-permissions"
+          ]
+        },
+        {
+          "id": "kimi-session-cancel",
+          "text": "Kimi 会话提供 idle、running、terminated 状态；user.interrupt 可取消运行中轮次。",
+          "evidence": [
+            "kimi-session-operations"
+          ]
+        }
+      ],
+      "limitations": [
+        "需要核查网络隔离、审批事件处理、执行日志与本地自托管可用权限。"
+      ]
+    },
+    {
+      "id": "research-acceleration-evidence",
+      "layout": "timeline",
+      "title": "AI 加速 AI 研发：评估数字不等于确定归因",
+      "conclusion": "将能力斜率、实际研发产出与 AI 贡献分别计量。",
+      "facts": [
+        {
+          "id": "metr-assessment-window",
+          "text": "METR 于 2026 年 8 月 12 日至 10 月 29 日在 Anthropic 进行高访问级别评估。",
+          "evidence": [
+            "metr-assessment"
+          ]
+        },
+        {
+          "id": "metr-acceleration-range",
+          "text": "其 AECI 估算能力增长速度为历史的 1.9 倍，95% 置信区间为 1.5–2.8 倍。",
+          "evidence": [
+            "metr-assessment"
+          ]
+        },
+        {
+          "id": "metr-redacted-evidence",
+          "text": "METR 表示 Anthropic 删节了多数关键依据，且 AI 对加速的贡献归因仍存在不确定性。",
+          "evidence": [
+            "metr-assessment"
+          ]
+        }
+      ],
+      "limitations": [
+        "这不是行业通用增长率；删节限制了外部独立复查。"
+      ]
+    },
+    {
+      "id": "beam-open-model-evaluation",
+      "layout": "comparison",
+      "title": "Beam：模型卡应同时呈现能力与安全边界",
+      "conclusion": "开放权重模型选型不能只看 Coding Benchmark。",
+      "facts": [
+        {
+          "id": "beam-model-shape",
+          "text": "Reflection Beam 模型卡列出 501B 总参数、约 23B 激活参数及 1M 上下文。",
+          "evidence": [
+            "reflection-beam-card"
+          ]
+        },
+        {
+          "id": "beam-safety-methods",
+          "text": "Beam 披露 Iris、安全框架与第三方评测等多种安全测试方式。",
+          "evidence": [
+            "reflection-beam-card"
+          ]
+        },
+        {
+          "id": "beam-iris-results",
+          "text": "Iris 总体测试中，Beam BF16 有害请求拒绝或转向率 88.9%，无害请求合规率 81.5%。",
+          "evidence": [
+            "reflection-beam-card"
+          ]
+        }
+      ],
+      "limitations": [
+        "数字来自厂商模型卡；需独立验证不同量化精度与真实任务结果。"
+      ]
+    },
+    {
+      "id": "tcsexam-verification",
+      "layout": "system-map",
+      "title": "TCSExam：用判题协议约束研究 Agent 的结论",
+      "conclusion": "优先引入可执行检查器，而非只用人工主观评分。",
+      "facts": [
+        {
+          "id": "tcs-task-counts",
+          "text": "Moonshot AI 的 TCSExam-Full 包含 100 个任务，Lite 为四类各 5 个共 20 个。",
+          "evidence": [
+            "tcsexam-repo"
+          ]
+        },
+        {
+          "id": "tcs-proof-and-solver",
+          "text": "任务覆盖 Lean 定理证明、隐藏样例求解器、构造及开放猜想验证。",
+          "evidence": [
+            "tcsexam-site",
+            "tcsexam-repo"
+          ]
+        },
+        {
+          "id": "tcs-protocol-choice",
+          "text": "官方工程区分 Online 与 Offline Solver 协议，并提供 Codex 等 Agent 运行示例。",
+          "evidence": [
+            "tcsexam-repo",
+            "tcsexam-site"
+          ]
+        }
+      ],
+      "limitations": [
+        "公开与隐藏测试必须隔离；不能把单轮成功当作研究能力的稳定证明。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "READ",
+      "name": "MoonshotAI/TCSExam",
+      "summary": "查看 Lean、隐藏测试和 Offline 判题的任务协议。",
+      "maturity": "early",
+      "url": "https://github.com/MoonshotAI/TCSExam"
+    },
+    {
+      "action": "TEST",
+      "name": "Kimi Hosted Agents",
+      "summary": "验证 always_ask、人审暂停与会话取消流程。",
+      "maturity": "early",
+      "url": "https://platform.kimi.com/docs/hosted-agents/overview"
+    },
+    {
+      "action": "WATCH",
+      "name": "Reflection Beam",
+      "summary": "比较 BF16 与量化模型的安全及工具任务结果。",
+      "maturity": "early",
+      "url": "https://reflection.ai/beam-model-card"
+    }
+  ],
+  "radar": [
+    {
+      "label": "安全 Agent 的授权范围评测",
+      "impact": 95,
+      "horizon": 88,
+      "note": "优先落地隔离执行、范围校验与人工审批。"
+    },
+    {
+      "label": "Harness as a Service",
+      "impact": 89,
+      "horizon": 81,
+      "note": "重点审查默认权限、日志、会话恢复和计费。"
+    },
+    {
+      "label": "AI 辅助研发的因果测量",
+      "impact": 86,
+      "horizon": 54,
+      "note": "通过版本、实验记录和复测降低归因偏差。"
+    },
+    {
+      "label": "安全模型卡可复查性",
+      "impact": 85,
+      "horizon": 67,
+      "note": "评估公开指标的测评覆盖与独立可复现性。"
+    },
+    {
+      "label": "形式化与隐藏测试评估",
+      "impact": 92,
+      "horizon": 76,
+      "note": "将 Lean 和隐藏实例引入 Agent 回归测试。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立越界阻断测试",
+      "description": "为高权限工具加入授权清单、拒绝路径和审计断言。"
+    },
+    {
+      "title": "验证托管 Agent 的暂停恢复",
+      "description": "以 always_ask、取消、重连、失败重试组成最小端到端测试。"
+    },
+    {
+      "title": "把研发提效变成可追溯实验",
+      "description": "按任务记录人类耗时、Agent 用量、复核与复现实验结果。"
+    },
+    {
+      "title": "试运行 TCSExam Lite",
+      "description": "先用 Offline 模式跑样例，保留环境、判题与失败日志。"
+    }
+  ],
+  "references": [
+    {
+      "id": "openai-cyber-launch",
+      "title": "OpenAI — GPT-6 Cyber launch",
+      "url": "https://openai.com/index/introducing-gpt-6-cyber/",
+      "supports": "官方发布日期、ExploitGym 与授权范围测评。",
+      "accessedAt": "2026-11-07"
+    },
+    {
+      "id": "openai-cyber-card",
+      "title": "OpenAI — GPT-6 Cyber System Card",
+      "url": "https://deploymentsafety.openai.com/gpt-6-cyber",
+      "supports": "模型用途、限制访问及安全控制。",
+      "accessedAt": "2026-11-07"
+    },
+    {
+      "id": "kimi-hosted-overview",
+      "title": "Kimi — Hosted Agents overview",
+      "url": "https://platform.kimi.com/docs/hosted-agents/overview",
+      "supports": "云端 Harness、沙箱、会话持久化及恢复。",
+      "accessedAt": "2026-11-07"
+    },
+    {
+      "id": "kimi-permissions",
+      "title": "Kimi — Hosted Agents permission policy",
+      "url": "https://platform.kimi.com/docs/hosted-agents/permissions",
+      "supports": "工具暴露、默认授权策略及确认流程。",
+      "accessedAt": "2026-11-07"
+    },
+    {
+      "id": "kimi-session-operations",
+      "title": "Kimi — Hosted Agents session operations",
+      "url": "https://platform.kimi.com/docs/hosted-agents/session-operations",
+      "supports": "会话生命周期及中断事件。",
+      "accessedAt": "2026-11-07"
+    },
+    {
+      "id": "metr-assessment",
+      "title": "METR — Independent Assessment of AI R&D Acceleration",
+      "url": "https://metr.org/blog/2026-11-05-anthropic-ai-rd-acceleration-assessment/",
+      "supports": "访问期间、加速估算、置信区间与删节限制。",
+      "accessedAt": "2026-11-07"
+    },
+    {
+      "id": "reflection-beam-card",
+      "title": "Reflection — Beam Model Card",
+      "url": "https://reflection.ai/beam-model-card",
+      "supports": "模型规模、上下文及安全测评结果。",
+      "accessedAt": "2026-11-07"
+    },
+    {
+      "id": "tcsexam-site",
+      "title": "Moonshot AI — TCSExam official site",
+      "url": "https://moonshotai.github.io/TCSExam/",
+      "supports": "验证模式、评测体系与 Agent 示例。",
+      "accessedAt": "2026-11-07"
+    },
+    {
+      "id": "tcsexam-repo",
+      "title": "MoonshotAI — TCSExam source repository",
+      "url": "https://github.com/MoonshotAI/TCSExam",
+      "source": "github",
+      "supports": "任务套件、Lean 和求解器协议。",
+      "accessedAt": "2026-11-07"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-06 — Agent 工程与可信交付",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-06.yaml",
+      "supports": "衔接前一期安全 Agent 和 ACP 工作流治理。",
+      "publishedAt": "2026-11-06"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
