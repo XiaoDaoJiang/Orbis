@@ -49,7 +49,7 @@
         },
         {
           "id": "flashprove-demo",
-          "text": "技术报告展示对 400B 参数 Llama 4 Maverick 的实验：单张 H100、24 个 CPU 核、232 GB 主机内存；每个 1,024-token 请求窗口只证明提示后的一个 greedy token。",
+          "text": "技术报告展示对 400B 参数 Llama 4 Maverick 的实验：单张 80 GB H100、24 个 CPU 核；模型权重占 232 GB，存放在主机内存中并流式传入 GPU。每个 1,024-token 请求窗口只证明提示后的一个 greedy token。",
           "evidence": [
             "flashprove-report"
           ]
