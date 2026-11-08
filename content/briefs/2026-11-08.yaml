@@ -1,0 +1,314 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-08",
+  "status": "published",
+  "title": "Agent 工作台走向持续协作：可纠错记忆、并行调度与证据验证",
+  "summary": "Anthropic 展示会话记录、记忆笔记、知识导航与离线整理的分层方案；Amp Spaces 将多条 Agent 线程收拢为协调工作面。Antigravity 语音模式把实时干预接入既有权限流程；BioBasicsBench 用原始实验材料揭示模型在结论判断上的边界。工程实践应优先打通可追溯记忆、子任务验收和人工审批。",
+  "topics": [
+    "agent-harness",
+    "coding-agent"
+  ],
+  "signals": [
+    {
+      "title": "长期记忆要能对照原始记录纠错",
+      "summary": "Anthropic 的 dreaming 将会话日志用于校正笔记与构建知识导航，而非只累积摘要。",
+      "impact": "high"
+    },
+    {
+      "title": "多 Agent 从线程列表升级为协调工作面",
+      "summary": "Amp Spaces 由单个协调 Agent 分配和跟踪线程，团队在同一空间交流与审查。",
+      "impact": "high"
+    },
+    {
+      "title": "语音控制必须沿用现有权限边界",
+      "summary": "Antigravity 支持语音干预与有限授权；删除、提权和强推等操作仍需屏幕确认。",
+      "impact": "medium"
+    },
+    {
+      "title": "真实原始证据比漂亮分数更能检验 Agent",
+      "summary": "BioBasicsBench 使用实验原始材料与专家评分；更高模型分数仍无法保证可靠结论。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "memory-hierarchy-and-repair",
+      "layout": "architecture",
+      "title": "记忆应分层存储，并能回溯到原始证据",
+      "conclusion": "把会话记录作为可追溯底座，让记忆笔记、知识导航和注入上下文各司其职。",
+      "facts": [
+        {
+          "id": "anthropic-memory-layers",
+          "text": "Anthropic 11 月 6 日将 Agent 记忆分为会话记录、记忆笔记、Wiki 类表示与会话注入上下文。",
+          "evidence": [
+            "anthropic-memory-research"
+          ]
+        },
+        {
+          "id": "anthropic-dreaming-repair",
+          "text": "Anthropic 报告 dreaming 可对照原始会话记录修正错误记忆、合并笔记并维护知识导航。",
+          "evidence": [
+            "anthropic-memory-research"
+          ]
+        },
+        {
+          "id": "claude-memory-injection-limit",
+          "text": "Anthropic 表示 Claude Code 的自动记忆只预加载 MEMORY.md 前 200 行或 25 KB，其他内容按需读取。",
+          "evidence": [
+            "anthropic-memory-research"
+          ]
+        }
+      ],
+      "limitations": [
+        "原始日志也可能包含敏感信息；记忆压缩和自动回写需要权限、溯源与过期策略。"
+      ]
+    },
+    {
+      "id": "memory-evaluation-and-stateful-tools",
+      "layout": "metrics",
+      "title": "记忆有效性要与检索基线和维护成本一起测",
+      "conclusion": "记录有无记忆、检索单用、检索加知识导航三组差异，同时衡量整理成本。",
+      "facts": [
+        {
+          "id": "anthropic-wiki-corpus",
+          "text": "Anthropic 在约 35 万份文档、约 4.2 亿 token 的语料上测试由 Agent 增量维护的 Wiki。",
+          "evidence": [
+            "anthropic-memory-research"
+          ]
+        },
+        {
+          "id": "anthropic-wiki-search-gain",
+          "text": "其 25 题实验中，Wiki 加搜索的得分随整理进展从 54% 升至 61%；仅搜索为 53%。",
+          "evidence": [
+            "anthropic-memory-research"
+          ]
+        },
+        {
+          "id": "letta-current-memory-runtime",
+          "text": "Letta Code 开源仓库介绍 /sleeptime 离线整理、跨会话搜索和由 Git 追踪上下文的 MemFS。",
+          "evidence": [
+            "letta-code-repo"
+          ]
+        }
+      ],
+      "limitations": [
+        "以上是特定资料集和厂商实验，不应外推为所有 Agent 都能提高同等比例。"
+      ]
+    },
+    {
+      "id": "amp-spaces-orchestration",
+      "layout": "system-map",
+      "title": "Spaces：让主 Agent 协调线程，而非要求人管理每条线程",
+      "conclusion": "把任务拆分、并行执行、验收与协作者讨论放进同一个受控工作面。",
+      "facts": [
+        {
+          "id": "amp-spaces-launch",
+          "text": "Amp 11 月 6 日推出 Spaces：一个协调 Agent 可为用户创建并管理多个任务线程。",
+          "evidence": [
+            "amp-spaces-launch"
+          ]
+        },
+        {
+          "id": "amp-team-collaboration",
+          "text": "Amp 公布团队在同一 Space 内提交反馈、讨论并由协调 Agent 分配线程的使用方式。",
+          "evidence": [
+            "amp-spaces-launch"
+          ]
+        },
+        {
+          "id": "amp-security-review-case",
+          "text": "Amp 描述一次安全审查实践：将代码分成 16 个区域分别检查，再对发现项做另一轮核验。",
+          "evidence": [
+            "amp-spaces-launch"
+          ]
+        }
+      ],
+      "limitations": [
+        "16 个区域的审查仅为官方案例；跨线程隔离、权限继承和任务完成判定需独立验证。"
+      ]
+    },
+    {
+      "id": "voice-steering-permission-boundary",
+      "layout": "comparison",
+      "title": "语音可加速干预，但高风险批准不能语音化",
+      "conclusion": "将语音视为交互通道，执行权限仍由原有 Harness 和显式审批策略控制。",
+      "facts": [
+        {
+          "id": "antigravity-voice-release",
+          "text": "Google 11 月 6 日发布 Antigravity 语音模式，基于 Gemini Live，支持 App 和 1.5.0 起的 CLI。",
+          "evidence": [
+            "google-voice-launch"
+          ]
+        },
+        {
+          "id": "antigravity-voice-cli",
+          "text": "官方文档支持在 CLI 使用 /voice live 或 F6，语音可在既有会话中引导任务。",
+          "evidence": [
+            "google-voice-docs"
+          ]
+        },
+        {
+          "id": "antigravity-dangerous-actions",
+          "text": "官方文档明确：删除文件、提权命令和 Git force-push 不能语音批准，需在屏幕点击授权。",
+          "evidence": [
+            "google-voice-docs"
+          ]
+        }
+      ],
+      "limitations": [
+        "语音模式不支持所有远程会话；语音转录与意图识别不能替代操作确认。"
+      ]
+    },
+    {
+      "id": "biobasics-evidence-grounding",
+      "layout": "metrics",
+      "title": "BioBasicsBench：让 Agent 面对原始证据和反例",
+      "conclusion": "面向专业任务设计评分时，应检查输入证据、控制组与明确说无法下结论的能力。",
+      "facts": [
+        {
+          "id": "biobasics-task-design",
+          "text": "OpenAI 与 Ligo 11 月 6 日发布 BioBasicsBench，含 100 个湿实验常规任务，覆盖五类工作。",
+          "evidence": [
+            "openai-biobasics"
+          ]
+        },
+        {
+          "id": "biobasics-multimodal-grading",
+          "text": "任务提供凝胶图像、显微资料与仪器数据等原始材料，并经实验人员复核和专家评分标准检查。",
+          "evidence": [
+            "openai-biobasics"
+          ]
+        },
+        {
+          "id": "biobasics-official-results",
+          "text": "OpenAI 报告在 xhigh 档 GPT-6 Astra 平均得分 66.7%，GPT-5.6 Sol 为 43.8%；仍展示误判对照组等失败案例。",
+          "evidence": [
+            "openai-biobasics"
+          ]
+        }
+      ],
+      "limitations": [
+        "成绩来自发布方评测，不能视为可自动独立进行真实湿实验或专业决策。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "READ",
+      "name": "letta-ai/letta-code",
+      "summary": "研究可持久记忆、离线整理、检索与 Git 可追溯上下文的 Harness 实现。",
+      "maturity": "growing",
+      "url": "https://github.com/letta-ai/letta-code"
+    }
+  ],
+  "radar": [
+    {
+      "label": "可纠错分层记忆",
+      "impact": 91,
+      "horizon": 82,
+      "note": "先设计原始记录回溯和记忆过期策略，再增量引入离线整理。"
+    },
+    {
+      "label": "Wiki 加检索的记忆评测",
+      "impact": 86,
+      "horizon": 68,
+      "note": "用同一问答集比较纯检索与知识导航，并记录索引维护成本。"
+    },
+    {
+      "label": "协调 Agent 与多线程验收",
+      "impact": 92,
+      "horizon": 85,
+      "note": "用可追踪任务状态、责任主体和变更审核限定协作自动化。"
+    },
+    {
+      "label": "语音任务控制与审批",
+      "impact": 75,
+      "horizon": 64,
+      "note": "适合低风险引导；敏感写操作坚持屏幕确认。"
+    },
+    {
+      "label": "原始证据驱动的 Agent 评测",
+      "impact": 93,
+      "horizon": 77,
+      "note": "为领域任务加入控制组、反例和证据不足的判分项。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "为长任务建立分层记忆账本",
+      "description": "保留会话事件日志，只注入精简索引；记忆笔记关联来源、时间和失效条件。"
+    },
+    {
+      "title": "给离线记忆整理增加回归测试",
+      "description": "抽样对照原始日志，统计错误修正率、误写入率、检索收益与 Token 成本。"
+    },
+    {
+      "title": "试做协调 Agent 的任务验收闭环",
+      "description": "把任务拆分、子线程进度、Diff、测试结果及人工接受记录为独立状态。"
+    },
+    {
+      "title": "验证权限及专业判断的失败边界",
+      "description": "将高风险操作设为屏幕审批，并在评测中加入反证与证据不足案例。"
+    }
+  ],
+  "references": [
+    {
+      "id": "anthropic-memory-research",
+      "title": "Anthropic — The components of agent memory",
+      "url": "https://www.anthropic.com/research/components-of-agent-memory",
+      "supports": "分层记忆、dreaming 纠错、Wiki+搜索评测和预加载限制。",
+      "accessedAt": "2026-11-08"
+    },
+    {
+      "id": "letta-code-repo",
+      "title": "Letta — Letta Code official repository",
+      "url": "https://github.com/letta-ai/letta-code",
+      "source": "github",
+      "supports": "持续记忆 Harness、sleeptime、搜索和 MemFS 功能。",
+      "accessedAt": "2026-11-08"
+    },
+    {
+      "id": "amp-spaces-launch",
+      "title": "Amp — Spaces launch",
+      "url": "https://ampcode.com/news/spaces",
+      "supports": "协调 Agent、线程协作与安全审查应用实例。",
+      "accessedAt": "2026-11-08"
+    },
+    {
+      "id": "google-voice-launch",
+      "title": "Google Antigravity — Voice mode announcement",
+      "url": "https://antigravity.google/blog/antigravity-voice-mode",
+      "supports": "语音模式发布时间、Gemini Live、App 与 CLI 支持。",
+      "accessedAt": "2026-11-08"
+    },
+    {
+      "id": "google-voice-docs",
+      "title": "Google Antigravity — Voice mode documentation",
+      "url": "https://antigravity.google/docs/voice-mode",
+      "supports": "CLI 控制命令、权限确认限制和远程会话边界。",
+      "accessedAt": "2026-11-08"
+    },
+    {
+      "id": "openai-biobasics",
+      "title": "OpenAI — Measuring how AI agents handle everyday wet-lab science",
+      "url": "https://openai.com/index/measuring-how-ai-agents-handle-wet-lab-science/",
+      "supports": "BioBasicsBench 的设计、专家复核、官方结果与失败案例。",
+      "accessedAt": "2026-11-08"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-07 — Agent 受控执行与可验证评测",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-07.yaml",
+      "supports": "延伸阅读托管 Agent 的会话与权限、可信验证。",
+      "publishedAt": "2026-11-07"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
