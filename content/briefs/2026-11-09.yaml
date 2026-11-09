@@ -1,0 +1,336 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-09",
+  "status": "published",
+  "title": "Computer-Use Agent 走向真实工作区：浏览器授权、后台执行与可信评测",
+  "summary": "OpenCode Browse 用 MCP 与 Chromium 扩展把 Agent 接入用户现有浏览器，但标签页边界、站点白名单与敏感数据仍需精细治理。Cua Driver Bench 把不抢焦点、不改剪贴板等用户干扰纳入任务通过条件；其公开结果显示只看任务完成率会掩盖后台执行风险。研究对评测误判的复审进一步提示：应同时检查执行轨迹、判题器和权限边界，而非只看一个成功率。",
+  "topics": [
+    "agent-harness",
+    "coding-agent"
+  ],
+  "signals": [
+    {
+      "title": "真实浏览器接入降低门槛，也扩大信任边界",
+      "summary": "Browse 用 MCP、Chromium 扩展与 Playwright 复用已登录浏览器；默认应最小化可用站点和标签页。",
+      "impact": "high"
+    },
+    {
+      "title": "敏感操作必须明确人机交接",
+      "summary": "Browse 允许用户移交和收回标签页，并为登录、二步验证与支付提供人工接管流程。",
+      "impact": "high"
+    },
+    {
+      "title": "后台执行要把用户不受打扰计入成功",
+      "summary": "Cua Driver Bench 要求任务完成、只用 GUI 且前台窗口、输入、鼠标和剪贴板不被干扰。",
+      "impact": "high"
+    },
+    {
+      "title": "可信评测需要校验判题器本身",
+      "summary": "公开 CUA 轨迹复审发现部分 FAIL 由评测错误或任务损坏导致，单一通过率不能替代审计。",
+      "impact": "medium"
+    }
+  ],
+  "sections": [
+    {
+      "id": "real-browser-agent-interface",
+      "layout": "architecture",
+      "title": "Browse：MCP 接入真实浏览器，而不是重新启动隔离浏览器",
+      "conclusion": "把可操作标签页、会话与浏览器连接拆成可授权、可回收的独立资源。",
+      "facts": [
+        {
+          "id": "browse-mcp-extension",
+          "text": "OpenCode Browse 由一个 MCP 服务器和 Chromium 扩展组成，使用用户现有浏览器及其已登录状态。",
+          "evidence": [
+            "browse-product"
+          ]
+        },
+        {
+          "id": "browse-playwright-operations",
+          "text": "官方说明 Agent 可借助 Playwright 驱动标签页，并捕获截图、视频与 HAR 网络记录。",
+          "evidence": [
+            "browse-product",
+            "browse-repository"
+          ]
+        },
+        {
+          "id": "browse-mcp-clients",
+          "text": "官方列出 OpenCode、Claude Code、Cursor、Codex、Zed 等 MCP 客户端可接入 Browse。",
+          "evidence": [
+            "browse-product"
+          ]
+        }
+      ],
+      "limitations": [
+        "真实浏览器的已有登录态不是额外沙箱；需要额外审查网页数据权限与企业身份会话。"
+      ]
+    },
+    {
+      "id": "browser-security-and-constraints",
+      "layout": "system-map",
+      "title": "浏览器权限：站点白名单只是文档导航防护",
+      "conclusion": "将 origin allowlist、页面接管、脚本执行环境和审计产物视为不同信任层。",
+      "facts": [
+        {
+          "id": "browse-tab-ownership",
+          "text": "Browse 仅能操作自身打开或用户通过工具栏主动借出的标签页，用户可随时点击收回。",
+          "evidence": [
+            "browse-repository"
+          ]
+        },
+        {
+          "id": "browse-domain-allowlist",
+          "text": "Browse 的可选 origin allowlist 会限制文档导航和弹窗，但官方明确子资源请求不在同一拦截范围。",
+          "evidence": [
+            "browse-repository"
+          ]
+        },
+        {
+          "id": "browse-execute-sandbox-warning",
+          "text": "Browse README 说明 execute 使用受限制的 JavaScript realm，但它与 relay 共进程，不能当作安全边界。",
+          "evidence": [
+            "browse-repository"
+          ]
+        },
+        {
+          "id": "browse-secrets-warning",
+          "text": "Browse 声称 HAR 与日志会脱敏，但输入网页的密钥仍可能被页面脚本读取，建议配合站点白名单。",
+          "evidence": [
+            "browse-repository"
+          ]
+        }
+      ],
+      "limitations": [
+        "不能将站点白名单等同于网络层数据防泄漏；真实企业环境还需独立代理和外发控制。"
+      ]
+    },
+    {
+      "id": "handoff-and-recoverable-sessions",
+      "layout": "timeline",
+      "title": "人机交接与会话恢复：能力与权限一起设计",
+      "conclusion": "保存任务状态不代表可以长期授权敏感操作，恢复时要重核当前站点和授权。",
+      "facts": [
+        {
+          "id": "browse-human-handoff",
+          "text": "Browse 官方要求 Agent 在登录、2FA 或支付步骤将页面交回用户，用户完成后再继续。",
+          "evidence": [
+            "browse-product",
+            "browse-repository"
+          ]
+        },
+        {
+          "id": "browse-named-sessions",
+          "text": "Browse 提供命名 Session、跨重启保留标签页，以及 session_reset 和 session_delete 工具。",
+          "evidence": [
+            "browse-repository"
+          ]
+        },
+        {
+          "id": "browse-pairing",
+          "text": "Browse README 描述首次配对后浏览器获得独立密钥，后续连接用新随机数上的 HMAC 证明持有密钥。",
+          "evidence": [
+            "browse-repository"
+          ]
+        }
+      ],
+      "limitations": [
+        "会话恢复前应检查过期凭据、站点变化和人工交接事件，避免无限延长访问权限。"
+      ]
+    },
+    {
+      "id": "background-desktop-evaluation",
+      "layout": "comparison",
+      "title": "Cua Driver Bench：后台工作需同时满足三重通过条件",
+      "conclusion": "桌面 Agent 的评测不能只问任务是否完成，还要问是否走了允许的路径、是否打扰正在工作的人。",
+      "facts": [
+        {
+          "id": "driver-bench-common-agent",
+          "text": "Cua Driver Bench 固定 Claude Sonnet 5.5、提示词以及每次 360 秒和 45 轮限制，只替换计算机操作驱动层。",
+          "evidence": [
+            "cua-bench-blog"
+          ]
+        },
+        {
+          "id": "driver-bench-three-checks",
+          "text": "官方定义完整通过需任务完成、仅通过 GUI 执行，并通过八项用户不受干扰的检查。",
+          "evidence": [
+            "cua-bench-blog"
+          ]
+        },
+        {
+          "id": "driver-bench-public-tasks",
+          "text": "Bench 包含 10 项公开任务，其中 8 项进入后台评分；后台窗口每秒模拟用户输入字符。",
+          "evidence": [
+            "cua-bench-blog"
+          ]
+        }
+      ],
+      "limitations": [
+        "测试任务规模较小且部分驱动来自不同执行方；不能将这些比率直接当作生产稳定性。"
+      ]
+    },
+    {
+      "id": "bench-results-and-evaluator-audit",
+      "layout": "metrics",
+      "title": "后台得分差异与评测误判：报告必须附归因",
+      "conclusion": "用完成、干扰、越权捷径和判题失误四类指标复核 Agent，而不是用一个总分决定选型。",
+      "facts": [
+        {
+          "id": "cua-macos-background-results",
+          "text": "Cua 披露 Scale 在 macOS 上测得 cua-driver 后台完整通过 23/40、agent-desktop 8/40、browser-use 1/40。",
+          "evidence": [
+            "cua-bench-blog"
+          ]
+        },
+        {
+          "id": "cua-platform-limits",
+          "text": "Cua 报告 Windows 上 cua-driver 后台完整通过为 11/40（由 Cua 自测），Linux XFCE 上为 5/40。",
+          "evidence": [
+            "cua-bench-blog"
+          ]
+        },
+        {
+          "id": "cua-bench-license",
+          "text": "Cua 仓库注明 libs/cua-driver-bench 采用 FSL-1.1-MIT，商业托管和再分发须检查具体许可条件。",
+          "evidence": [
+            "cua-repository"
+          ]
+        },
+        {
+          "id": "evaluation-audit-fail-labels",
+          "text": "2026 年论文 How Benchmarks Mis-Score Computer-Use Agents 复审 150 条被判 FAIL 的公开轨迹，发现 15.3% 误判，其中 10.7% 为评测器假阴性、4.7% 为任务损坏。",
+          "evidence": [
+            "cua-evaluation-audit"
+          ]
+        }
+      ],
+      "limitations": [
+        "论文复审取样为 FAIL 轨迹而非全量任务，不代表所有 CUA 基准的平均错误率；不同系统结果需统一任务与执行环境再比较。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "anomalyco/browse",
+      "summary": "评估真实浏览器 MCP、Session 生命周期、标签页授权与网络记录脱敏。",
+      "maturity": "early",
+      "url": "https://github.com/anomalyco/browse"
+    },
+    {
+      "action": "READ",
+      "name": "trycua/cua",
+      "summary": "学习跨平台 computer-use driver 和公开 GUI-only 后台评测协议。",
+      "maturity": "growing",
+      "url": "https://github.com/trycua/cua"
+    },
+    {
+      "action": "READ",
+      "name": "CUA evaluator audit",
+      "summary": "对照原始论文建立任务损坏、判题错误及真实 Agent 失败的分类。",
+      "maturity": "early",
+      "url": "https://arxiv.org/abs/2607.28367"
+    }
+  ],
+  "radar": [
+    {
+      "label": "真实浏览器接入与会话授权",
+      "impact": 93,
+      "horizon": 87,
+      "note": "先用测试账户、固定 origin 和可撤回标签页验证，不接生产会话。"
+    },
+    {
+      "label": "人机交接和可恢复任务",
+      "impact": 87,
+      "horizon": 83,
+      "note": "显式保存等待人工状态与审批事件；恢复时重新核验权限。"
+    },
+    {
+      "label": "后台桌面无干扰指标",
+      "impact": 92,
+      "horizon": 72,
+      "note": "将焦点、指针、输入、剪贴板、弹窗和工作区切换纳入回归测试。"
+    },
+    {
+      "label": "GUI-only 路径约束",
+      "impact": 88,
+      "horizon": 74,
+      "note": "避免 GUI 任务绕行 shell 或文件写入伪造完成。"
+    },
+    {
+      "label": "评测器错误与轨迹审计",
+      "impact": 90,
+      "horizon": 80,
+      "note": "每个失败保留截图、操作与最终状态，抽样人工审计判题器。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立 Browser MCP 最小权限试验",
+      "description": "用无敏感数据的测试账号验证站点白名单、标签页主动授权和收回及 HAR 脱敏。"
+    },
+    {
+      "title": "为审批和会话恢复设计状态机",
+      "description": "记录 running、waiting-human、resumed、cancelled，并在每次恢复时验证 origin 与当前权限。"
+    },
+    {
+      "title": "定义桌面 Agent 后台通过准则",
+      "description": "除任务完成外，检测焦点、窗口层级、键鼠、剪贴板、弹窗与 GUI-only 路径。"
+    },
+    {
+      "title": "抽查失败判题并保留复现实验",
+      "description": "对一批失败轨迹重放并分类 Agent 失败、环境错误和评测器误判，报告置信区间。"
+    }
+  ],
+  "references": [
+    {
+      "id": "browse-product",
+      "title": "OpenCode — Browse: your real browser for coding agents",
+      "url": "https://opencode.ai/product/browse",
+      "supports": "MCP 与 Chromium 架构、Playwright、客户端范围、截图/HAR、人机交接。",
+      "accessedAt": "2026-11-09"
+    },
+    {
+      "id": "browse-repository",
+      "title": "Anomaly — Browse source repository and security README",
+      "url": "https://github.com/anomalyco/browse",
+      "supports": "标签页所有权、白名单限制、restricted execute、会话恢复、配对和敏感信息机制。",
+      "accessedAt": "2026-11-09"
+    },
+    {
+      "id": "cua-bench-blog",
+      "title": "Cua — Driver Bench: Can an Agent Use Your Apps Without Disturbing You?",
+      "url": "https://cua.ai/blog/cua-driver-bench",
+      "supports": "比较方法、后台评分条件、公开任务和 macOS/Windows/Linux 报告数值。",
+      "accessedAt": "2026-11-09"
+    },
+    {
+      "id": "cua-repository",
+      "title": "Cua — Computer-use drivers and benchmark source",
+      "url": "https://github.com/trycua/cua",
+      "supports": "Cua Driver Bench 代码、工具组织及基准的 FSL-1.1-MIT 许可说明。",
+      "accessedAt": "2026-11-09"
+    },
+    {
+      "id": "cua-evaluation-audit",
+      "title": "Dong et al. — How Benchmarks Mis-Score Computer-Use Agents",
+      "url": "https://arxiv.org/abs/2607.28367",
+      "supports": "150 条 FAIL 轨迹复审、误判类型及结果分布。",
+      "accessedAt": "2026-11-09"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-08 — 可纠错记忆与持续协作",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-08.yaml",
+      "supports": "延伸阅读 Agent 的会话恢复、任务协作与人工审批。",
+      "publishedAt": "2026-11-08"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
