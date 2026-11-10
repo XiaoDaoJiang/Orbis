@@ -8,8 +8,7 @@
   "summary": "11 月 9 日，Anthropic 发布 Fable 5.2 与按验证资格访问的 Mythos 5.2，GitHub Copilot 同步说明了企业启用和数据保留限制。DeepSeek Harness 展示以 Cordis 为底座的插件化扩展；Anthropic 的电子设备原型实验把 Agent 从写代码推向 PCB、外壳与固件协作。CodeRabbit 案例则显示产出扩张之后，审查、安全和交付治理成为关键瓶颈。工程团队应将模型路由、权限、验证与人工验收统一纳入可追踪工作流。",
   "topics": [
     "agent-harness",
-    "coding-agent",
-    "agent-security"
+    "coding-agent"
   ],
   "signals": [
     {
