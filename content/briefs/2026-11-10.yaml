@@ -1,0 +1,351 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-10",
+  "status": "published",
+  "title": "AI Agent 进入工程闭环：强模型分级、可插拔 Harness 与真实世界验收",
+  "summary": "11 月 9 日，Anthropic 发布 Fable 5.2 与按验证资格访问的 Mythos 5.2，GitHub Copilot 同步说明了企业启用和数据保留限制。DeepSeek Harness 展示以 Cordis 为底座的插件化扩展；Anthropic 的电子设备原型实验把 Agent 从写代码推向 PCB、外壳与固件协作。CodeRabbit 案例则显示产出扩张之后，审查、安全和交付治理成为关键瓶颈。工程团队应将模型路由、权限、验证与人工验收统一纳入可追踪工作流。",
+  "topics": [
+    "agent-harness",
+    "coding-agent",
+    "agent-security"
+  ],
+  "signals": [
+    {
+      "title": "前沿模型按任务难度和风险分层",
+      "summary": "Fable 5.2 面向高难工程，Mythos 5.2 通过验证计划限量提供；日常任务不必默认使用最高价模型。",
+      "impact": "high"
+    },
+    {
+      "title": "模型接入同时是企业数据治理决策",
+      "summary": "GitHub Copilot 已提供 Fable 5.2，但需管理员显式启用；默认保留数据用于安全分类，ZDR 有资格限制。",
+      "impact": "high"
+    },
+    {
+      "title": "插件化 Harness 让执行能力更易替换",
+      "summary": "DeepSeek Harness 基于 Cordis 的一切皆插件架构，开放本地 Web 与桌面场景，但开发者预览可能破坏兼容。",
+      "impact": "medium"
+    },
+    {
+      "title": "Agent 交付必须覆盖实物和代码的验收",
+      "summary": "从三件硬件原型到 CodeRabbit 的审查体系，完成任务不等于经过生产认证或安全审查。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "frontier-model-routing",
+      "layout": "metrics",
+      "title": "Fable 与 Mythos：模型选型从单一榜单转为任务路由",
+      "conclusion": "让高成本模型担任复杂规划与难题诊断，常规任务先跑低成本基线，并用自己的可复现测试校准。",
+      "facts": [
+        {
+          "id": "fable-mythos-official-release",
+          "text": "Anthropic 于 2026 年 11 月 9 日发布 Claude Fable 5.2 与 Claude Mythos 5.2，两者底层模型相同，但部署防护和访问方式不同。",
+          "evidence": [
+            "anthropic-fable-52"
+          ]
+        },
+        {
+          "id": "fable-pricing-and-speed",
+          "text": "Anthropic 官方列出 Fable 5.2 和 Mythos 5.2 标准价格每百万输入/输出 token 为 8/40 美元，称输出比 5.1 版本最高快 30%。",
+          "evidence": [
+            "anthropic-fable-52"
+          ]
+        },
+        {
+          "id": "fable-frontiercode-score",
+          "text": "在 Anthropic 自报的 FrontierCode 2.0 中，Fable 5.2 的 Xhigh 得分为 49.1%，High 为 45.3%；各模型成本和 effort 配置不同，不能直接推为生产成绩。",
+          "evidence": [
+            "anthropic-fable-52"
+          ]
+        },
+        {
+          "id": "fable-agent-roles",
+          "text": "Anthropic 推荐多数日常编码任务先使用 Opus 5.5，并介绍 Fable 5.2 可作为 Advisor 或 Orchestrator 协同较小模型。",
+          "evidence": [
+            "anthropic-fable-52"
+          ]
+        }
+      ],
+      "limitations": [
+        "性能、成本和案例主要来自厂商预发布测试；应以固定仓库任务、工具预算和审核成本进行本地复测。"
+      ]
+    },
+    {
+      "id": "enterprise-access-and-data",
+      "layout": "comparison",
+      "title": "权限与隐私：模型可用并不等于企业默认可启用",
+      "conclusion": "先评估数据保留、模型访问政策和审批流程，再引入新模型到企业代码仓库。",
+      "facts": [
+        {
+          "id": "mythos-gated",
+          "text": "Anthropic 称 Fable 5.2 启用较强的网络安全和生物安全防护并面向一般用户，Mythos 5.2 通过 Life Sciences 与 Cyber Verification Program 向符合资格的组织开放。",
+          "evidence": [
+            "anthropic-fable-52"
+          ]
+        },
+        {
+          "id": "copilot-rollout",
+          "text": "GitHub 11 月 9 日宣布 Claude Fable 5.2 在 GitHub Copilot 可用，涵盖 VS Code、JetBrains、Copilot CLI 和 Coding Agent 等入口，采取逐步发布。",
+          "evidence": [
+            "github-copilot-fable"
+          ]
+        },
+        {
+          "id": "copilot-retention-default",
+          "text": "GitHub 说明 Fable 5.2 默认须保留提示词与输出供 Anthropic 安全分类器使用；Business 和 Enterprise 管理员需显式开启相关模型政策。",
+          "evidence": [
+            "github-copilot-fable"
+          ]
+        },
+        {
+          "id": "copilot-zdr-exemption",
+          "text": "GitHub 表示部分获批企业可在 2026 年底前通过限时豁免使用 Fable 5.2 的零数据保留端点，其后继续使用需满足 Enterprise Frontier Safeguards 条件。",
+          "evidence": [
+            "github-copilot-fable"
+          ]
+        }
+      ],
+      "limitations": [
+        "ZDR 与默认数据保留政策因产品和资格而异，不应将 GitHub Copilot 公告推广到所有 Claude 接入方式。"
+      ]
+    },
+    {
+      "id": "extensible-harness-boundaries",
+      "layout": "architecture",
+      "title": "DeepSeek Harness：一切皆插件意味着扩展点也需要安全边界",
+      "conclusion": "把插件能力与审核、秘密管理、沙箱隔离分开测试，不让可热替换组件自行决定越权权限。",
+      "facts": [
+        {
+          "id": "deepseek-cordis-plugins",
+          "text": "DeepSeek Harness 官方称产品基于 Cordis 的“一切皆插件”架构，支持安装既有插件或通过创造模式生成插件。",
+          "evidence": [
+            "deepseek-harness-product",
+            "deepseek-harness-repository"
+          ]
+        },
+        {
+          "id": "deepseek-desktop-web",
+          "text": "DeepSeek 官网页面提供桌面应用、工作区及后台任务示例，官方仓库同时给出 Node.js 下通过 npx 启动本地 Web UI 的方法。",
+          "evidence": [
+            "deepseek-harness-product",
+            "deepseek-harness-repository"
+          ]
+        },
+        {
+          "id": "deepseek-preview-breaking",
+          "text": "DeepSeek Harness 官方仓库注明仍处于开发者预览，可能发生破坏兼容性的变更，并要求运行前阅读安全公告。",
+          "evidence": [
+            "deepseek-harness-repository"
+          ]
+        }
+      ],
+      "limitations": [
+        "插件架构的开放性不能替代权限审核；预览版生产部署前应独立验证沙箱、网络访问和升级兼容性。"
+      ]
+    },
+    {
+      "id": "hardware-agent-validation",
+      "layout": "timeline",
+      "title": "从软件代理到电子原型：多工具协作开始接触物理约束",
+      "conclusion": "沿着规格、器件选型、PCB、固件、机械外壳、实物测试保留证据，并对不可逆步骤施加人工关卡。",
+      "facts": [
+        {
+          "id": "fable-three-prototypes",
+          "text": "Anthropic 11 月 9 日披露与 Diode Computers 合作，让 Fable 5.2 从简短需求设计 USB 免提电话、语音助手 Hub 和掌上虚拟宠物三个原型。",
+          "evidence": [
+            "anthropic-electronics-design"
+          ]
+        },
+        {
+          "id": "fable-hardware-toolchain",
+          "text": "官方称模型完成电路图、PCB 布线、三维打印外壳、固件和器件清单，并由 Diode 工程师装配测试；三款原型无需电路修改即可工作。",
+          "evidence": [
+            "anthropic-electronics-design"
+          ]
+        },
+        {
+          "id": "fable-pcb-benchmark",
+          "text": "在 Diode 的内部 PCB Gym 测试中，Anthropic 报告 Fable 5.2 得分 69%，Fable 5 得分 25%；此为特定合作方基准而非独立普适认证。",
+          "evidence": [
+            "anthropic-electronics-design"
+          ]
+        },
+        {
+          "id": "fable-hardware-not-certified",
+          "text": "Anthropic 明确表示三款设备尚未完成电气验证、天线调谐、热测试或认证，且物理制造与测试仍由人执行。",
+          "evidence": [
+            "anthropic-electronics-design"
+          ]
+        }
+      ],
+      "limitations": [
+        "原型可工作不代表符合量产、安全或法规认证要求；模型未直接控制测试和制造设备。"
+      ]
+    },
+    {
+      "id": "review-and-acceptance-scaling",
+      "layout": "system-map",
+      "title": "生产率扩张之后，代码审查和安全验证成为必要控制面",
+      "conclusion": "采用分层路由和自动检查压缩常规劳动，但高风险变更必须有可追溯 Review 与独立验证。",
+      "facts": [
+        {
+          "id": "coderabbit-review-bottleneck",
+          "text": "OpenAI 11 月 9 日发布的 CodeRabbit 客户案例中，CodeRabbit CEO 将代码审查称为引入编码 Agent 后的首个瓶颈。",
+          "evidence": [
+            "openai-coderabbit"
+          ]
+        },
+        {
+          "id": "coderabbit-agent-routing",
+          "text": "CodeRabbit 表示内部使用较低成本模型增加子 Agent 数量，并使用更强模型完成规划、协调和代码审查；该说法来自客户访谈。",
+          "evidence": [
+            "openai-coderabbit"
+          ]
+        },
+        {
+          "id": "coderabbit-throughput-claim",
+          "text": "CodeRabbit CEO 自报过去六个月工程师人数未增加，但采用 Codex 后软件交付约增加至 20 倍；团队同时重构了测试、编译、发布和人工批准流程。",
+          "evidence": [
+            "openai-coderabbit"
+          ]
+        },
+        {
+          "id": "coderabbit-security-workflows",
+          "text": "该客户案例介绍 CodeRabbit 将审查、修复和安全扫描融入 Agent 工作流，并为低风险变更设置自动化流程。",
+          "evidence": [
+            "openai-coderabbit"
+          ]
+        }
+      ],
+      "limitations": [
+        "20 倍交付为企业自报案例，不是受控因果实验；复现前需度量缺陷率、返工、review 工时和生产事故。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "deepseek-ai/deepseek-harness",
+      "summary": "在隔离工作区验证 Cordis 插件扩展、权限控制与升级行为。",
+      "maturity": "experimental",
+      "url": "https://github.com/deepseek-ai/deepseek-harness"
+    },
+    {
+      "action": "READ",
+      "name": "Claude Fable 5.2 System Card",
+      "summary": "核查厂商评测设置、安全筛选机制与局限，再评估新模型路由。",
+      "maturity": "growing",
+      "url": "https://www.anthropic.com/claude-fable-and-mythos-5-2"
+    }
+  ],
+  "radar": [
+    {
+      "label": "复杂任务的模型路由",
+      "impact": 93,
+      "horizon": 86,
+      "note": "固定仓库任务对比不同 effort 与模型的质量、成本和耗时。"
+    },
+    {
+      "label": "企业模型访问与数据保留审查",
+      "impact": 96,
+      "horizon": 91,
+      "note": "按模型和产品维度记录保留策略、管理员开关及例外申请。"
+    },
+    {
+      "label": "插件化 Harness 的能力隔离",
+      "impact": 91,
+      "horizon": 79,
+      "note": "用受控插件验证工具调用、文件访问、网络白名单和权限升级。"
+    },
+    {
+      "label": "物理工程 Agent 的分阶段验收",
+      "impact": 90,
+      "horizon": 59,
+      "note": "把 BOM、CAD、PCB、固件和实物测试分开审批与归档。"
+    },
+    {
+      "label": "代码审查和漏洞修复闭环",
+      "impact": 95,
+      "horizon": 89,
+      "note": "关联每条 Agent 变更的 Diff、测试、Review、风险分级和回滚。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "搭建多模型路由基准",
+      "description": "选取十个真实但脱敏的修复任务，按相同预算比较 Fable、Opus 和现有 Agent Provider 的验收结果。"
+    },
+    {
+      "title": "执行企业数据保留预检",
+      "description": "在接入新模型前填写数据分类、保留期限、ZDR 资格、管理员策略和敏感仓库使用边界。"
+    },
+    {
+      "title": "隔离试运行插件化 Harness",
+      "description": "在测试账号与临时目录中启动 DeepSeek Harness，对插件工具权限、沙箱和升级兼容性做回归测试。"
+    },
+    {
+      "title": "建立从 Agent 产出到验收的证据链",
+      "description": "将提交、Diff、构建、测试、代码审查、人工批准及回滚计划关联到同一任务执行记录。"
+    }
+  ],
+  "references": [
+    {
+      "id": "anthropic-fable-52",
+      "title": "Anthropic — Claude Fable 5.2 and Mythos 5.2",
+      "url": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+      "supports": "2026-11-09 官方模型发布、模型分级、定价、厂商评测与 Agent 编排案例。",
+      "accessedAt": "2026-11-10"
+    },
+    {
+      "id": "github-copilot-fable",
+      "title": "GitHub Changelog — Claude Fable 5.2 in GitHub Copilot",
+      "url": "https://github.blog/changelog/2026-11-09-claude-fable-5-2-in-github-copilot/",
+      "supports": "2026-11-09 上线范围、组织管理员开关与数据保留/ZDR 例外要求。",
+      "accessedAt": "2026-11-10"
+    },
+    {
+      "id": "deepseek-harness-product",
+      "title": "DeepSeek — Harness official preview and architecture",
+      "url": "https://www.deepseek.com/harness/",
+      "supports": "DeepSeek Harness 开放测试、Cordis 插件架构、工作区与后台任务能力。",
+      "accessedAt": "2026-11-10"
+    },
+    {
+      "id": "deepseek-harness-repository",
+      "title": "DeepSeek — DeepSeek Harness official GitHub repository",
+      "url": "https://github.com/deepseek-ai/deepseek-harness",
+      "supports": "开放源代码、开发者预览状态、兼容性变化风险、MIT 许可证与本地启动方式。",
+      "accessedAt": "2026-11-10"
+    },
+    {
+      "id": "anthropic-electronics-design",
+      "title": "Anthropic — Testing Claude on real-world electronics design",
+      "url": "https://www.anthropic.com/research/claude-electronics-design",
+      "supports": "2026-11-09 PCB/固件/外壳多步工程案例、Diode 实物装配、内部基准与明确限制。",
+      "accessedAt": "2026-11-10"
+    },
+    {
+      "id": "openai-coderabbit",
+      "title": "OpenAI — CodeRabbit scales agentic software development and ships 20x more",
+      "url": "https://openai.com/index/coderabbit-codex-daybreak/",
+      "supports": "2026-11-09 CodeRabbit 自报代码交付速度、分层模型路由、PR 审核与安全验证流程案例。",
+      "accessedAt": "2026-11-10"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-09 — 真实浏览器 Agent 的授权与评测",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-09.yaml",
+      "supports": "对照真实浏览器的权限边界与后台桌面代理的验收标准。",
+      "publishedAt": "2026-11-09"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
