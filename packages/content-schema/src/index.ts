@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MAX_OPEN_TAGS, normalizeContentLabel } from './open-tags.mjs'
 
 export const publicationStatusSchema = z.enum([
   'draft',
@@ -199,9 +200,24 @@ export const legacyDailyBriefSchema = briefSharedSchema.extend({
   }),
 })
 
+// Persist normalized display labels only. Tags are metadata, never Registry IDs.
+export const openTagSchema = z.string().superRefine((value, ctx) => {
+  try {
+    if (normalizeContentLabel(value) !== value) throw new Error('Tags must use normalized whitespace and NFKC text')
+  } catch (error) {
+    ctx.addIssue({ code: 'custom', message: error instanceof Error ? error.message : String(error) })
+  }
+})
+export const openTagsSchema = z.array(openTagSchema).max(MAX_OPEN_TAGS).default([]).superRefine((tags, ctx) => {
+  const keys = tags.map((tag) => tag.toLowerCase())
+  if (new Set(keys).size !== keys.length) ctx.addIssue({ code: 'custom', message: 'Tags must be unique ignoring case' })
+})
+
 export const evidenceDailyBriefSchema = briefSharedSchema.extend({
   cadence: z.literal('daily'),
   evidenceVersion: z.literal(1),
+  topics: z.array(registryIdSchema).max(MAX_OPEN_TAGS),
+  tags: openTagsSchema,
   signals: z.array(signalSchema).length(4),
   sections: z.array(dailyEvidenceSectionSchema).length(5),
   projects: z.array(projectSchema).max(6).default([]),
@@ -214,7 +230,17 @@ export const evidenceDailyBriefSchema = briefSharedSchema.extend({
     enabled: z.boolean(),
     template: z.literal('daily-v1'),
   }).strict(),
-}).strict()
+}).strict().superRefine((brief, ctx) => {
+  if (!brief.topics.length && !brief.tags.length) {
+    ctx.addIssue({ code: 'custom', path: ['topics'], message: 'Daily requires at least one topic or tag' })
+  }
+  if (new Set(brief.topics).size !== brief.topics.length) {
+    ctx.addIssue({ code: 'custom', path: ['topics'], message: 'Topics must be unique' })
+  }
+  if (brief.tags.some((tag) => brief.topics.includes(tag.toLowerCase()))) {
+    ctx.addIssue({ code: 'custom', path: ['tags'], message: 'Tags must not duplicate formal topics' })
+  }
+})
 
 export const dailyBriefSchema = z.union([evidenceDailyBriefSchema, legacyDailyBriefSchema])
 

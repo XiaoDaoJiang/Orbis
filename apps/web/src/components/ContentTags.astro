@@ -1,0 +1,12 @@
+---
+interface Props {
+  tags?: string[]
+}
+const { tags = [] } = Astro.props
+---
+{tags.length > 0 && (
+  <div class="pills content-tags" data-content-tags role="group" aria-label="标签">
+    <span class="content-tags-label" aria-hidden="true">标签</span>
+    {tags.map((tag) => <span class="pill content-tag" data-content-tag>{tag}</span>)}
+  </div>
+)}

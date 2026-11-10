@@ -10,6 +10,7 @@ export type DiscoveryItem = {
   summary: string
   publishedAt: string
   topics: string[]
+  tags?: string[]
   href: string
   cadence?: BriefCadence
   presentationHref?: string
@@ -52,6 +53,7 @@ export function toBriefDiscoveryItem(entry: CollectionEntry<'briefs'>, base: str
     summary: entry.data.summary,
     publishedAt: entry.data.publishedAt,
     topics: entry.data.topics,
+    tags: entry.data.cadence === 'daily' && entry.data.evidenceVersion === 1 ? entry.data.tags ?? [] : [],
     href: publicHref(base, 'briefs', entry.id),
     cadence: entry.data.cadence,
     presentationHref: entry.data.presentation.enabled ? publicHref(base, 'slides', entry.id) : undefined,

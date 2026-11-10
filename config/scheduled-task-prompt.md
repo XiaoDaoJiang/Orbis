@@ -90,6 +90,24 @@ references:
 
 旧已发布 Daily 的 legacy shape 只用于冻结迁移兼容，不允许新 Scheduled Daily 继续使用。
 
+## Open tags and stable topics
+
+Before research or generation, resolve current `main` to one explicit commit SHA (`integrationBaseSha`). Read these contracts, schema, classification modules and the complete `content/topics/` Registry from that same SHA. Do not mix mutable `main` reads or reuse a cached list of IDs. Before a GitHub mutation, recheck current main, target publication state and candidate head; if main changed, refresh the snapshot and revalidate instead of reusing the old decision.
+
+The classification contract is `tools/content-automation/daily-classification.mjs` plus `packages/content-schema/src/open-tags.mjs`. Read full Topic entries (canonical filename ID, name, description, aliases, status and related), not filenames alone. Complete enumeration is required: follow pagination, reject truncated trees, failed reads, malformed entries or an unavailable Registry. These failures are `blocked`, not evidence that every label is new.
+
+Generate meaningful topic/tag labels without inventing Registry identities. Before serialization, execute `classifyDailyCandidate(candidate, registryEntries)` with `registryEntries` shaped as `[{ id, data }]` from that verified snapshot. The repository serializer does this automatically in a pinned checkout. For connector-only execution, retrieve both dependency-free modules from the same SHA, preserve their relative paths, parse Registry YAML with a real parser and execute the same policy (or executable parity-tested equivalent). Do not manually approximate matching with a prompt or a regular expression. If no parser/policy can execute, stop before mutation.
+
+- An active canonical Topic ID or unique explicit alias becomes a canonical `topics` entry. Canonical ID matching takes precedence; do not guess from display names or use fuzzy similarity.
+- A genuinely unknown label, an ambiguous alias or a label matching an inactive Topic remains an open `tags` label with a diagnostic; it must not block an otherwise valid Daily or reactivate/create a Registry entry.
+- `topics` may be empty if `tags` is non-empty. Do not force an unrelated formal classification merely to pass a check.
+- Tags are normalized (NFKC, trimmed/collapsed whitespace), deduplicated ignoring case and bounded by the shared label policy. Preserve their meaning; do not silently drop invalid or excess labels.
+- Tags are displayed and searchable, but do not create Topic pages, enter the formal Topic filter or affect formal-topic related-content ranking. `watch` is a public Registry state, not a private candidate queue.
+- Classification only changes `topics` / `tags`. Preserve every factual, evidence and presentation value exactly, then run the normal serialization round-trip and validation chain. In the no-checkout JSON-as-YAML path, compare final bytes against the classified object, not against unclassified label proposals.
+- This lightweight check is not `pnpm validate`, a build, preview proof or publication authorization. Preserve truthful `not-run` outcomes and do not invent DailyAutomationReport fields.
+
+New Registry topics and future tag-to-topic promotion remain a separate reviewed change. Scheduled Daily still modifies exactly its one content file; no automatic Registry edits or historical content rewrites.
+
 ## Safe YAML serialization
 
 Treat source titles and all other free text as data, never as interpolated YAML syntax. In particular, `: `, ` #`, quotes, backslashes, multiline text, YAML indicators and strings resembling dates, numbers or booleans must survive unchanged.
@@ -100,7 +118,7 @@ When repository execution is available, generate a JSON object first, then use t
 pnpm --silent automation:daily:serialize YYYY-MM-DD /tmp/candidate.json > /tmp/candidate.yaml && cp /tmp/candidate.yaml content/briefs/YYYY-MM-DD.yaml
 ```
 
-`automation:daily:serialize` validates Evidence V1 and target identity, serializes with the pinned `yaml` library, then parses the result and verifies exact value/type round-trip preservation before emitting any YAML. Use a temporary file; never redirect over the candidate before validation succeeds. Do not commit the intermediate JSON or temporary YAML.
+`automation:daily:serialize` first resolves classification labels using the complete Topic Registry in the pinned checkout, then validates Evidence V1 and target identity, serializes with the pinned `yaml` library, parses the result and verifies exact value/type round-trip preservation of the classified candidate before emitting any YAML. Only `topics` / `tags` may change during classification; all other source values must remain identical. Unknown labels produce diagnostics on stderr, not a publication failure. Use a temporary file; never redirect over the candidate before validation succeeds. Do not commit the intermediate JSON or temporary YAML.
 
 If repository execution is unavailable, use a real YAML serializer when available; otherwise serialize the entire candidate as JSON (JSON is valid YAML) into the `.yaml` file. Use JSON string escaping, never concatenate unquoted external text into YAML. Parse the exact final bytes and compare every value/type with the source object before GitHub mutation. If no parser can run, stop and report serialization validation as blocked; do not upload unvalidated candidate bytes or count GitHub CI as producer-local validation.
 

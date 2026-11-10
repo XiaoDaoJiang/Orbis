@@ -210,3 +210,18 @@ assert.throws(() => authorSchema.parse({ ...validAuthor, url: 'not-a-url' }))
 assert.throws(() => authorSchema.parse({ ...validAuthor, bio: 'too short' }))
 
 console.log('content-schema tests passed')
+
+// Open tags extend Evidence V1 Daily only; historical inputs remain unchanged.
+assert.deepEqual(dailyBriefSchema.parse(validEvidence).tags, [])
+assert.equal('tags' in dailyBriefSchema.parse(valid), false)
+assert.equal(dailyBriefSchema.safeParse({ ...validEvidence, topics: [], tags: ['agent-security'] }).success, true)
+assert.equal(dailyBriefSchema.safeParse({ ...validEvidence, topics: [], tags: [] }).success, false)
+assert.equal(dailyBriefSchema.safeParse({ ...valid, topics: [], tags: ['agent-security'] }).success, false)
+for (const tags of [[''], ['bad\u202ename'], ['<script>'], ['not  normalized'], ['Ａ'], ['x'.repeat(65)], ['Same', 'same'], Array(33).fill('tag')]) {
+  assert.equal(dailyBriefSchema.safeParse({ ...validEvidence, tags }).success, false)
+}
+assert.equal(dailyBriefSchema.safeParse({ ...validEvidence, tags: ['agent-harness'] }).success, false)
+assert.equal(dailyBriefSchema.safeParse({ ...validEvidence, classificationLabels: ['new-label'] }).success, false)
+assert.equal(dailyBriefSchema.safeParse({ ...validEvidence, topics: ['Invalid ID'] }).success, false)
+assert.equal(dailyBriefSchema.safeParse({ ...validEvidence, topics: ['agent-harness', 'agent-harness'] }).success, false)
+assert.equal(dailyBriefSchema.safeParse({ ...validEvidence, topics: [], tags: ['agent-security'], references: [] }).success, false)

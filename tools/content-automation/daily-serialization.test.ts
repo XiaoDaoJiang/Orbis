@@ -33,6 +33,18 @@ try {
   await writeFile(input, JSON.stringify(fixture))
   const output = execFileSync(process.execPath, ['--import', 'tsx', cli, fixture.publishedAt, input], { encoding: 'utf8' })
   assert.deepEqual(parse(output), fixture)
+  const proposed = { ...fixture, topics: ['harness', 'coding-agent', 'agent-security'] }
+  await writeFile(input, JSON.stringify(proposed))
+  const classifiedRun = spawnSync(process.execPath, ['--import', 'tsx', cli, fixture.publishedAt, input], { encoding: 'utf8' })
+  assert.equal(classifiedRun.status, 0, classifiedRun.stderr)
+  const classified = parse(classifiedRun.stdout)
+  assert.deepEqual(classified.topics, ['agent-harness', 'coding-agent'])
+  assert.deepEqual(classified.tags, ['agent-security'])
+  const { topics: _beforeTopics, ...beforeRest } = proposed
+  const { topics: _afterTopics, tags: _tags, ...afterRest } = classified
+  assert.deepEqual(afterRest, beforeRest, 'Classification must preserve all non-classification data')
+  assert.match(classifiedRun.stderr, /unknown-label/)
+  await writeFile(input, JSON.stringify(fixture))
   for (const args of [[], ['2026-09-25', input], [fixture.publishedAt, input, 'extra']]) {
     const failed = spawnSync(process.execPath, ['--import', 'tsx', cli, ...args], { encoding: 'utf8' })
     assert.equal(failed.status, 1)

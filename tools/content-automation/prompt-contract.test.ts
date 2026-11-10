@@ -6,6 +6,12 @@ const scheduled = await readFile('config/scheduled-task-prompt.md', 'utf8')
 
 for (const [name, text] of [['daily-task-prompt', daily], ['scheduled-task-prompt', scheduled]] as const) {
   assert.match(text, /automation:daily:serialize/, `${name} must use the safe serializer`)
+  assert.match(text, /integrationBaseSha/, `${name} must pin one main snapshot`)
+  assert.match(text, /classifyDailyCandidate/, `${name} must execute deterministic classification`)
+  assert.match(text, /unknown, ambiguous or inactive labels|unknown label, an ambiguous alias or a label matching an inactive Topic/i, `${name} must preserve new labels as tags`)
+  assert.match(text, /truncated trees/, `${name} must reject incomplete registry reads`)
+  assert.match(text, /If no parser\/policy can execute, stop before mutation/, `${name} must fail closed without executable classification`)
+
   assert.match(text, /round-trip/, `${name} must require exact round-trip validation`)
   assert.match(text, /do not upload unvalidated candidate bytes/, `${name} must fail closed without validation`)
   assert.match(text, /targetDate/, `${name} must require an explicit targetDate`)

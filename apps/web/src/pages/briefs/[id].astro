@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content'
 import AdjacentContentNav from '../../components/AdjacentContentNav.astro'
+import ContentTags from '../../components/ContentTags.astro'
 import RelatedContent from '../../components/RelatedContent.astro'
 import AdHocBriefBody from '../../components/briefs/AdHocBriefBody.astro'
 import DailyBriefBody from '../../components/briefs/DailyBriefBody.astro'
@@ -91,7 +92,8 @@ const jsonLd = buildBriefJsonLd(webSiteConfig, {
       <div class="eyebrow">Brief · {entry.data.cadence} · {entry.data.publishedAt}</div>
       <h1>{entry.data.title}</h1>
       <p class="lead">{entry.data.summary}</p>
-      <div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+      {entry.data.topics.length > 0 && <div class="pills">{entry.data.topics.map((topic) => <span class="pill">{topic}</span>)}</div>}
+      <ContentTags tags={dailyBrief?.evidenceVersion === 1 ? dailyBrief.tags : []} />
       {entry.data.presentation.enabled && <p><a href={`${base}/slides/${entry.id}/`}>打开演示版 →</a></p>}
     </header>
     {dailyBrief && <DailyBriefBody brief={dailyBrief} sourceIndex={sourceIndex} />}
