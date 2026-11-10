@@ -23,6 +23,7 @@ function makeBrief(): EvidenceDailyBrief {
     title: 'Published Evidence Daily integration fixture',
     summary: 'A sufficiently descriptive integration fixture for the published Daily correction guard.',
     topics: ['agent-harness'],
+    tags: [],
     signals: Array.from({ length: 4 }, (_, index) => ({
       title: `Signal ${index + 1}`,
       summary: 'A sufficiently descriptive signal summary.',

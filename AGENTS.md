@@ -21,6 +21,8 @@ These directories may contain `slides.md`, `style.css`, imported Markdown, Vue c
 
 Scheduled agents may reference existing Topic, Source and Author IDs that are already registered and active.
 
+Evidence V1 Daily Briefs may also contain open `tags`: descriptive labels that do not create Registry entries, Topic routes or automatic promotion authority. Before serialization, resolve proposed topic/tag labels with the repository classification policy: active canonical IDs or unique explicit aliases become `topics`; unknown, ambiguous or inactive labels remain open `tags`. A Daily may have no formal topics when at least one open tag exists. Registry read/validation failures are not unknown labels and must fail closed. See `docs/operations/daily-open-tags.md`.
+
 ## Explicit published Daily corrections
 
 A normal Scheduled Daily run must never enter correction mode automatically.

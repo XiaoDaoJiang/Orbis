@@ -1,5 +1,7 @@
 ---
 import { getCollection } from 'astro:content'
+import ContentTags from '../../components/ContentTags.astro'
+import { archiveSearchText } from '../../lib/archive-filters'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import {
   isPublicBrief,
@@ -35,7 +37,7 @@ const topics = topicEntries.filter(isPublicTopic).sort((left, right) => left.dat
   <form class="filters" id="archive-filters" aria-label="Archive filters" hidden>
     <label class="filter-control filter-search">
       <span>Search · 搜索</span>
-      <input id="archive-search" type="search" placeholder="搜索标题、摘要或主题" autocomplete="off" aria-controls="archive-results" />
+      <input id="archive-search" type="search" placeholder="搜索标题、摘要、主题或标签" autocomplete="off" aria-controls="archive-results" />
     </label>
     <label class="filter-control">
       <span>Type · 内容类型</span>
@@ -77,12 +79,13 @@ const topics = topicEntries.filter(isPublicTopic).sort((left, right) => left.dat
         data-kind={item.kind}
         data-cadence={item.cadence ?? ''}
         data-topics={item.topics.join(' ')}
-        data-search={`${item.title} ${item.summary} ${item.topics.join(' ')}`}
+        data-search={archiveSearchText(item)}
       >
         <small>{item.kind}{item.cadence ? ` · ${item.cadence}` : ''} · {item.publishedAt}</small>
         <h2><a href={item.href}>{item.title}</a></h2>
         <p>{item.summary}</p>
-        <div class="pills">{item.topics.map((topic) => <span class="pill">{topic}</span>)}</div>
+        {item.topics.length > 0 && <div class="pills">{item.topics.map((topic) => <span class="pill">{topic}</span>)}</div>}
+        <ContentTags tags={item.tags} />
         <div class="link-row">
           <a href={item.href} aria-label={`Read: ${item.title}`}>Read →</a>
           {item.presentationHref && <a href={item.presentationHref} aria-label={`Presentation: ${item.title}`}>Presentation →</a>}

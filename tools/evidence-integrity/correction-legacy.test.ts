@@ -55,6 +55,7 @@ const evidence: EvidenceDailyBrief = {
   title: 'Evidence published Daily fixture',
   summary: 'A sufficiently descriptive Evidence published Daily fixture for fail-closed tests.',
   topics: ['agent-harness'],
+  tags: [],
   signals: legacy.signals,
   sections: Array.from({ length: 5 }, (_, index) => ({
     id: `section-${index + 1}`,

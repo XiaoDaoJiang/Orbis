@@ -45,3 +45,9 @@ assert.match(adapter, /JSON is valid YAML/, 'Non-executable fallback must avoid 
 assert.match(adapter, /do not upload unvalidated candidate bytes/, 'Adapter must fail closed without parsing')
 
 console.log('ChatGPT Scheduled Daily adapter contract passed')
+
+assert.match(adapter, /integrationBaseSha/, 'Adapter must pin one current-main snapshot')
+assert.match(adapter, /classifyDailyCandidate/, 'Adapter must use executable classification in both runtime paths')
+assert.match(adapter, /truncated trees/, 'Adapter must reject incomplete Registry snapshots')
+assert.match(adapter, /topics.*may be empty/, 'Adapter must permit genuinely new tag-only topics')
+assert.match(adapter, /If no parser\/policy can execute, stop before mutation/, 'Adapter must not guess classification without execution')

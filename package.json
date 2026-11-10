@@ -8,7 +8,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "validate": "pnpm build:preflight && pnpm test:build-tools && pnpm test:feed-discovery && pnpm test:path-guard && pnpm test:content-automation && pnpm test:pages-promotion && pnpm --filter @orbis/content-schema test && pnpm test:evidence-integrity && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:reading-ui && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm test:knowledge-lifecycle-ui && pnpm test:knowledge-lifecycle-ui-fixtures && pnpm content:validate && pnpm knowledge:review && pnpm test:registry-ui-fixtures",
+    "validate": "pnpm build:preflight && pnpm test:build-tools && pnpm test:feed-discovery && pnpm test:path-guard && pnpm test:content-automation && pnpm test:pages-promotion && pnpm --filter @orbis/content-schema test && pnpm test:evidence-integrity && pnpm test:presentation-platform && pnpm test:weekly-brief && pnpm test:content-registry && pnpm test:registry-ui-contract && pnpm test:reading-ui && pnpm test:seo-url && pnpm test:structured-data && pnpm test:knowledge-lifecycle && pnpm test:knowledge-lifecycle-ui && pnpm test:knowledge-lifecycle-ui-fixtures && pnpm content:validate && pnpm knowledge:review && pnpm test:registry-ui-fixtures && pnpm test:open-tags-ui-fixture",
     "build:preflight": "tsx tools/build/preflight.ts",
     "test:build-tools": "tsx tools/shared/content.test.ts && tsx tools/shared/process.test.ts && tsx tools/shared/site-config.test.ts && tsx tools/shared/toolchain.test.ts && tsx tools/shared/presentation-scope.test.ts && tsx tools/incremental-build/content-detail-cache.test.ts && tsx tools/incremental-build/presentation-impact-policy.test.ts && node tools/incremental-build/build-scope-policy.test.mjs && tsx tools/incremental-build/workflow-contract.test.ts",
     "discovery:feeds": "tsx tools/feed-discovery/index.ts",
@@ -29,7 +29,7 @@
     "test:presentation-scope": "tsx tools/presentation-scope-check/index.ts",
     "test:multi-presentation": "tsx tools/multi-presentation-check/index.ts",
     "test:path-guard": "tsx tools/path-guard/change-set.test.ts && tsx tools/path-guard/policy.test.ts && tsx tools/path-guard/change-set.integration.test.ts",
-    "test:content-automation": "node --test tools/content-automation/producer-metadata-handoff.test.mjs && tsx tools/content-automation/daily-target.test.ts && tsx tools/content-automation/daily-decision.test.ts && tsx tools/content-automation/daily-guard-policy.test.ts && tsx tools/content-automation/pr-metadata.test.ts && tsx tools/content-automation/preview-workflow.test.ts && tsx tools/content-automation/prompt-contract.test.ts && tsx tools/content-automation/chatgpt-adapter.test.ts && tsx tools/content-automation/daily-serialization.test.ts",
+    "test:content-automation": "node --test tools/content-automation/producer-metadata-handoff.test.mjs && tsx tools/content-automation/daily-target.test.ts && tsx tools/content-automation/daily-decision.test.ts && tsx tools/content-automation/daily-guard-policy.test.ts && tsx tools/content-automation/pr-metadata.test.ts && tsx tools/content-automation/preview-workflow.test.ts && tsx tools/content-automation/prompt-contract.test.ts && tsx tools/content-automation/chatgpt-adapter.test.ts && tsx tools/content-automation/daily-serialization.test.ts && node --test tools/content-automation/daily-classification.test.mjs && tsx tools/content-automation/daily-classification-loader.test.ts",
     "test:pages-promotion": "tsx tools/pages-promotion/eligibility.test.ts && tsx tools/pages-promotion/workflow-contract.test.ts",
     "test:evidence-integrity": "tsx tools/evidence-integrity/daily-evidence.test.ts && tsx tools/evidence-integrity/renderer-contract.test.ts && tsx tools/evidence-integrity/ui-contract.test.ts && tsx tools/evidence-integrity/correction-policy.test.ts && tsx tools/evidence-integrity/correction-legacy.test.ts && tsx tools/evidence-integrity/correction-guard.integration.test.ts",
     "test:evidence-ui-artifact": "tsx tools/evidence-integrity/ui-artifact-check.ts",
@@ -55,8 +55,10 @@
     "build:site-artifacts": "pnpm assemble && pnpm test:site && pnpm test:evidence-ui-artifact && pnpm test:presentation-scope && pnpm test:weekly-artifact && pnpm test:registry-ui-artifact && pnpm test:seo-site && pnpm test:structured-data-artifact && pnpm test:knowledge-lifecycle-ui-artifact && pnpm test:native-slidev-artifact",
     "build": "pnpm build:prepare && pnpm generate:slides && pnpm build:web-artifacts && pnpm build:slides && pnpm build:site-artifacts",
     "automation:daily:serialize": "tsx tools/content-automation/serialize-daily-cli.ts",
-    "test:reading-ui": "tsx tools/ui-reading/archive-filters.test.ts && tsx tools/ui-reading/reading-contract.test.ts && tsx tools/ui-reading/appearance.test.ts && tsx tools/ui-reading/slide-appearance.test.ts",
-    "automation:daily:metadata": "node tools/content-automation/render-daily-pr-metadata.mjs"
+    "test:reading-ui": "tsx tools/ui-reading/archive-filters.test.ts && tsx tools/ui-reading/reading-contract.test.ts && tsx tools/ui-reading/appearance.test.ts && tsx tools/ui-reading/slide-appearance.test.ts && tsx tools/ui-reading/open-tags.test.ts",
+    "automation:daily:metadata": "node tools/content-automation/render-daily-pr-metadata.mjs",
+    "test:open-tags-ui-fixture": "tsx tools/ui-reading/open-tags-fixture.test.ts",
+    "automation:daily:classify": "tsx tools/content-automation/classify-daily-cli.ts"
   },
   "devDependencies": {
     "@orbis/content-schema": "workspace:*",

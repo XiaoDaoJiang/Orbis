@@ -1,3 +1,5 @@
+import type { DiscoveryItem } from './content-discovery'
+
 export interface ArchiveFilters {
   query: string
   kind: string
@@ -50,4 +52,9 @@ export function matchesArchiveFilters(candidate: ArchiveCandidate, filters: Arch
     && (filters.cadence === 'all' || candidate.cadence === filters.cadence)
     && (filters.topic === 'all' || candidate.topics.includes(filters.topic))
     && terms.every((term) => text.includes(term))
+}
+
+/** Open keywords contribute only to text search, never the formal Topic filter. */
+export function archiveSearchText(item: Pick<DiscoveryItem, 'title' | 'summary' | 'topics' | 'tags'>): string {
+  return [item.title, item.summary, ...item.topics, ...(item.tags ?? [])].join(' ')
 }
