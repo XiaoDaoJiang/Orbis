@@ -1,0 +1,324 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-11",
+  "status": "published",
+  "title": "Agent 规模化的五道边界：轻量模型、算力调度、熔断与数据隔离",
+  "summary": "Meta Muse Ember 将低成本模型定位为工具调用与重复子任务的执行层；Google 用 TPU 8tx 与 8i Max 分别回应机密推理和长上下文内存压力。OpenAI Control Room 将任务级停止权下沉到推理服务，Google Antigravity 为知识工作提供同一 Agent 的简化界面。Fireworks 的安全事件更新则提醒团队：模型服务即使宣称零数据保留，评测密钥、研发环境和客户数据的访问路径仍需单独治理。",
+  "topics": [
+    "agent-harness",
+    "mcp"
+  ],
+  "signals": [
+    {
+      "title": "轻量模型更适合重复 Agent 子任务",
+      "summary": "Muse Ember 主打工具调用、提取和路由；低单价只是起点，真实成本仍须连同质量、回退与审查计算。",
+      "impact": "high"
+    },
+    {
+      "title": "AI 算力从单一峰值转向专用工作负载",
+      "summary": "Google 将 8tx 面向机密推理、8i Max 面向高密度长上下文，并提出空闲 Agent 状态换出方案。",
+      "impact": "medium"
+    },
+    {
+      "title": "终止权应脱离不可靠的 Agent 工作代码",
+      "summary": "OpenAI Control Room 通过推理引擎逐次检查 job_id 授权；服务故障也要求拒绝继续生成。",
+      "impact": "high"
+    },
+    {
+      "title": "产品界面简化不能取代数据与权限隔离",
+      "summary": "Antigravity 以相同 Agent 支撑知识工作视图；Fireworks 事件显示研发、评测和客户数据仍有独立风险。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "small-model-worker-economics",
+      "layout": "metrics",
+      "title": "Muse Ember：让重复任务使用可度量的小模型执行层",
+      "conclusion": "为工具调用、提取和代码子任务建立分层路由基线；价格和厂商榜单之外，还要计算异常回退及人工审查成本。",
+      "facts": [
+        {
+          "id": "muse-ember-launch",
+          "text": "Meta 于 2026 年 11 月 9 日发布 Muse Ember，定位于 Agent 的工具调用、代码子任务、路由、抽取与长文档解析。",
+          "evidence": [
+            "meta-muse-ember"
+          ]
+        },
+        {
+          "id": "muse-ember-window",
+          "text": "Meta 公布 Muse Ember 支持 100 万 token 上下文窗口，最多 51.2 万输出 token，并可通过 Meta Model API 使用。",
+          "evidence": [
+            "meta-muse-ember"
+          ]
+        },
+        {
+          "id": "muse-ember-pricing",
+          "text": "Meta 公布该模型每百万输入 token 定价 0.10 美元、输出 token 0.50 美元，缓存输入单价为 0.004 美元。",
+          "evidence": [
+            "meta-muse-ember"
+          ]
+        },
+        {
+          "id": "muse-ember-benchmark",
+          "text": "Meta 报告其在 AutomationBench-AA 上的最高推理设置得分为 37.8%，该结果及对比属于厂商披露的评测。",
+          "evidence": [
+            "meta-muse-ember"
+          ]
+        }
+      ],
+      "limitations": [
+        "价格、吞吐与基准结果来自 Meta 公告；生产路由须通过相同任务和相同工具预算实测，不应从单一得分推断可靠性。"
+      ]
+    },
+    {
+      "id": "specialized-agent-infrastructure",
+      "layout": "architecture",
+      "title": "TPU 8tx 与 8i Max：把安全、内存和空闲等待分开优化",
+      "conclusion": "以数据敏感度、上下文规模和等待比例划分运行池，而不是把所有 Agent 任务放入同一种加速器配置。",
+      "facts": [
+        {
+          "id": "google-tpu-portfolio",
+          "text": "Google 于 2026 年 11 月 9 日介绍 TPU 8tx 与 TPU 8i Max，形成面向训练、低延迟推理、机密推理和长上下文的第八代四系统组合。",
+          "evidence": [
+            "google-tpu-agent"
+          ]
+        },
+        {
+          "id": "tpu-eight-tx",
+          "text": "Google 称 TPU 8tx 面向机密推理，可在处理过程中以硬件隔离保护敏感数据和模型权重，采用基于 TPU 8t 的硅片。",
+          "evidence": [
+            "google-tpu-agent"
+          ]
+        },
+        {
+          "id": "tpu-eight-i-max",
+          "text": "TPU 8i Max 将两枚 8i 芯片组合成单一封装；Google 称相对 8i 其算力、SRAM 和 HBM 带宽均翻倍。",
+          "evidence": [
+            "google-tpu-agent"
+          ]
+        },
+        {
+          "id": "agent-compute-suspension",
+          "text": "Google 介绍 Agent Compute Engine，可暂停等待外部工具或人工反馈的空闲 Agent 会话，并将工作内存从芯片迁出。",
+          "evidence": [
+            "google-tpu-agent"
+          ]
+        }
+      ],
+      "limitations": [
+        "硬件性能和基础设施收益为 Google 官方描述，不代表所有平台已经可购买或能复现同等成本收益。"
+      ]
+    },
+    {
+      "id": "control-room-interruption",
+      "layout": "system-map",
+      "title": "Control Room：在推理授权关口实施可撤销执行",
+      "conclusion": "把任务注册、继续推理许可、紧急停机和 fail-closed 设计为与 Agent 业务进程分离的控制面。",
+      "facts": [
+        {
+          "id": "control-room-scope",
+          "text": "OpenAI 于 2026 年 11 月 9 日介绍 Control Room，用于追踪和停止研究基础设施中的模型推理工作负载。",
+          "evidence": [
+            "openai-control-room"
+          ]
+        },
+        {
+          "id": "control-room-job-id",
+          "text": "研究工作负载启动时领取 job_id；每次请求模型生成时，推理引擎依据该 ID 向 Control Room 查询是否仍被授权。",
+          "evidence": [
+            "openai-control-room"
+          ]
+        },
+        {
+          "id": "control-room-stop-lag",
+          "text": "OpenAI 披露停止指令到无法继续生成的最大延迟为 35 秒，主要受推理授权缓存影响。",
+          "evidence": [
+            "openai-control-room"
+          ]
+        },
+        {
+          "id": "control-room-fail-closed",
+          "text": "OpenAI 表示其推理引擎集成在 Control Room 不可用时会拒绝请求；fail-closed 已覆盖前沿模型研究任务，其他研究任务正逐步完成部署。",
+          "evidence": [
+            "openai-control-room"
+          ]
+        }
+      ],
+      "limitations": [
+        "35 秒限制与部署覆盖范围针对 OpenAI 的内部研究基础设施，不能直接当作公开 API 的停机 SLA。"
+      ]
+    },
+    {
+      "id": "knowledge-work-agent-interface",
+      "layout": "comparison",
+      "title": "Knowledge Work：同一 Agent 的界面视图不能改变执行权限",
+      "conclusion": "将用户体验的简化与底层模型、工具、凭据和审核策略分离，避免隐藏终端后误以为能力被移除。",
+      "facts": [
+        {
+          "id": "antigravity-two-layouts",
+          "text": "Google Antigravity 11 月 9 日推出 Knowledge Work 与 Software Engineering 两种界面布局，两种布局运行同一个 Agent。",
+          "evidence": [
+            "google-antigravity-knowledge"
+          ]
+        },
+        {
+          "id": "antigravity-capabilities",
+          "text": "官方说明两种布局仍支持本地文件、插件、Skills、Rules、自定义 Agent 和 MCP Server，界面选择不会移除这些能力。",
+          "evidence": [
+            "google-antigravity-knowledge"
+          ]
+        },
+        {
+          "id": "antigravity-simplification",
+          "text": "Knowledge Work 视图隐藏 Git 分支入口、Review 和 Terminal 等开发者控件，并采用更易理解的权限提示与以文档、产物为中心的侧栏。",
+          "evidence": [
+            "google-antigravity-knowledge"
+          ]
+        }
+      ],
+      "limitations": [
+        "界面可见性不是最小权限；企业需要单独检查 MCP、插件和本地文件访问边界。"
+      ]
+    },
+    {
+      "id": "provider-incident-data-boundaries",
+      "layout": "timeline",
+      "title": "Fireworks 事件：数据隔离必须覆盖评测、研发与客户资料",
+      "conclusion": "把评测密钥、第三方研发主机、客户账单与模型产物纳入独立的身份、网络和保留策略核查。",
+      "facts": [
+        {
+          "id": "fireworks-security-update",
+          "text": "Fireworks 在 2026 年 11 月 9 日更新安全通告：其第三方云供应商于 10 月 23 日发生事件，攻击者 10 月 24 日进一步访问研发机器。",
+          "evidence": [
+            "fireworks-incident-update"
+          ]
+        },
+        {
+          "id": "fireworks-affected-data",
+          "text": "Fireworks 表示受影响信息包括资源元数据、账单信息；少量账户还涉及 Secrets、数据集和不完整模型权重。",
+          "evidence": [
+            "fireworks-incident-update"
+          ]
+        },
+        {
+          "id": "fireworks-current-scope",
+          "text": "Fireworks 表示截至该通告调查阶段，尚未发现其默认零数据保留的 Inference、Training SDK 和 Nexus 受到影响，调查仍在继续。",
+          "evidence": [
+            "fireworks-incident-update"
+          ]
+        },
+        {
+          "id": "fireworks-mitigations",
+          "text": "Fireworks 报告已轮换凭据、收紧权限及网络隔离，并临时关闭用于 Batch Inference 与数据集训练的自助上传下载。",
+          "evidence": [
+            "fireworks-incident-update"
+          ]
+        }
+      ],
+      "limitations": [
+        "这是一份持续调查中的厂商自述，不能把当前未检测到影响解释为最终排除所有风险。"
+      ]
+    }
+  ],
+  "projects": [],
+  "radar": [
+    {
+      "label": "低成本子 Agent 分层路由",
+      "impact": 92,
+      "horizon": 84,
+      "note": "以任务正确率、Token 成本、回退率与审核成本一起评测 Muse Ember 类执行模型。"
+    },
+    {
+      "label": "Agent 状态换出与长上下文内存",
+      "impact": 84,
+      "horizon": 66,
+      "note": "统计等待工具/人工时的内存驻留和恢复成本，评估专用基础设施收益。"
+    },
+    {
+      "label": "推理层停机与可撤销授权",
+      "impact": 96,
+      "horizon": 79,
+      "note": "为 Run 与模型请求绑定可撤销标识，并将故障默认拒绝纳入演练。"
+    },
+    {
+      "label": "知识工作 Agent 的工具可见性",
+      "impact": 78,
+      "horizon": 78,
+      "note": "隐藏开发控件时继续暴露授权范围、操作后果与撤销入口。"
+    },
+    {
+      "label": "模型平台数据隔离与事故响应",
+      "impact": 95,
+      "horizon": 88,
+      "note": "分别审计推理、评测、研发与训练存储；演练密钥撤销和影响面回溯。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "评测小模型执行层",
+      "description": "从提取、工具调用、重复编码子任务各抽样一组固定任务，记录质量、费用和失败回退。"
+    },
+    {
+      "title": "为长任务设计统一停止开关",
+      "description": "在 Run 与每次模型请求之间绑定授权 ID，验证取消、超时和控制服务故障均会阻断新推理。"
+    },
+    {
+      "title": "检查 Agent 的存储与数据隔离",
+      "description": "清点第三方推理、评测、研发主机及训练产物的密钥、保留周期与网络访问边界。"
+    },
+    {
+      "title": "对知识工作台开展权限可用性测试",
+      "description": "比较简化布局与开发布局中的审批提示、工具作用域与操作日志，确保隐藏不等于失控。"
+    }
+  ],
+  "references": [
+    {
+      "id": "meta-muse-ember",
+      "title": "Meta AI Research — Introducing Our Smallest, Most Efficient Model: Muse Ember",
+      "url": "https://research.meta.ai/blog/muse-ember",
+      "supports": "发布日期、模型用途、上下文、定价和 Meta 自报基准数据。",
+      "accessedAt": "2026-11-11"
+    },
+    {
+      "id": "google-tpu-agent",
+      "title": "Google — Our newest TPUs: 8tx and 8i Max, built for the agentic era",
+      "url": "https://blog.google/innovation-and-ai/infrastructure-and-cloud/global-network/tpu-8i-max-and-8tx/",
+      "supports": "第八代 TPU 系统用途、机密推理、内存带宽与 Agent Compute Engine。",
+      "accessedAt": "2026-11-11"
+    },
+    {
+      "id": "openai-control-room",
+      "title": "OpenAI — Control Room: A central system to track and stop model workloads",
+      "url": "https://openai.com/index/control-room/",
+      "supports": "研究任务 job_id、推理授权、35 秒停止窗口与 fail-closed 行为。",
+      "accessedAt": "2026-11-11"
+    },
+    {
+      "id": "google-antigravity-knowledge",
+      "title": "Google Antigravity — Google Antigravity for Knowledge Work",
+      "url": "https://antigravity.google/blog/antigravity-for-knowledge-work",
+      "supports": "知识工作与开发布局共享 Agent、工具能力和界面差异。",
+      "accessedAt": "2026-11-11"
+    },
+    {
+      "id": "fireworks-incident-update",
+      "title": "Fireworks AI — Update on October 2026 security incident",
+      "url": "https://fireworks.ai/security/bulletins/october-2026-security-incident-update",
+      "supports": "11 月 9 日调查更新、涉及的数据、受影响范围与缓解措施。",
+      "accessedAt": "2026-11-11"
+    }
+  ],
+  "archivePicks": [],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  },
+  "tags": [
+    "Agent Inference Infrastructure",
+    "Confidential Computing",
+    "AI Incident Response"
+  ]
+}
