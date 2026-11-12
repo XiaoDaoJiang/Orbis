@@ -1,0 +1,327 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-12",
+  "status": "published",
+  "title": "并行 Agent 的可信交付：Swarm、私网授权、沙箱与可验证评测",
+  "summary": "Google Antigravity /swarm 将编码任务拆成共享消息板上的并行工作者与独立验证者；Tailscale OAuth apps 让 Agent 以用户身份连接私网工具，同时保留细粒度访问限制；NVIDIA 将 OpenShell 安全运行时贡献给 CNCF。Google DeepMind 的 AlphaProof Code 为 Signal 关键加密实现生成机器可检查的形式化证明，而 MKA 基准以复杂视觉交付物考查 Agent 的实际工作质量。工程重点正从让 Agent 完成任务，转向让并行执行、授权边界与验收结果都可验证。",
+  "topics": [
+    "agent-harness",
+    "mcp",
+    "coding-agent"
+  ],
+  "tags": [
+    "Formal Verification",
+    "Agent Sandbox",
+    "Multi-Agent Orchestration",
+    "Visual Agent Evaluation"
+  ],
+  "signals": [
+    {
+      "title": "并行 Agent 需要明确工作区与验收责任",
+      "summary": "Antigravity /swarm 引入协调者、独立工作者和 verifier；共享工作区的文件冲突与配额成本仍需约束。",
+      "impact": "high"
+    },
+    {
+      "title": "私网 MCP 应使用委托身份而非共享密钥",
+      "summary": "Tailscale OAuth apps 将 Agent 设备绑定到授权用户，结合 posture 与 grants 将内网访问缩小到指定服务。",
+      "impact": "high"
+    },
+    {
+      "title": "Agent 沙箱正在进入云原生治理层",
+      "summary": "NVIDIA 宣布将 OpenShell 贡献给 CNCF Sandbox，推动自治 Agent 的安全运行环境走向社区治理。",
+      "impact": "medium"
+    },
+    {
+      "title": "可信验收需要证明与真实产物双轨度量",
+      "summary": "AlphaProof Code 使用 Lean 检查密码学实现；MKA 则用视觉复杂任务及独立评分检查实际交付物。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "swarm-parallel-coordination",
+      "layout": "architecture",
+      "title": "/swarm：协调者、工作者与验证者共享任务板",
+      "conclusion": "只有能够按文件或子系统切分、明确每个 worker 的写入范围并独立验证的任务，才值得并行化。",
+      "facts": [
+        {
+          "id": "swarm-preview-launch",
+          "text": "Google Antigravity 于 2026 年 11 月 10 日宣布 /swarm 预览，App 与 CLI 均可通过命令启动多个命名 Agent，并在共享消息板协调任务。",
+          "evidence": [
+            "google-antigravity-swarm"
+          ]
+        },
+        {
+          "id": "swarm-worker-verifier",
+          "text": "官方文档规定 coordinator 为各 worker 发布职责与完成条件，通常每二至四名 worker 设置一名 verifier 检查 Diff 和测试。",
+          "evidence": [
+            "google-antigravity-swarm"
+          ]
+        },
+        {
+          "id": "swarm-workspaces-quota",
+          "text": "官方文档说明 worker 默认共享工作区，也可分配独立仓库副本；Swarm 属于预览功能，每个 worker 消耗独立配额。",
+          "evidence": [
+            "google-antigravity-swarm"
+          ]
+        }
+      ],
+      "limitations": [
+        "共享目录下并行写入可能产生冲突；文档中的协调与验证流程不等于自动保证任务正确性。"
+      ]
+    },
+    {
+      "id": "oauth-user-identity-mcp",
+      "layout": "comparison",
+      "title": "Tailscale OAuth apps：用户委托身份不等于完整用户权限",
+      "conclusion": "对内网 Agent 接入采用可撤销的用户委托、独立设备姿态与最小化网络 grants，不向公共网络暴露内部 MCP。",
+      "facts": [
+        {
+          "id": "tailscale-oauth-ga",
+          "text": "Tailscale 于 2026 年 11 月 9 日宣布 OAuth apps 正式可用，可通过 OAuth 2.0 将 Agent 设备关联授权用户，而非所有设备共用服务身份。",
+          "evidence": [
+            "tailscale-oauth-apps"
+          ]
+        },
+        {
+          "id": "tailscale-mcp-example",
+          "text": "Tailscale 官方以 Grok Bot 为例，说明其通过 OAuth apps 访问 tailnet 内的私有 MCP 服务，无需把 MCP 服务暴露到公网。",
+          "evidence": [
+            "tailscale-oauth-apps"
+          ]
+        },
+        {
+          "id": "tailscale-posture-grants",
+          "text": "官方示例通过 device posture、defaultSrcPosture 与单独的 grants，将 Agent 设备仅授权访问指定 MCP 服务器；自定义 posture 属性限定 Premium 和 Enterprise 计划。",
+          "evidence": [
+            "tailscale-oauth-apps"
+          ]
+        }
+      ],
+      "limitations": [
+        "OAuth 身份绑定不自动产生最小权限；必须验证策略优先级、默认拒绝与授权撤销效果。"
+      ]
+    },
+    {
+      "id": "openshell-sandbox-governance",
+      "layout": "system-map",
+      "title": "OpenShell：自治执行环境开始由云原生社区共同治理",
+      "conclusion": "优先将工作区隔离、工具权限和网络出口限制当作 Runtime 基础设施，而非只写在 Agent 提示词中。",
+      "facts": [
+        {
+          "id": "openshell-cncfsandbox",
+          "text": "NVIDIA 于 2026 年 11 月 10 日宣布，将用于保护和治理自治 Agent 的开源运行时 OpenShell 贡献给 CNCF，以 Sandbox 项目形式推进社区治理。",
+          "evidence": [
+            "nvidia-openshell-cncfsandbox"
+          ]
+        },
+        {
+          "id": "agent-substrate-cncfsandbox",
+          "text": "同一公告介绍 NVIDIA 参与 Google 主导的 Agent Substrate，该项目用于在 Kubernetes 上运行长期 Agent 工作负载，并已获 CNCF Sandbox 接纳。",
+          "evidence": [
+            "nvidia-openshell-cncfsandbox"
+          ]
+        },
+        {
+          "id": "nvidia-k8s-infra",
+          "text": "NVIDIA 同时宣布 Kubernetes Engine、Kubernetes Recipes 与 Snapshot 等基础设施组件，以支持 AI 工厂中的 GPU 工作负载管理。",
+          "evidence": [
+            "nvidia-openshell-cncfsandbox"
+          ]
+        }
+      ],
+      "limitations": [
+        "Sandbox 治理状态不等于成熟安全认证；具体隔离强度和配置缺陷仍需在目标环境验证。"
+      ]
+    },
+    {
+      "id": "alphaproof-code-formal-verification",
+      "layout": "timeline",
+      "title": "AlphaProof Code：将 Agent 证明与可检查的形式系统连接",
+      "conclusion": "对高风险代码尝试从自然语言断言升级为可审计规格和机器检查的证明，但仍需专家确认规格覆盖目标。",
+      "facts": [
+        {
+          "id": "alphaproof-signal-announcement",
+          "text": "Google DeepMind 2026 年 11 月 10 日发布 AlphaProof Code 案例，称通过多模型 Agent 和专家协作，形式化验证了 Signal 加密协议实现的关键安全属性。",
+          "evidence": [
+            "deepmind-alphaproof-code"
+          ]
+        },
+        {
+          "id": "alphaproof-lean-gatekeeper",
+          "text": "官方描述其流程为专家审查形式化规格、Gemini 驱动 Agent 生成超过六百万行 Lean 证明，再交由 Lean 独立机器检查，并将需要人工复核的部分聚焦到约 1%。",
+          "evidence": [
+            "deepmind-alphaproof-code"
+          ]
+        },
+        {
+          "id": "alphaproof-four-week-bugtests",
+          "text": "DeepMind 称验证历时约四周，并在隔离版本中重新引入两个历史漏洞，系统均生成可机检的“不安全”证明。",
+          "evidence": [
+            "deepmind-alphaproof-code"
+          ]
+        }
+      ],
+      "limitations": [
+        "厂商所述证明只覆盖经过专家定义的安全属性与所建模实现，不能据此声称整个协议和所有部署不存在漏洞。"
+      ]
+    },
+    {
+      "id": "mka-visual-deliverable-evaluation",
+      "layout": "metrics",
+      "title": "MKA：把 Agent 评测从对话正确率推进到复杂文件交付",
+      "conclusion": "应为真实工作台引入同工具预算、可打开交付文件、事实与视觉质量分离的评测体系。",
+      "facts": [
+        {
+          "id": "mka-200-tasks",
+          "text": "Google 于 2026 年 11 月 10 日与 Artificial Analysis 发布 MKA 基准，涵盖十个行业、83 种职业的 200 项多模态知识工作任务。",
+          "evidence": [
+            "google-mka-benchmark"
+          ]
+        },
+        {
+          "id": "mka-rubric-weighting",
+          "text": "Google 报告每项任务包含复杂视觉输入及约 70 条是非评分规则，事实准确性占 75%，视觉设计占 25%。",
+          "evidence": [
+            "google-mka-benchmark"
+          ]
+        },
+        {
+          "id": "mka-common-harness",
+          "text": "官方表示不同模型使用相同 Stirrup 开源 Agent Harness、工具、沙箱和轮次预算；200 个正式评测任务保密，另公开十个样本任务。",
+          "evidence": [
+            "google-mka-benchmark"
+          ]
+        },
+        {
+          "id": "mka-rater-agreement",
+          "text": "Google 报告基于非 Google 模型的自动评分器与领域专家对输出评分的符合率为 96%；这一结果来自发布方评估。",
+          "evidence": [
+            "google-mka-benchmark"
+          ]
+        }
+      ],
+      "limitations": [
+        "自动评分一致率不是绝对准确率；封闭评测集有助于降低泄漏风险，但不能取代本地真实任务复现。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "OpenShell",
+      "summary": "在隔离测试环境审查自治 Agent 的沙箱、工具权限与出站网络策略。",
+      "maturity": "early",
+      "url": "https://github.com/ai-openshell"
+    },
+    {
+      "action": "READ",
+      "name": "Antigravity Swarm",
+      "summary": "阅读协调者、独立工作区与 verifier 机制，并建立并行执行检查表。",
+      "maturity": "early",
+      "url": "https://antigravity.google/docs/swarm"
+    }
+  ],
+  "radar": [
+    {
+      "label": "多 Agent 并行职责与冲突隔离",
+      "impact": 92,
+      "horizon": 85,
+      "note": "把 worker 文件所有权、独立验证与冲突率纳入执行记录。"
+    },
+    {
+      "label": "私有 MCP 的 OAuth 最小授权",
+      "impact": 96,
+      "horizon": 92,
+      "note": "基于用户身份、设备姿态及最小化端口 grants 做访问测试。"
+    },
+    {
+      "label": "自治 Agent 沙箱的社区化 Runtime",
+      "impact": 89,
+      "horizon": 72,
+      "note": "对照隔离、审计、网络边界与恢复能力验证 OpenShell 类运行时。"
+    },
+    {
+      "label": "高风险代码的机器可检查证明",
+      "impact": 93,
+      "horizon": 52,
+      "note": "优先在密码学或权限关键的小范围组件探索 Lean 规格与复核。"
+    },
+    {
+      "label": "真实多模态交付物评测",
+      "impact": 94,
+      "horizon": 82,
+      "note": "建立文件级审查、事实准确性、视觉质量与统一工具预算基线。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立并行 Agent 的任务所有权",
+      "description": "拆分三个可独立修改的子任务，为每位 worker 指定文件范围、验收标准和 verifier，再比较串行/并行返工率。"
+    },
+    {
+      "title": "演练私网 MCP 的撤销与越权",
+      "description": "使用测试 tailnet 给 Agent 单独分配身份与授权，验证仅能访问指定 MCP、令牌撤销后访问立即失效。"
+    },
+    {
+      "title": "验证沙箱逃逸与外网限制",
+      "description": "在隔离主机试运行 Agent Runtime，测试越权文件读取、非白名单域名访问、命令执行审计和清理行为。"
+    },
+    {
+      "title": "为任务交付增加双重验收",
+      "description": "对关键逻辑尝试形式化断言；对报告、图表和表格建立可打开的产物检查与事实/外观分项评分。"
+    }
+  ],
+  "references": [
+    {
+      "id": "google-antigravity-swarm",
+      "title": "Google Antigravity Docs — Swarm (/swarm)",
+      "url": "https://antigravity.google/docs/swarm",
+      "supports": "/swarm 预览、协调者和 worker 流程、verifier、工作区和配额限制。",
+      "accessedAt": "2026-11-12"
+    },
+    {
+      "id": "tailscale-oauth-apps",
+      "title": "Tailscale — Grok Bot has a Tailscale integration—and now you can, too",
+      "url": "https://tailscale.com/blog/oauth-apps-ga",
+      "supports": "2026-11-09 OAuth apps GA、用户委托身份、私网 MCP 示例和设备姿态授权策略。",
+      "accessedAt": "2026-11-12"
+    },
+    {
+      "id": "nvidia-openshell-cncfsandbox",
+      "title": "NVIDIA — OpenShell Donation and New AI Infrastructure",
+      "url": "https://blogs.nvidia.com/blog/open-source-openshell-infrastructure/",
+      "supports": "2026-11-10 OpenShell、Agent Substrate 的 CNCF Sandbox 治理与 NVIDIA Kubernetes 组件。",
+      "accessedAt": "2026-11-12"
+    },
+    {
+      "id": "deepmind-alphaproof-code",
+      "title": "Google DeepMind — Introducing AlphaProof Code",
+      "url": "https://deepmind.google/blog/introducing-alphaproof-code/",
+      "supports": "2026-11-10 Signal 加密代码形式验证、Lean 证明审查流程、四周实验与两项漏洞回归。",
+      "accessedAt": "2026-11-12"
+    },
+    {
+      "id": "google-mka-benchmark",
+      "title": "Google — Introducing the Multimodal Knowledge Agent benchmark",
+      "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/multimodal-knowledge-agent-benchmark/",
+      "supports": "2026-11-10 MKA 任务规模、评分结构、统一 Harness、公开任务及评分器一致率。",
+      "accessedAt": "2026-11-12"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-11 — 规模化 Agent 的执行与安全边界",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-11.yaml",
+      "supports": "回顾轻量执行模型、推理层停止开关与企业数据隔离。",
+      "publishedAt": "2026-11-11"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
