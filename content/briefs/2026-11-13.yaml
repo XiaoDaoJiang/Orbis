@@ -1,0 +1,337 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-13",
+  "status": "published",
+  "title": "Agent 控制面正在分层：闭集决策、浏览器授权、沙箱与可信执行",
+  "summary": "Google Gemini Decisions API 将工具选择和策略评分从逐字生成中分离；Antigravity Browser use 通过导航与文件审批限制浏览器 Agent；Gemini Managed Agents 支持自托管 Linux 沙箱。OpenAI 的新研究指出，思维链监控不能被视为唯一安全证据。Runway Praxis-1 开放机器人动作模型，提醒工程团队将执行轨迹和实际交付验收落实到每一层。控制面必须覆盖选择、授权、隔离、观测和动作。",
+  "topics": [
+    "agent-harness",
+    "coding-agent",
+    "mcp"
+  ],
+  "tags": [
+    "Closed-Set Decision API",
+    "Browser Agent Permissions",
+    "Self-Hosted Agent Sandbox",
+    "CoT Monitorability",
+    "Robotics World Action Model"
+  ],
+  "signals": [
+    {
+      "title": "闭集决策成为工具路由和政策检查的独立控制层",
+      "summary": "Gemini Decision 1 对多模态输入批量评估最多一千项问题，输出概率供工具选择与人工回退。",
+      "impact": "high"
+    },
+    {
+      "title": "浏览器自动化应按动作细化权限",
+      "summary": "Antigravity Browser use 在导航、跨域跳转和文件上传下载上提供分别审批与隔离。",
+      "impact": "high"
+    },
+    {
+      "title": "Agent 会话与执行环境可以分离",
+      "summary": "Gemini Managed Agents 支持远程与自托管 Linux 沙箱，后者通过出站 HTTPS 连接。",
+      "impact": "high"
+    },
+    {
+      "title": "可监控性与物理执行须分别验证",
+      "summary": "OpenAI 指出 CoT 监控能力的代理指标存在局限；Runway 开放 Praxis-1 后仍需独立评估真实动作风险。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "bounded-decision-model-routing",
+      "layout": "comparison",
+      "title": "Gemini Decisions：不生成答案，也能完成受限策略判断",
+      "conclusion": "为工具路由、内容等级与策略选择定义有限选项、置信度阈值和明确的人工回退，避免把模型概率当成确定性的合规裁决。",
+      "facts": [
+        {
+          "id": "google-decision-api-launch",
+          "text": "Google 2026 年 11 月 11 日发布 Gemini Decisions API；gemini-decision-1 可在单次调用中评估最多一千个问题，并支持文本、图像、音频、视频和 PDF 输入。",
+          "evidence": [
+            "google-decision-api"
+          ]
+        },
+        {
+          "id": "google-decision-types",
+          "text": "Google 公告列出是非、多选和有序评分三种问题类型，多选支持 2 至 255 个选项，输出供程序处理的概率或置信度。",
+          "evidence": [
+            "google-decision-api"
+          ]
+        },
+        {
+          "id": "google-decision-vendor-metrics",
+          "text": "Google 自报端到端延迟约 150 至 250 毫秒，输入每百万 token 0.10 美元，输出 token 不单独计费；这属于官方发布口径而非独立复测。",
+          "evidence": [
+            "google-decision-api"
+          ]
+        }
+      ],
+      "limitations": [
+        "校准与准确率仍需按具体数据分布验证；不应将模型给出的概率视为正式授权结果。"
+      ]
+    },
+    {
+      "id": "browser-agent-security-gates",
+      "layout": "architecture",
+      "title": "Browser use：站点、端口与文件操作各有权限边界",
+      "conclusion": "浏览器 Agent 的权限应按目标站点、重定向、localhost 端口、文件上传下载逐项治理，并记录人工审批结果。",
+      "facts": [
+        {
+          "id": "browser-actions-and-verification",
+          "text": "Google Antigravity Browser use 文档显示，Agent 可操作运行中的网页、检查控制台与失败请求、截图，并对修复结果执行浏览器验证。",
+          "evidence": [
+            "antigravity-browser-use"
+          ]
+        },
+        {
+          "id": "browser-origin-port-approvals",
+          "text": "文档要求在通常权限预设下为未知网站及每次跨源重定向审批；localhost 按端口隔离，部分敏感 Google 子域名需要单独授权。",
+          "evidence": [
+            "antigravity-browser-use"
+          ]
+        },
+        {
+          "id": "browser-file-actions-approvals",
+          "text": "Browser subagent 只能上传已为任务暂存的文件，且每次上传均需人工确认；内置浏览器下载也可按来源、文件和类型提示审批。",
+          "evidence": [
+            "antigravity-browser-use"
+          ]
+        }
+      ],
+      "limitations": [
+        "功能覆盖与执行界面取决于 Google Antigravity 的版本、账号及管理员策略，不应以演示默认配置推断企业可用性。"
+      ]
+    },
+    {
+      "id": "managed-agents-sandbox-boundaries",
+      "layout": "system-map",
+      "title": "Managed Agents：自托管沙箱通过单向外连接入",
+      "conclusion": "应分离 Agent 交互上下文和执行环境，独立治理环境租约、出站网络、会话恢复及访问凭据。",
+      "facts": [
+        {
+          "id": "managed-env-isolation",
+          "text": "Google Managed Agents 文档将环境定义为独立 Linux 沙箱，支持以 remote 创建新环境或通过环境 ID 跨交互复用文件和已安装包。",
+          "evidence": [
+            "google-agent-environments"
+          ]
+        },
+        {
+          "id": "managed-env-self-host",
+          "text": "Google 官方文档支持 self_hosted 环境，利用 Gemini API CLI 和出站 HTTPS 接入用户控制的计算环境，无需开启入站防火墙端口。",
+          "evidence": [
+            "google-agent-environments"
+          ]
+        },
+        {
+          "id": "managed-env-preview-limitations",
+          "text": "文档注明该能力仍在预览；自托管环境不能使用托管沙箱专用的 sources、network、env 与文件快照选项，闲置的离线环境七天后过期。",
+          "evidence": [
+            "google-agent-environments"
+          ]
+        }
+      ],
+      "limitations": [
+        "自托管不自动等于安全容器；Google 文档指出本机示例可能直接使用宿主机 bash，必须先评估隔离条件。"
+      ]
+    },
+    {
+      "id": "cot-monitorability-measurement",
+      "layout": "metrics",
+      "title": "CoT 可监控性：文本推理无法取代行为审计",
+      "conclusion": "把思维链当作辅助监控信号，并通过工具轨迹、权限事件、工作区 Diff 和确定性测试校验实际执行行为。",
+      "facts": [
+        {
+          "id": "openai-cot-study-scope",
+          "text": "OpenAI 2026 年 11 月 10 日发布研究，讨论预训练、架构、强化学习和模型生成训练数据如何影响无思维链推理能力及思维链可控性。",
+          "evidence": [
+            "openai-cot-study"
+          ]
+        },
+        {
+          "id": "openai-cot-study-results",
+          "text": "研究发现较低的基础模型困惑度与更强无思维链推理相关，强化学习可能提高思维链可控性，模型生成数据的微调也可能传递这种能力。",
+          "evidence": [
+            "openai-cot-study"
+          ]
+        },
+        {
+          "id": "openai-cot-proxy-warning",
+          "text": "OpenAI 明确表示无思维链能力与思维链可控性只是可监控性的不完美代理指标，不能直接视作实际逃避监控能力的精确测量。",
+          "evidence": [
+            "openai-cot-study"
+          ]
+        }
+      ],
+      "limitations": [
+        "发布方的相关性发现不能证明任意生产模型已经发生具体逃避监控行为。"
+      ]
+    },
+    {
+      "id": "open-robot-action-models",
+      "layout": "timeline",
+      "title": "Praxis-1：开源动作能力与实际安全验收不可混同",
+      "conclusion": "将开放的物理动作模型先限定在可复现仿真、受控硬件和明确急停机制中，不由模型自报基准代替实体验收。",
+      "facts": [
+        {
+          "id": "praxis-open-weight-release",
+          "text": "Runway 2026 年 11 月 11 日宣布 Praxis-1 权重、推理和微调代码以 Apache 2.0 许可开放，并提供 GitHub 代码仓库。",
+          "evidence": [
+            "runway-praxis-release",
+            "runway-praxis-repository"
+          ]
+        },
+        {
+          "id": "praxis-architecture",
+          "text": "Runway 描述 Praxis-1 是约 270 亿参数的 MoE 扩散 Transformer，可联合预测视频与动作，并支持 LoRA 等适配方式。",
+          "evidence": [
+            "runway-praxis-release"
+          ]
+        },
+        {
+          "id": "praxis-benchmark-hardware",
+          "text": "Runway 自报模型在 RoboLab-120 的一千二百个 episode 上成功率 46.2%；其开源仓库的单臂仿真入门需要至少 80GB 显存的 CUDA GPU。",
+          "evidence": [
+            "runway-praxis-release",
+            "runway-praxis-repository"
+          ]
+        }
+      ],
+      "limitations": [
+        "该指标属于发布方的指定基准口径，不代表所有机器人或真实场景达到同样结果。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "READ",
+      "name": "Gemini API CLI",
+      "summary": "阅读自托管执行环境的连接、运维与安全边界。",
+      "maturity": "early",
+      "url": "https://github.com/google-gemini/gemini-api-cli"
+    },
+    {
+      "action": "TEST",
+      "name": "Runway Praxis-1 OSS",
+      "summary": "在满足资源要求的隔离仿真环境中复现机器人动作基线。",
+      "maturity": "early",
+      "url": "https://github.com/runwayml/praxis-1-oss"
+    },
+    {
+      "action": "READ",
+      "name": "Antigravity Browser use",
+      "summary": "检查导航、重定向、端口以及文件审批机制。",
+      "maturity": "growing",
+      "url": "https://antigravity.google/docs/browser"
+    }
+  ],
+  "radar": [
+    {
+      "label": "闭集模型决策与路由",
+      "impact": 91,
+      "horizon": 87,
+      "note": "用误路由率、置信阈值与人工回退率衡量价值。"
+    },
+    {
+      "label": "Browser Agent 最小权限",
+      "impact": 96,
+      "horizon": 94,
+      "note": "测试跨域跳转、端口与文件读写权限是否收敛。"
+    },
+    {
+      "label": "自托管 Linux 执行沙箱",
+      "impact": 93,
+      "horizon": 78,
+      "note": "验证租约、凭据、网络出站和工作区恢复。"
+    },
+    {
+      "label": "工具轨迹与结果审计",
+      "impact": 95,
+      "horizon": 91,
+      "note": "保持可重放日志和独立测试，避免只依赖思维链。"
+    },
+    {
+      "label": "开放机器人动作模型",
+      "impact": 85,
+      "horizon": 45,
+      "note": "先复现厂商仿真结果，再考虑实体设备安全。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立模型路由置信度测试集",
+      "description": "为闭集路由准备真实样本、定义错误代价与人工回退条件，比较确定性规则和模型评分。"
+    },
+    {
+      "title": "用测试站点演练浏览器越权",
+      "description": "覆盖跨域重定向、未许可本地端口、上传和下载，记录审批是否生效。"
+    },
+    {
+      "title": "验证自托管沙箱生命周期",
+      "description": "使用临时凭据、出站白名单和可销毁工作区测试断连、重连和环境过期。"
+    },
+    {
+      "title": "将执行轨迹纳入每次 Run 验收",
+      "description": "记录工具操作、权限决策、文件变更与自动测试结果，使交付可重放和可审计。"
+    }
+  ],
+  "references": [
+    {
+      "id": "google-decision-api",
+      "title": "Google — Gemini Decisions API: Fast, calibrated multimodal decisions",
+      "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-decisions-api/",
+      "supports": "2026-11-11 API 发布时间、问题类型、批量数量、官方延迟与价格。",
+      "accessedAt": "2026-11-13"
+    },
+    {
+      "id": "antigravity-browser-use",
+      "title": "Google Antigravity Docs — Browser use",
+      "url": "https://antigravity.google/docs/browser",
+      "supports": "浏览器交互、网站与端口审批、文件上传下载的安全限制。",
+      "accessedAt": "2026-11-13"
+    },
+    {
+      "id": "google-agent-environments",
+      "title": "Google AI Studio — Environments in managed agents",
+      "url": "https://aistudio.google.com/docs/agent-environment",
+      "supports": "远程和自托管 Linux 环境、出站 HTTPS、配置限制和过期策略。",
+      "accessedAt": "2026-11-13"
+    },
+    {
+      "id": "openai-cot-study",
+      "title": "OpenAI — What affects chain-of-thought monitorability across the model lifecycle?",
+      "url": "https://alignment.openai.com/cot-monitorability-model-lifecycle",
+      "supports": "2026-11-10 研究的训练因素、实验结论与代理指标局限。",
+      "accessedAt": "2026-11-13"
+    },
+    {
+      "id": "runway-praxis-release",
+      "title": "Runway — Praxis-1 Is Now Available",
+      "url": "https://runway.com/news/company-news/praxis-1-is-now-available",
+      "supports": "开放权重、许可、模型构型与发布方 RoboLab-120 数据。",
+      "accessedAt": "2026-11-13"
+    },
+    {
+      "id": "runway-praxis-repository",
+      "title": "Runway — Praxis-1 OSS",
+      "url": "https://github.com/runwayml/praxis-1-oss",
+      "supports": "开源代码与仿真环境的硬件要求。",
+      "accessedAt": "2026-11-13"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-12 — 并行 Agent 的可信交付",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-12.yaml",
+      "supports": "回顾并行工作区、私网授权、安全沙箱和真实任务评测。",
+      "publishedAt": "2026-11-12"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
