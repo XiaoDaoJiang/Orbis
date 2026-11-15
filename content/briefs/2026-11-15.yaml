@@ -1,0 +1,392 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-15",
+  "status": "published",
+  "title": "Agent 运行时的可组合时代：工具 API、脚本编排与安全契约",
+  "summary": "DeepSeek 将检索、网页、文件和语音能力拆为可组合的 API；Google Antigravity 将并行 Agent 流程交给可审查的 Python 脚本。Anthropic Anvil 展示多轮自适应红队的验证价值；llama.cpp v1.0.0 为本地推理库明确版本兼容规则；Poppy 1.0 则分离跨企业代理的发现、会话身份与 OAuth 授权。工程化重点正从单次模型输出转向可计费、可隔离、可复现、可升级的能力调用。",
+  "topics": [
+    "agent-harness",
+    "coding-agent",
+    "mcp"
+  ],
+  "tags": [
+    "Composable Tool APIs",
+    "Scripted Agent Workflows",
+    "Adaptive Red Teaming",
+    "Local Inference ABI",
+    "Personal Agent Protocol"
+  ],
+  "signals": [
+    {
+      "title": "工具能力接口化，费用与数据边界必须同步拆分",
+      "summary": "DeepSeek 公开服务端搜索、URL 读取、文件解析和语音接口，并对这些工具单独计费。",
+      "impact": "high"
+    },
+    {
+      "title": "多 Agent 编排由隐式对话转为显式控制流",
+      "summary": "Antigravity Dynamic Workflows 用 Python parallel 与 pipeline 协作独立会话、返回结构化结果。",
+      "impact": "high"
+    },
+    {
+      "title": "自适应红队成为模型防护评测的持续环节",
+      "summary": "Anthropic Anvil 通过多轮并行攻击对照人工专家，强调静态、动态与真实流量的联合评估。",
+      "impact": "high"
+    },
+    {
+      "title": "本地推理与企业 Agent 接入需要稳定契约",
+      "summary": "llama.cpp v1.0.0 明确公开 API 兼容策略，Poppy 1.0 则定义跨组织发现、身份和授权边界。",
+      "impact": "medium"
+    }
+  ],
+  "sections": [
+    {
+      "id": "deepseek-composable-tool-apis",
+      "layout": "architecture",
+      "title": "DeepSeek：工具从聊天产品拆为可编排 API",
+      "conclusion": "把搜索、读取、解析和语音列为独立工具预算、权限和数据流，不能把服务端能力误认为本地执行。",
+      "facts": [
+        {
+          "id": "deepseek-tool-coverage",
+          "text": "DeepSeek 的 Build a Chatbot 官方文档已列出 Web Search、Deep Thinking Search、文件输入、URL 读取、内容安全检查以及语音输入和朗读；搜索和 URL 读取由服务端执行。",
+          "evidence": [
+            "deepseek-chatbot-guide"
+          ]
+        },
+        {
+          "id": "deepseek-tool-pricing",
+          "text": "DeepSeek 官方定价页把 Search 和 Web Fetch 按调用次数计费，文件解析与 OCR 按页计费，TTS 与 ASR 使用独立单位，并明确这些调用与模型 token 费用分别核算。",
+          "evidence": [
+            "deepseek-pricing"
+          ]
+        },
+        {
+          "id": "deepseek-demo-data-storage",
+          "text": "DeepSeek 开源的 chat-demo 支持历史会话 ZIP 导入导出、流式回复、搜索和网页读取；README 说明 API key 与对话保存在浏览器端，而实际使用服务会发送相关内容到配置的 API。",
+          "evidence": [
+            "deepseek-chat-demo"
+          ]
+        },
+        {
+          "id": "deepseek-history-import",
+          "text": "chat-demo 仓库明确提示，导入历史须经确认与验证，成功后会替换浏览器中原有的本地会话及附件。",
+          "evidence": [
+            "deepseek-chat-demo"
+          ]
+        }
+      ],
+      "limitations": [
+        "演示应用不是企业级凭据管理方案；API 计费和工具可用性应以集成时的官方文档为准。"
+      ]
+    },
+    {
+      "id": "scripted-multi-agent-workflows",
+      "layout": "system-map",
+      "title": "Dynamic Workflows：Python 控制流编排独立 Agent 会话",
+      "conclusion": "把阶段、并发、工作区、审批和结构化输出变成可审核的执行契约。",
+      "facts": [
+        {
+          "id": "dynamic-parallel-pipeline",
+          "text": "Google Antigravity /run-workflow 文档介绍，Agent 生成 Python 脚本并通过 parallel() 和 pipeline() 分别协调并行子任务与顺序阶段。",
+          "evidence": [
+            "antigravity-workflows"
+          ]
+        },
+        {
+          "id": "dynamic-schema-conversations",
+          "text": "Dynamic Workflows 启动的各个 Agent 拥有独立会话，其结果按 JSON Schema 校验后返回脚本；文档还支持持续多轮 Agent 和独立分支工作区。",
+          "evidence": [
+            "antigravity-workflows"
+          ]
+        },
+        {
+          "id": "dynamic-permission-reviews",
+          "text": "Google 文档规定脚本执行按权限预设审批，子 Agent 的操作仍在自己的会话中申请授权；该功能面向 Antigravity App/CLI 的相应付费方案。",
+          "evidence": [
+            "antigravity-workflows"
+          ]
+        }
+      ],
+      "limitations": [
+        "脚本化编排不等于副作用可回滚，仍需验证工作区隔离、错误恢复和权限预设。"
+      ]
+    },
+    {
+      "id": "adaptive-automated-red-teaming",
+      "layout": "metrics",
+      "title": "Anvil：自适应对抗和真实防护效果分开观测",
+      "conclusion": "在获授权测试边界内结合固定测试、动态对抗与真实事件指标，避免以单一分数推断整体安全性。",
+      "facts": [
+        {
+          "id": "anvil-agent-harness",
+          "text": "Anthropic 2026 年 11 月 12 日发布内部自动红队系统 Anvil 的技术报告，描述并行调查 Agent 借助分支、回退、重复采样和记忆持续寻找多轮绕过方式。",
+          "evidence": [
+            "anthropic-anvil"
+          ]
+        },
+        {
+          "id": "anvil-human-comparison",
+          "text": "Anthropic 自报在隐藏推理提取测试中，Anvil 在 435 次请求后首次达到实质泄漏阈值，同一比较中的专家红队约用 102,200 次请求才达到阈值。",
+          "evidence": [
+            "anthropic-anvil"
+          ]
+        },
+        {
+          "id": "anvil-three-measurements",
+          "text": "Anthropic 同时对照静态重放、自适应攻击与真实流量尝试，并说明同一时期存在其他防护改进，不能将真实流量变化全部归因于 Anvil。",
+          "evidence": [
+            "anthropic-anvil"
+          ]
+        }
+      ],
+      "limitations": [
+        "研究结果来自发布方内部任务与特定模型；不能无条件外推至任意企业 Agent。"
+      ]
+    },
+    {
+      "id": "stable-local-inference-library-apis",
+      "layout": "comparison",
+      "title": "llama.cpp v1：本地推理库走向明确的版本治理",
+      "conclusion": "将公开 API、后端、模型文件和硬件环境分别版本化，升级时执行 ABI 与功能回归。",
+      "facts": [
+        {
+          "id": "llama-v1-release",
+          "text": "ggml-org 于 2026 年 11 月 13 日发布 libllama 和 libggml v1.0.0，并将公开 C 头文件列为库版本兼容的边界。",
+          "evidence": [
+            "llama-v1-blog",
+            "llama-v1-release"
+          ]
+        },
+        {
+          "id": "llama-versioning-rules",
+          "text": "ggml-org 说明公开 C API 的破坏性变更使用 major 版本，向后兼容的新功能或 API 使用 minor，错误修复使用 patch。",
+          "evidence": [
+            "llama-v1-blog"
+          ]
+        },
+        {
+          "id": "llama-release-notes",
+          "text": "llama.cpp v1.0.0 Release 指出移除了过时的公开 API，提升了 NextN/speculative API，并添加 OCP FP8 KV Cache 等功能。",
+          "evidence": [
+            "llama-v1-release"
+          ]
+        },
+        {
+          "id": "llama-backend-coverage",
+          "text": "ggml-org 官方文章称 ggml 后端可编译成动态库，并报告 llama.cpp 支持超过 150 种模型架构变体；该数量属于项目方披露。",
+          "evidence": [
+            "llama-v1-blog"
+          ]
+        }
+      ],
+      "limitations": [
+        "公开 C API 稳定并不保证全部加速后端、驱动和量化模型组合具有相同稳定性。"
+      ]
+    },
+    {
+      "id": "poppy-agent-identity-and-authorization",
+      "layout": "architecture",
+      "title": "Poppy 1.0：企业代理接入不应混淆身份与授权",
+      "conclusion": "分别验证发现文档、跨会话身份和 OAuth 最小权限，必要时引入明确的人工业务审批。",
+      "facts": [
+        {
+          "id": "poppy-v1-announcement",
+          "text": "Sierra 于 2026 年 11 月 13 日发布 Personal Agent Protocol（Poppy）1.0，用于个人 Agent 通过企业代理、网站或 API 与组织服务交互。",
+          "evidence": [
+            "sierra-poppy"
+          ]
+        },
+        {
+          "id": "poppy-discovery-session",
+          "text": "Poppy 1.0 规范要求企业提供 HTTPS 的 /.well-known/poppy.json 发现文档，并通过 Session JWT 维持 Agent 与用户的会话身份，OAuth token 则负责账户权限。",
+          "evidence": [
+            "poppy-spec"
+          ]
+        },
+        {
+          "id": "poppy-reused-standards",
+          "text": "Sierra 说明 Poppy 基于 MCP、OpenAPI、OAuth 与 UCP 等既有标准，并提供分阶段实施材料和校验工具。",
+          "evidence": [
+            "sierra-poppy",
+            "poppy-spec"
+          ]
+        },
+        {
+          "id": "poppy-redirect-security",
+          "text": "Poppy 1.0 规范要求协议定义的 URL 使用 HTTPS，且在端点重定向时不得向新地址转发 access token、Session JWT 或其他凭证。",
+          "evidence": [
+            "poppy-spec"
+          ]
+        }
+      ],
+      "limitations": [
+        "生态采用数量是发起方声明；协议互操作与权限治理需要在接入企业服务时独立验收。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "DeepSeek chat-demo",
+      "summary": "检查搜索工具、API 数据出站及 ZIP 导入对本地历史的影响。",
+      "maturity": "early",
+      "url": "https://github.com/deepseek-ai/chat-demo"
+    },
+    {
+      "action": "READ",
+      "name": "Antigravity Dynamic Workflows",
+      "summary": "阅读脚本编排、结构化结果和独立权限审批契约。",
+      "maturity": "growing",
+      "url": "https://antigravity.google/docs/dynamic-workflows"
+    },
+    {
+      "action": "READ",
+      "name": "llama.cpp v1.0.0",
+      "summary": "对照语义化版本和原始 Release，评估本地推理依赖升级。",
+      "maturity": "stable",
+      "url": "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0"
+    },
+    {
+      "action": "READ",
+      "name": "Personal Agent Protocol",
+      "summary": "验证规范中的 well-known 发现、会话 JWT 和 OAuth 账户访问分层。",
+      "maturity": "early",
+      "url": "https://personalagentprotocol.org/docs/1.0/spec"
+    }
+  ],
+  "radar": [
+    {
+      "label": "工具计费与数据流边界",
+      "impact": 95,
+      "horizon": 91,
+      "note": "逐项记录搜索、文件读取与语音工具的请求、费用和出站数据。"
+    },
+    {
+      "label": "脚本化 Agent 编排",
+      "impact": 94,
+      "horizon": 89,
+      "note": "结合阶段日志、结构化结果、工作区隔离和审批验证。"
+    },
+    {
+      "label": "自适应防护回归",
+      "impact": 97,
+      "horizon": 70,
+      "note": "联合固定测试、动态评测和真实安全告警。"
+    },
+    {
+      "label": "本地推理 ABI/API 稳定性",
+      "impact": 86,
+      "horizon": 88,
+      "note": "关注版本迁移、硬件后端、模型加载和回归用例。"
+    },
+    {
+      "label": "跨组织代理发现与授权",
+      "impact": 89,
+      "horizon": 55,
+      "note": "将发现、身份连续性和账户授权分开验证。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "为每种 Agent 工具登记费用与数据出站",
+      "description": "按搜索、URL 读取、OCR、ASR/TTS 建立调用成本、权限与失败回退台账。"
+    },
+    {
+      "title": "用脚本复现分阶段并行 Review",
+      "description": "将发现、审查和验证拆成独立 Agent 会话，要求每阶段返回经 JSON Schema 校验的结果。"
+    },
+    {
+      "title": "建立三层安全验证基线",
+      "description": "在授权测试环境中结合静态测试、动态对抗和生产告警趋势，不以单次测试代替整体风险判断。"
+    },
+    {
+      "title": "验证接口升级和代理授权最小化",
+      "description": "为 llama.cpp 维护 ABI 回归集；对 Poppy 检查 HTTPS 发现、Session 签名、scope 与撤销流程。"
+    }
+  ],
+  "references": [
+    {
+      "id": "deepseek-chatbot-guide",
+      "title": "DeepSeek API Docs — Build a Chatbot",
+      "url": "https://api-docs.deepseek.com/guides/build_a_chatbot/",
+      "supports": "模型工具化搜索、网页读取、文件输入、语音与服务端执行方式。",
+      "accessedAt": "2026-11-15"
+    },
+    {
+      "id": "deepseek-pricing",
+      "title": "DeepSeek API Docs — Models & Pricing",
+      "url": "https://api-docs.deepseek.com/quick_start/pricing/",
+      "supports": "工具 API 和模型调用的独立计费单位及使用规则。",
+      "accessedAt": "2026-11-15"
+    },
+    {
+      "id": "deepseek-chat-demo",
+      "title": "DeepSeek — chat-demo GitHub repository",
+      "url": "https://github.com/deepseek-ai/chat-demo",
+      "supports": "开源客户端功能、浏览器数据存储和历史导入导出。",
+      "accessedAt": "2026-11-15"
+    },
+    {
+      "id": "antigravity-workflows",
+      "title": "Google Antigravity Docs — Dynamic Workflows",
+      "url": "https://antigravity.google/docs/dynamic-workflows",
+      "supports": "Python 控制流、并行与串行编排、独立会话、JSON Schema 和权限。",
+      "accessedAt": "2026-11-15"
+    },
+    {
+      "id": "anthropic-anvil",
+      "title": "Anthropic — Strengthening our safeguards with frontier automated red-teaming",
+      "url": "https://safeguards.anthropic.com/2026/automated-red-teaming/",
+      "supports": "Anvil 设计、发布方专家对照、动态与静态防护测量。",
+      "accessedAt": "2026-11-15"
+    },
+    {
+      "id": "llama-v1-blog",
+      "title": "ggml-org — llama.cpp v1.0.0 library announcement",
+      "url": "https://huggingface.co/blog/ggml-org/llama-cpp-v1",
+      "supports": "版本发布、公开 C API 语义化版本和后端覆盖。",
+      "accessedAt": "2026-11-15"
+    },
+    {
+      "id": "llama-v1-release",
+      "title": "ggml-org — llama.cpp v1.0.0 Release",
+      "url": "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0",
+      "supports": "原始版本发布和 ABI、推理功能变化。",
+      "accessedAt": "2026-11-15"
+    },
+    {
+      "id": "sierra-poppy",
+      "title": "Sierra — Releasing Personal Agent Protocol 1.0",
+      "url": "https://sierra.ai/blog/releasing-poppy",
+      "supports": "发布日期、协议目标及与既有标准的衔接。",
+      "accessedAt": "2026-11-15"
+    },
+    {
+      "id": "poppy-spec",
+      "title": "Personal Agent Protocol — Specification v1.0",
+      "url": "https://personalagentprotocol.org/docs/1.0/spec",
+      "supports": "发现文档、Session JWT、OAuth、HTTPS 和重定向限制。",
+      "accessedAt": "2026-11-15"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-14 — Agent 生产系统的新变量",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-14.yaml",
+      "supports": "延续模型路由、生成式 UI 和指令隔离讨论。",
+      "publishedAt": "2026-11-14"
+    },
+    {
+      "title": "Orbis · 2026-11-12 — 并行 Agent 的可信交付",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-12.yaml",
+      "supports": "回顾并行工作区、沙箱和评测边界。",
+      "publishedAt": "2026-11-12"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
