@@ -1,0 +1,338 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-16",
+  "status": "published",
+  "title": "Agent 生产化的下一道边界：无容器浏览器、持久状态与供应链安全",
+  "summary": "Cloudflare 开源 Kitesurf，将可经 CDP 驱动的浏览器引擎带入 Workers；Anthropic 的 always-on Agent 架构把任务拆为可恢复的事件、计时器、记忆、权限与出站消息。安全方面，Anthropic 强调评测设计与评分器验证，而 Cursor 公布的供应链事件揭示了第三方凭据、历史轨迹和插件分发之间的连锁风险。今日应优先验证隔离与可恢复性，再考虑扩大自动执行范围。",
+  "topics": [
+    "agent-harness",
+    "coding-agent",
+    "mcp"
+  ],
+  "tags": [
+    "Serverless Browser Engine",
+    "Always-on Agent Lifecycle",
+    "Durable Event Inbox",
+    "Safety Evaluation Methodology",
+    "Agent Supply Chain Security"
+  ],
+  "signals": [
+    {
+      "title": "浏览器能力可服务化，但不等于完整 Chromium",
+      "summary": "Cloudflare Kitesurf 以 Workers、WebAssembly 和 CDP 组合浏览器能力，开源实现仍标记为实验性。",
+      "impact": "high"
+    },
+    {
+      "title": "常驻 Agent 的本质是持久化短 Run",
+      "summary": "事件 Inbox、Timers、Memory、Permissions 与 Outbox 五个组件让跨会话任务具备重试和审批边界。",
+      "impact": "high"
+    },
+    {
+      "title": "安全评测需要验证评分器，而不仅是模型分数",
+      "summary": "Anthropic 建议预注册指标、检查环境污染、以人工标签校验评测器，并公开不确定性。",
+      "impact": "high"
+    },
+    {
+      "title": "Agent 数据与插件分发形成联动供应链风险",
+      "summary": "Cursor 公开事件说明外部访问密钥、未脱敏历史轨迹与恶意扩展缓存可能串联，需按实际影响范围处置。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "serverless-browser-engine",
+      "layout": "architecture",
+      "title": "Kitesurf：无容器浏览器服务的技术边界",
+      "conclusion": "可以把 CDP 浏览器接入 Agent Harness，但应以兼容性、动态执行隔离和实际成本为验收前提。",
+      "facts": [
+        {
+          "id": "kitesurf-open-source",
+          "text": "Cloudflare 在 2026 年 11 月 13 日开放 Kitesurf 源码，采用 Apache 2.0 许可，支持本地开发和部署到自己的 Cloudflare Workers 账户。",
+          "evidence": [
+            "cloudflare-kitesurf-blog",
+            "cloudflare-kitesurf-repo"
+          ]
+        },
+        {
+          "id": "kitesurf-worker-cdp",
+          "text": "Kitesurf 在 Workers 内解析 HTML、处理 CSS、执行 JavaScript 并渲染截图，不需要传统浏览器容器；它支持 Chrome DevTools Protocol，能对接 Puppeteer 等 CDP 客户端。",
+          "evidence": [
+            "cloudflare-kitesurf-blog",
+            "cloudflare-kitesurf-repo"
+          ]
+        },
+        {
+          "id": "kitesurf-isolation-plan",
+          "text": "项目使用 Dynamic Workers 为页面建立隔离执行环境；在 Cloudflare 上运行需要 Workers Paid 方案，仓库仍把该引擎标为 experimental。",
+          "evidence": [
+            "cloudflare-kitesurf-repo"
+          ]
+        }
+      ],
+      "limitations": [
+        "Kitesurf 的网站兼容性与 Chromium 不同；供应商性能目标不等于经独立测试的生产容量结论。"
+      ]
+    },
+    {
+      "id": "durable-agent-event-loop",
+      "layout": "system-map",
+      "title": "Always-on Agent：事件与持久记忆支撑短时 Run",
+      "conclusion": "把任务触发、串行消费、可恢复会话和长期状态分离，防止靠单条无限对话承载工作。",
+      "facts": [
+        {
+          "id": "always-on-short-runs",
+          "text": "Anthropic 2026 年 11 月 13 日的工程指南说明：所谓 always-on Agent 通常在多数时间休眠，由事件唤醒，完成一次 Run 后保存状态，再等待下一次触发。",
+          "evidence": [
+            "anthropic-always-on"
+          ]
+        },
+        {
+          "id": "always-on-five-primitives",
+          "text": "该指南将基础组件分为 Event Inbox、Timers、Memory、Permissions 与 Outbox；Inbox 作为持久事件队列可支持去重、失败恢复和串行处理。",
+          "evidence": [
+            "anthropic-always-on"
+          ]
+        },
+        {
+          "id": "always-on-memory-lifecycle",
+          "text": "指南建议 Memory 保存跨 Run 的指令、进度及必要摘要；其他系统已有的信息可以只保存引用，避免重复复制和上下文膨胀。",
+          "evidence": [
+            "anthropic-always-on"
+          ]
+        }
+      ],
+      "limitations": [
+        "这是一份架构指导而非可直接部署的通用运行时，具体重试与幂等策略仍需自行验证。"
+      ]
+    },
+    {
+      "id": "agent-permissions-and-notifications",
+      "layout": "comparison",
+      "title": "无人值守 Agent：凭据、人工审批与通知必须分层",
+      "conclusion": "将机器可自主完成的低风险步骤与需要人批准的动作拆成不同的持久状态，避免丢失待批请求。",
+      "facts": [
+        {
+          "id": "permissions-credential-proxy",
+          "text": "Anthropic 建议将敏感凭据放在 Agent 环境之外，由独立代理在出站请求时注入，避免直接把长期密钥交给 Agent。",
+          "evidence": [
+            "anthropic-always-on"
+          ]
+        },
+        {
+          "id": "permissions-deferred-tools",
+          "text": "指南描述 Deferred Tool Calls：高风险工具调用可暂停并保存当前会话，待用户在独立界面批准后以新事件恢复。",
+          "evidence": [
+            "anthropic-always-on"
+          ]
+        },
+        {
+          "id": "outbox-delivery-policy",
+          "text": "指南描述 Outbox 和 Dispatcher 可保存待发消息、处理重试，并区分无需提醒、直接发送以及请求人工输入三种 Run 结果。",
+          "evidence": [
+            "anthropic-always-on"
+          ]
+        }
+      ],
+      "limitations": [
+        "第三方指南的权限设计建议不等于默认产品已经实现全部控制；部署时须验证凭据轮换与审批恢复。"
+      ]
+    },
+    {
+      "id": "reproducible-safety-evaluations",
+      "layout": "metrics",
+      "title": "安全 Evals：预注册、评分器一致性与难度校准",
+      "conclusion": "建立包含真实风险场景、评分器自检和统计说明的评测门禁，而不是只比较单次通过率。",
+      "facts": [
+        {
+          "id": "safety-eval-methodology",
+          "text": "Anthropic 于 2026 年 11 月 13 日发布安全评测建议，强调评测任务须对应真实风险、覆盖不同语言和部署环境，避免场景和生产环境不一致。",
+          "evidence": [
+            "anthropic-safety-evals"
+          ]
+        },
+        {
+          "id": "safety-eval-grader-validation",
+          "text": "该研究建议将评分标准尽可能拆成原子判定，并用独立人工标注样本比对 LLM Grader 的结果，同时关注评分器版本变化和偏差。",
+          "evidence": [
+            "anthropic-safety-evals"
+          ]
+        },
+        {
+          "id": "safety-eval-preregistration",
+          "text": "该研究建议事先登记指标、比较对象、数据切片及改进阈值，并通过重复测量和样本量分析报告波动与不确定性。",
+          "evidence": [
+            "anthropic-safety-evals"
+          ]
+        }
+      ],
+      "limitations": [
+        "文中的样本规模与安全测试实践是发布方经验，并不构成所有领域通用的统计充分性保证。"
+      ]
+    },
+    {
+      "id": "cursor-supply-chain-incident",
+      "layout": "timeline",
+      "title": "Cursor 事件：第三方密钥与扩展缓存的连锁风险",
+      "conclusion": "把模型服务商共享数据、日志中的凭据和 IDE 扩展来源纳入统一审计，但不夸大此次披露的受影响范围。",
+      "facts": [
+        {
+          "id": "cursor-incident-vendor-entry",
+          "text": "Cursor 在 2026 年 11 月 13 日的调查更新中称，攻击者利用发给 Fireworks 的暴露访问密钥读取其共享存储中部分历史 Coding Agent 轨迹，少量未脱敏凭据随后被用于访问其他 SaaS 服务。",
+          "evidence": [
+            "cursor-incident-update"
+          ]
+        },
+        {
+          "id": "cursor-extension-cache-poison",
+          "text": "Cursor 披露攻击者在 2026 年 10 月 29 日通过扩展市场缓存分发恶意 Claude Code 扩展，潜在影响最多约 5,000 个请求特定版本的用户，分发持续约 11 小时。",
+          "evidence": [
+            "cursor-incident-update"
+          ]
+        },
+        {
+          "id": "cursor-affected-versions-response",
+          "text": "Cursor 通告明确列出其 VS Code Extension Marketplace 上适用于 Windows 和 macOS 的 Anthropic.claude-code 2.1.312 与 2.1.313；厂商已下架恶意版本，并建议疑似受影响用户按官方指引检测、处置和轮换凭据。",
+          "evidence": [
+            "cursor-extension-notice",
+            "cursor-incident-update"
+          ]
+        }
+      ],
+      "limitations": [
+        "以上影响范围及处置结论依 Cursor 官方调查报告；事件不应被表述为 Anthropic 官方分发渠道或全部 Cursor 扩展均遭入侵。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "Cloudflare Kitesurf",
+      "summary": "在隔离测试环境评估 CDP 功能、网页兼容性与浏览器实例回收。",
+      "maturity": "experimental",
+      "url": "https://github.com/cloudflare/kitesurf"
+    },
+    {
+      "action": "READ",
+      "name": "Anthropic Always-on Agents Guide",
+      "summary": "对照事件队列、定时器、长期记忆、权限和出站消息五组件。",
+      "maturity": "growing",
+      "url": "https://claude.com/resources/articles/building-always-on-agents"
+    },
+    {
+      "action": "READ",
+      "name": "Cursor Extension Security Notice",
+      "summary": "核对版本、受影响来源、恶意扩展识别和恢复建议。",
+      "maturity": "growing",
+      "url": "https://cursor.com/blog/claude-code-extension-security-notice"
+    }
+  ],
+  "radar": [
+    {
+      "label": "Worker 浏览器引擎",
+      "impact": 85,
+      "horizon": 73,
+      "note": "先用 CDP 回归与隔离测试评估，再比较自托管浏览器的资源成本。"
+    },
+    {
+      "label": "常驻任务的可靠性控制面",
+      "impact": 97,
+      "horizon": 96,
+      "note": "事件去重、检查点、定时器持久化与通知重试值得优先建设。"
+    },
+    {
+      "label": "安全评测器自检",
+      "impact": 94,
+      "horizon": 88,
+      "note": "先定义风险构念，再做人工一致性、难度校准与版本回归。"
+    },
+    {
+      "label": "Agent 插件供应链治理",
+      "impact": 98,
+      "horizon": 95,
+      "note": "审查扩展下载来源、第三方共享日志和凭据注入路径。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立 Agent 事件幂等与恢复验证集",
+      "description": "用重复 webhook、进程异常退出、补发消息和审批超时测试 Inbox/Timer/Outbox 的持久状态迁移。"
+    },
+    {
+      "title": "评估无容器 CDP 浏览器",
+      "description": "对 Kitesurf 在隔离账户测量 DOM、脚本、截图与会话隔离，不把实验性能当作 Chromium 等价。"
+    },
+    {
+      "title": "将安全评测器纳入评测本身",
+      "description": "记录测试场景、指标、切片、评分器版本与人工一致性样本，并显式报告异常判分。"
+    },
+    {
+      "title": "核查 IDE 扩展及第三方轨迹数据",
+      "description": "确认扩展安装来源与版本，排查历史轨迹中的明文 Token，对符合通告范围的设备执行官方处置流程。"
+    }
+  ],
+  "references": [
+    {
+      "id": "cloudflare-kitesurf-blog",
+      "title": "Cloudflare — Kitesurf is now open source",
+      "url": "https://blog.cloudflare.com/kitesurf-open-source/",
+      "supports": "Kitesurf 开源日期、许可、CDP、Workers 引擎组成与部署要求。",
+      "accessedAt": "2026-11-16"
+    },
+    {
+      "id": "cloudflare-kitesurf-repo",
+      "title": "Cloudflare — Kitesurf GitHub Repository",
+      "url": "https://github.com/cloudflare/kitesurf",
+      "supports": "实验性标识、Workers Paid/Dynamic Workers 要求、CDP 接口与 Apache 2.0 许可。",
+      "accessedAt": "2026-11-16"
+    },
+    {
+      "id": "anthropic-always-on",
+      "title": "Anthropic — Building always-on agents",
+      "url": "https://claude.com/resources/articles/building-always-on-agents",
+      "supports": "周期性 Run、Event Inbox、Timers、Memory、权限代理、Deferred Tool Calls 和 Outbox。",
+      "accessedAt": "2026-11-16"
+    },
+    {
+      "id": "anthropic-safety-evals",
+      "title": "Anthropic — Building strong safety evaluations",
+      "url": "https://www.anthropic.com/research/building-strong-safety-evaluations",
+      "supports": "安全评测场景设计、评分器校准、预注册、重复采样及报告方法。",
+      "accessedAt": "2026-11-16"
+    },
+    {
+      "id": "cursor-incident-update",
+      "title": "Cursor — An update on our recent security incident",
+      "url": "https://cursor.com/blog/security-incident-update",
+      "supports": "第三方访问密钥、历史数据轨迹、后续 SaaS 访问与扩展缓存事件的官方调查。",
+      "accessedAt": "2026-11-16"
+    },
+    {
+      "id": "cursor-extension-notice",
+      "title": "Cursor — Security notice: malicious Anthropic.claude-code versions",
+      "url": "https://cursor.com/blog/claude-code-extension-security-notice",
+      "supports": "2.1.312/2.1.313 的受影响平台、恶意行为与排查处置建议。",
+      "accessedAt": "2026-11-16"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-13 — Agent 控制面的分层治理",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-13.yaml",
+      "supports": "对照浏览器授权、沙箱、可验证执行的近期讨论。",
+      "publishedAt": "2026-11-13"
+    },
+    {
+      "title": "Orbis · 2026-11-15 — Agent Runtime 的可组合接口",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-15.yaml",
+      "supports": "延续工具 API、脚本编排与安全契约的工程化讨论。",
+      "publishedAt": "2026-11-15"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
