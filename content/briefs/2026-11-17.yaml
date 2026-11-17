@@ -1,0 +1,328 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-17",
+  "status": "published",
+  "title": "Agent 模型选型走向可验证：MaaS 接口、开放 MoE 与科研证明",
+  "summary": "华为云 openPangu-2.1-Pro 的公开 MaaS 接口给 Agent 工具调用带来新的部署选项；Agnes 2.5 Pro Theta 以开放权重进入多模态 MoE 竞争，但体积、运行代码与自报成绩需要独立验收。OpenAI 新 science blog 展示 AI 辅助理论证明的工作流，也明确候选构造仍待领域专家检验。工程重点不是追逐榜单，而是将接入契约、成本、证据质量与复现实验放到同一张验收表。",
+  "topics": [
+    "agent-harness",
+    "coding-agent",
+    "mcp"
+  ],
+  "tags": [
+    "MaaS Model API",
+    "Open-weight MoE",
+    "Model Card Verification",
+    "AI-Assisted Formal Proof",
+    "Inference Capacity Planning"
+  ],
+  "signals": [
+    {
+      "title": "MaaS 的可用性应以接口合同而非宣传性能为准",
+      "summary": "华为云已公开 openPangu-2.1-Pro 的上下文、Function Call、协议兼容和按量价格，应以真实工具调用测试验收。",
+      "impact": "high"
+    },
+    {
+      "title": "开放权重不意味着低门槛本地运行",
+      "summary": "Agnes 2.5 Pro Theta 虽采用 Apache 2.0，但 BF16 权重约 375.5 GB，需预算显存、存储和自定义代码风险。",
+      "impact": "high"
+    },
+    {
+      "title": "厂商自报基准分数不能替代可复现实验",
+      "summary": "Agnes 模型卡列有多项评测成绩，却明确未提供复现所需的完整提示、采样设置与原始运行日志。",
+      "impact": "high"
+    },
+    {
+      "title": "AI 参与证明需要保留独立核验边界",
+      "summary": "OpenAI 披露 GPT-6 Astra 协助研究者构造标准模型格点定义候选方案，同时承认反射正性等条件仍待检验。",
+      "impact": "medium"
+    }
+  ],
+  "sections": [
+    {
+      "id": "openpangu-maas-entry",
+      "layout": "architecture",
+      "title": "openPangu-2.1-Pro：可调用接口与部署入口",
+      "conclusion": "先确认模型服务接口、访问区域和兼容细节，再把它接入实际 Agent Harness。",
+      "facts": [
+        {
+          "id": "pangu-on-maas",
+          "text": "华为云 MaaS 官方目录已列出 openPangu-2.1-Pro，介绍其相较上一代在 Agent、代码生成及吞吐方向的提升；提升表述来自厂商。",
+          "evidence": [
+            "huawei-maas-home"
+          ]
+        },
+        {
+          "id": "pangu-api-compatibility",
+          "text": "openPangu-2.1-Pro 的官方详情页列出 Chat V2 接口及 OpenAI、Anthropic 兼容接入方式，同时列有 Function Call Auto、None 模式。",
+          "evidence": [
+            "huawei-pangu-details"
+          ]
+        },
+        {
+          "id": "pangu-context-and-modality",
+          "text": "官方详情页列出 512K 上下文窗口、文本输入与文本输出、中文及英文支持；深度思考模式标为可关闭。",
+          "evidence": [
+            "huawei-pangu-details"
+          ]
+        }
+      ],
+      "limitations": [
+        "官方页面没有提供完整 Agent 任务成功率或跨 SDK 兼容性的独立测试结果。"
+      ]
+    },
+    {
+      "id": "openpangu-pricing-limits",
+      "layout": "comparison",
+      "title": "模型服务价格与限制必须一起验收",
+      "conclusion": "价格、缓存命中与输出配额影响持续 Agent 的真实成本，不能只按单次调用估算。",
+      "facts": [
+        {
+          "id": "pangu-input-output-price",
+          "text": "华为云官方详情页标注 openPangu-2.1-Pro 的推理输入价格为人民币 0.8 元/百万 tokens，输出价格为 3.2 元/百万 tokens。",
+          "evidence": [
+            "huawei-pangu-details"
+          ]
+        },
+        {
+          "id": "pangu-cache-price",
+          "text": "该页标注缓存命中输入价格为人民币 0.016 元/百万 tokens；这属于平台当前公示价格，不保证所有地区或合同条件相同。",
+          "evidence": [
+            "huawei-pangu-details"
+          ]
+        },
+        {
+          "id": "pangu-input-output-caps",
+          "text": "该模型官方页面列出最大输入 500K、最大输出 384K 和最大思维链 256K 的限制。",
+          "evidence": [
+            "huawei-pangu-details"
+          ]
+        }
+      ],
+      "limitations": [
+        "实际计费、速率限制、重试及工具调用兼容性要通过租户环境实测，不将页面价格视为最终账单保证。"
+      ]
+    },
+    {
+      "id": "agnes-moe-package",
+      "layout": "system-map",
+      "title": "Agnes Theta：开放权重及其工程资源边界",
+      "conclusion": "模型许可与权重开放是接入起点；上线前还须核算大规模 BF16 权重和自定义加载代码的代价。",
+      "facts": [
+        {
+          "id": "agnes-architecture",
+          "text": "Agnes AI 在 Hugging Face 发布 Agnes 2.5 Pro Theta 多模态 MoE 权重；模型卡标注总参数约 187.8B、52 层文本解码器和每个 MoE 块 512 个路由专家。",
+          "evidence": [
+            "agnes-model-card"
+          ]
+        },
+        {
+          "id": "agnes-inputs-context",
+          "text": "模型卡列出文本、图像及视频帧输入路径、文本输出、262144 tokens 的配置上下文上限及 Apache 2.0 许可证。",
+          "evidence": [
+            "agnes-model-card"
+          ]
+        },
+        {
+          "id": "agnes-weight-footprint",
+          "text": "模型卡标注 BF16 权重分为 105 个 Safetensors 分片，权重张量体积约 375.5 GB，并要求本地加载额外预留显存和存储空间。",
+          "evidence": [
+            "agnes-model-card"
+          ]
+        }
+      ],
+      "limitations": [
+        "262144 tokens 是配置上限，并不构成在所有多模态组合与硬件环境中完成长上下文推理的保证。"
+      ]
+    },
+    {
+      "id": "agnes-eval-reproducibility",
+      "layout": "metrics",
+      "title": "Agnes 评测：高分与复现证据仍需分开",
+      "conclusion": "将发布方 benchmark 当作候选筛选信息，实测应固定提示、采样配置与工具环境。",
+      "facts": [
+        {
+          "id": "agnes-selfreported-benchmarks",
+          "text": "Agnes 模型卡提供的发布方评测快照报告 GPQA Diamond 92.9、LiveCodeBench v6 90.5、AA-LCR 84.7；这些是厂商自报数据。",
+          "evidence": [
+            "agnes-model-card"
+          ]
+        },
+        {
+          "id": "agnes-eval-gap",
+          "text": "模型卡明确注明其公布成绩不是可复现评测包，未附完整提示词、采样配置、Token 预算、Agent 脚手架及原始运行日志。",
+          "evidence": [
+            "agnes-model-card"
+          ]
+        },
+        {
+          "id": "agnes-remote-code",
+          "text": "官方 Quickstart 需使用 Transformers 的 trust_remote_code=True；模型卡提示在允许加载自定义 Python 文件前应检查代码。",
+          "evidence": [
+            "agnes-model-card"
+          ]
+        }
+      ],
+      "limitations": [
+        "模型卡示例只说明构建与输入准备的测试环境，不能据此推断所有 Serving Engine 的兼容性或实际吞吐。"
+      ]
+    },
+    {
+      "id": "astra-science-proof",
+      "layout": "timeline",
+      "title": "GPT-6 Astra 与研究者：候选证明不等于定论",
+      "conclusion": "为 AI 辅助科研建立论证链、专家复核与未完成条件清单，避免将候选构造误写成已证实的完整物理理论。",
+      "facts": [
+        {
+          "id": "openai-science-blog-launch",
+          "text": "OpenAI 于 2026 年 11 月 15 日开设 science blog，计划分享 AI 科研发现、可迁移的方法及验证局限。",
+          "evidence": [
+            "openai-science-blog"
+          ]
+        },
+        {
+          "id": "astra-lattice-candidate",
+          "text": "首篇客座文章中，物理学家 Nathaniel Craig 介绍了与 GPT-6 Astra 协作提出标准模型格点非微扰定义候选方案的过程，相关预印本发表于 2026 年 10 月。",
+          "evidence": [
+            "openai-lattice-article"
+          ]
+        },
+        {
+          "id": "astra-proof-open-questions",
+          "text": "Craig 说明该方案目前更接近原则性构造，仍需领域专家检验，且有限格点间距下的反射正性与现实数值模拟适用性尚待研究。",
+          "evidence": [
+            "openai-lattice-article"
+          ]
+        }
+      ],
+      "limitations": [
+        "文章属于作者对研究的陈述；尚不能据此断言完整标准模型的数学问题已获社区验证解决。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "openPangu-2.1-Pro on Huawei MaaS",
+      "summary": "建立 Function Call、长上下文和缓存命中计费的最小集成测试。",
+      "maturity": "growing",
+      "url": "https://www.huaweicloud.com/product/modelarts/studio/openPangu-2-1-Pro.html"
+    },
+    {
+      "action": "READ",
+      "name": "Agnes 2.5 Pro Theta Model Card",
+      "summary": "核对自报评测、BF16 资源需求和 trust_remote_code 依赖。",
+      "maturity": "early",
+      "url": "https://huggingface.co/Agnes-AI/Agnes-2.5-Pro-Theta"
+    },
+    {
+      "action": "READ",
+      "name": "OpenAI Science Blog",
+      "summary": "梳理 AI 辅助数学证明的证据链、独立复核和未解决条件。",
+      "maturity": "growing",
+      "url": "https://openai.com/index/our-new-blog-for-science/"
+    }
+  ],
+  "radar": [
+    {
+      "label": "MaaS 工具调用兼容性",
+      "impact": 91,
+      "horizon": 78,
+      "note": "把输出结构、函数调用与异常重试做成确定性回归集。"
+    },
+    {
+      "label": "MoE 权重工程化",
+      "impact": 79,
+      "horizon": 56,
+      "note": "先验证模型加载、显存余量、定量成本再评估真实任务吞吐。"
+    },
+    {
+      "label": "Benchmark 复现协议",
+      "impact": 95,
+      "horizon": 92,
+      "note": "保存 prompts、采样参数、工具环境与原始运行轨迹。"
+    },
+    {
+      "label": "AI 辅助科研独立复核",
+      "impact": 87,
+      "horizon": 84,
+      "note": "保留待证明条件、专家审稿与可机器检查的材料。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "制作 MaaS 接入合同测试",
+      "description": "用同一批 Function Call、JSON 输出及超长提示样例，对照官方接口限制记录失败与成本。"
+    },
+    {
+      "title": "建立开放模型安全审阅门禁",
+      "description": "对模型卡与 trust_remote_code 加载脚本做代码扫描，隔离运行、限制网络权限并确认磁盘显存预算。"
+    },
+    {
+      "title": "复测模型卡的关键任务",
+      "description": "固定版本、采样参数与运行日志，在内部 Coding Agent 和中文任务集上形成与厂商数据独立的结论。"
+    },
+    {
+      "title": "维护 AI 科研事实与未解决条件清单",
+      "description": "区分正式论文、作者叙述、专家复核和待证问题，避免把理论候选当作可直接工程化的定论。"
+    }
+  ],
+  "references": [
+    {
+      "id": "huawei-maas-home",
+      "title": "华为云 MaaS 官方模型目录",
+      "url": "https://www.huaweicloud.com/product/modelarts/studio.html",
+      "supports": "openPangu-2.1-Pro 已进入 MaaS 模型服务目录，以及厂商描述的 Agent 与代码能力方向。",
+      "accessedAt": "2026-11-17"
+    },
+    {
+      "id": "huawei-pangu-details",
+      "title": "华为云 openPangu-2.1-Pro 模型详情",
+      "url": "https://www.huaweicloud.com/product/modelarts/studio/openPangu-2-1-Pro.html",
+      "supports": "API 兼容方式、Function Call、输入输出限制及当前公示计费。",
+      "accessedAt": "2026-11-17"
+    },
+    {
+      "id": "agnes-model-card",
+      "title": "Agnes AI — Agnes 2.5 Pro Theta Model Card",
+      "url": "https://huggingface.co/Agnes-AI/Agnes-2.5-Pro-Theta",
+      "supports": "MoE 权重架构、硬件要求、模型限制、自报 benchmark 及自定义代码风险。",
+      "accessedAt": "2026-11-17"
+    },
+    {
+      "id": "openai-science-blog",
+      "title": "OpenAI — Our new blog for science",
+      "url": "https://openai.com/index/our-new-blog-for-science/",
+      "supports": "science blog 在 2026 年 11 月 15 日的创办说明及科学验证定位。",
+      "accessedAt": "2026-11-17"
+    },
+    {
+      "id": "openai-lattice-article",
+      "title": "Nathaniel Craig / OpenAI — A step toward defining the Standard Model on a lattice",
+      "url": "https://openai.com/index/step-toward-defining-the-standard-model/",
+      "supports": "格点定义候选构造、GPT-6 Astra 的参与、领域专家复核与仍存限制。",
+      "accessedAt": "2026-11-17"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-14 — Agent 模型与原生 UI",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-14.yaml",
+      "supports": "延伸对照模型分工与 Agent 工具接口。",
+      "publishedAt": "2026-11-14"
+    },
+    {
+      "title": "Orbis · 2026-11-16 — 安全与持久运行时",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-16.yaml",
+      "supports": "将模型选型与持续任务的可恢复性、安全边界相连接。",
+      "publishedAt": "2026-11-16"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
