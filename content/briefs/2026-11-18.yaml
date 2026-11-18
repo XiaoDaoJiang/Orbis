@@ -1,0 +1,321 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-18",
+  "status": "published",
+  "title": "从 Agent 代码验收到持续审计：可执行验证、攻击自动化与推理路由",
+  "summary": "Claude Code 团队公开了以端到端、性质测试和差分测试构成的验证闭环，强调验证规则必须独立于被审查改动。Google 威胁情报报告显示，多 Agent 框架已被用于真实入侵活动，自动化既放大了攻击速度，也留下可检测轨迹。OpenAI 开始让外部评估者深入模型和监控系统；Hugging Face 将语言模型推理路由切换到 OpenRouter，带来故障转移的同时也改变了供应商密钥与数据流边界。工程团队应把测试证据、独立门禁、执行权限和供应商治理纳入同一套交付合同。",
+  "topics": [
+    "coding-agent",
+    "agent-harness",
+    "mcp"
+  ],
+  "tags": [
+    "Verification Loop",
+    "Property-Based Testing",
+    "Agentic Threat Intelligence",
+    "Embedded Safety Assessment",
+    "Inference Provider Routing"
+  ],
+  "signals": [
+    {
+      "title": "Agent 完成任务必须有真实运行证据",
+      "summary": "Claude Code 团队建议优先验证 E2E 用户路径、性质不变量和旧新系统差分，而不是只让 Agent 声称测试通过。",
+      "impact": "high"
+    },
+    {
+      "title": "自审规则不能随候选代码一起被修改",
+      "summary": "Claude Code 使用基础分支的 REVIEW.md、按提交锚定审查结果，并把守门规则分为 off、observe、enforce。",
+      "impact": "high"
+    },
+    {
+      "title": "自主工具链已被攻击方用于真实行动",
+      "summary": "Google GTIG 观察到多 Agent 渗透框架参与实际入侵和漏洞扫描，但自动化执行也会留下可检测的流量及代码痕迹。",
+      "impact": "high"
+    },
+    {
+      "title": "评估与路由都需要清晰的组织边界",
+      "summary": "OpenAI 启动外部内嵌评估；Hugging Face 的 OpenRouter 集成改变语言模型请求路由及自定义提供商密钥政策。",
+      "impact": "medium"
+    }
+  ],
+  "sections": [
+    {
+      "id": "agent-executable-verification",
+      "layout": "architecture",
+      "title": "从代码生成转向可执行验收",
+      "conclusion": "让 Agent 启动真实应用、复现用户路径、保留失败证据；补充不变量与旧新系统差分，才有可审查的完成标准。",
+      "facts": [
+        {
+          "id": "e2e-real-workflow",
+          "text": "Anthropic Claude Code 团队于 2026 年 11 月 16 日发表验证实践文章，推荐以真实用户流程的端到端测试观察应用运行结果，并使用 CDP、模拟器或 API Harness 驱动应用。",
+          "evidence": [
+            "claude-verification"
+          ]
+        },
+        {
+          "id": "property-generated-inputs",
+          "text": "该文章建议使用 fast-check、Hypothesis 等性质测试库生成大量输入，检查序列化往返、不变量、幂等性及算法等价性。",
+          "evidence": [
+            "claude-verification"
+          ]
+        },
+        {
+          "id": "differential-migration",
+          "text": "该文章将差分测试用于迁移场景：在同样输入下比较旧系统与新系统输出，归一化无关差异，并维护允许变化清单。",
+          "evidence": [
+            "claude-verification"
+          ]
+        }
+      ],
+      "limitations": [
+        "文中经验属于 Claude Code 团队实践与建议，并非所有项目均适合把 E2E 测试作为唯一门禁。"
+      ]
+    },
+    {
+      "id": "independent-review-gates",
+      "layout": "system-map",
+      "title": "审查独立性：规则与候选变更分离",
+      "conclusion": "把验收规范和代码所有者制定的门禁锁在可信基础分支，再按提交 SHA 记录验证与人工升级。",
+      "facts": [
+        {
+          "id": "verify-skill-and-escalation",
+          "text": "Claude Code 团队建议在仓库的 .claude/skills/ 下设置 verify skill 来启动和检查应用；检查连续三轮未通过时停止自动修复并转交人工。",
+          "evidence": [
+            "claude-verification"
+          ]
+        },
+        {
+          "id": "base-branch-review-rules",
+          "text": "该团队声明 Code Review 从 base/default branch 读取 REVIEW.md，不使用 PR 中修改的审查规则；审查结果绑定具体提交而非浮动分支。",
+          "evidence": [
+            "claude-verification"
+          ]
+        },
+        {
+          "id": "commit-gate-modes",
+          "text": "团队描述了 off、observe、enforce 三种提交门禁模式，observe 用于先记录可能被拦截的提交并评估误报。",
+          "evidence": [
+            "claude-verification"
+          ]
+        }
+      ],
+      "limitations": [
+        "文章描述的提交门禁含避免 Agent 永久卡住的例外机制，不能视为不可绕过的安全控制。"
+      ]
+    },
+    {
+      "id": "agentic-threat-observations",
+      "layout": "timeline",
+      "title": "攻击方的多 Agent 运行链已进入真实环境",
+      "conclusion": "防御者要审视 Agent 工具权限、凭据暴露、可疑任务编排与执行审计，而非仅检测异常提示词。",
+      "facts": [
+        {
+          "id": "gtig-report-date",
+          "text": "Google Threat Intelligence Group 和 Mandiant 于 2026 年 11 月 17 日发布 AI 威胁追踪报告，讨论多 Agent 攻击框架、自动漏洞研究及云资源滥用。",
+          "evidence": [
+            "google-agentic-threat"
+          ]
+        },
+        {
+          "id": "real-framework-abuse",
+          "text": "GTIG 表示在实际入侵中观察到 CAIRN、PentAGI 等开源 Agent 渗透框架被滥用，并观察到 CyberStrikeAI 等框架的实验活动。",
+          "evidence": [
+            "google-agentic-threat"
+          ]
+        },
+        {
+          "id": "security-velocity-traces",
+          "text": "报告指出自主攻击框架能加速侦察与多阶段行动，但高频自动执行可能产生可取证的网络流量、工具标识与代码痕迹。",
+          "evidence": [
+            "google-agentic-threat"
+          ]
+        }
+      ],
+      "limitations": [
+        "这是 Google 的特定威胁情报观察，不意味着所有 Agent 框架均被用于恶意用途，也不能推断每次攻击都完全无人干预。"
+      ]
+    },
+    {
+      "id": "embedded-independent-assessments",
+      "layout": "comparison",
+      "title": "内嵌评测：扩大证据访问而非替代治理",
+      "conclusion": "评测的独立性要落实到访问范围、调查自由、异议处理及可发布结论的明确契约。",
+      "facts": [
+        {
+          "id": "openai-four-assessors",
+          "text": "OpenAI 于 2026 年 11 月 16 日宣布与 Apollo Research、METR、Transluce、Goodfire 四家独立评估机构达成首阶段内嵌评估协议。",
+          "evidence": [
+            "openai-embedded-assessments"
+          ]
+        },
+        {
+          "id": "assessment-access",
+          "text": "OpenAI 说明评估者可按评测范围访问部分内部模型检查点、代码、训练与评测数据、监控系统、技术文档和工程人员，以开展持续审查。",
+          "evidence": [
+            "openai-embedded-assessments"
+          ]
+        },
+        {
+          "id": "embedded-protocols",
+          "text": "OpenAI 公布了现场安全环境、评估范围调整、异议处理及发布与负责任披露规则，并说明保留删改机密内容及要求披露延迟的权利。",
+          "evidence": [
+            "openai-embedded-assessments"
+          ]
+        }
+      ],
+      "limitations": [
+        "这是协议和计划的启动公告，不是外部机构已经完成评估或证实模型安全的结果。"
+      ]
+    },
+    {
+      "id": "multi-provider-inference-routing",
+      "layout": "metrics",
+      "title": "推理供应商路由成为运行时数据边界",
+      "conclusion": "采用自动故障转移时同时验收 SDK 协议、缓存会话一致性、数据去向、路由策略及计费权限。",
+      "facts": [
+        {
+          "id": "hf-router-switch",
+          "text": "Hugging Face 在 2026 年 11 月 16 日宣布，语言模型 Inference Providers 请求从自建路由器切换到 OpenRouter，按价格、速度和可靠性选择供应商并在失败时重试。",
+          "evidence": [
+            "hf-openrouter"
+          ]
+        },
+        {
+          "id": "hf-api-and-session",
+          "text": "官方说明支持 OpenAI Chat Completions、Responses 和 Anthropic Messages API，且通过 X-HF-Session-Id 会话标识帮助路由保持同一缓存供应商。",
+          "evidence": [
+            "hf-openrouter"
+          ]
+        },
+        {
+          "id": "hf-keys-and-provider-controls",
+          "text": "Hugging Face 表示语言模型请求现在由其账户或组织计费，不能继续为这些模型使用自备供应商 API Key；组织可在设置中禁用不希望承接请求的提供商。",
+          "evidence": [
+            "hf-openrouter"
+          ]
+        }
+      ],
+      "limitations": [
+        "文中的服务规模及路由性能属于平台自报数据；组织启用前需要针对合规地域、数据留存与故障转移重做验证。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "READ",
+      "name": "Claude Code Verification Playbook",
+      "summary": "提炼 E2E、性质、差分测试和可信门禁的实用核查项。",
+      "maturity": "growing",
+      "url": "https://claude.dev/blog/how-the-claude-code-team-thinks-about-verification/"
+    },
+    {
+      "action": "READ",
+      "name": "Google GTIG Agentic Threat Tracker",
+      "summary": "辨识真实攻击中的自动任务编排模式及可检测痕迹。",
+      "maturity": "growing",
+      "url": "https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold"
+    },
+    {
+      "action": "TEST",
+      "name": "Hugging Face Inference Providers",
+      "summary": "使用隔离测试请求验证多供应商路由、失败重试与会话缓存。",
+      "maturity": "growing",
+      "url": "https://huggingface.co/blog/openrouter"
+    }
+  ],
+  "radar": [
+    {
+      "label": "可执行 Agent 验收与独立门禁",
+      "impact": 98,
+      "horizon": 95,
+      "note": "将端到端执行和不可由候选自改的审查规则作为最高优先级。"
+    },
+    {
+      "label": "攻击性 Agent 的工具链监控",
+      "impact": 96,
+      "horizon": 87,
+      "note": "限制工具调用权限并审计异常多阶段自动执行与凭据访问。"
+    },
+    {
+      "label": "内嵌安全评测的访问治理",
+      "impact": 84,
+      "horizon": 68,
+      "note": "设计评测范围、独立报告、敏感数据隔离及结果争议解决机制。"
+    },
+    {
+      "label": "多供应商推理路由与数据主权",
+      "impact": 91,
+      "horizon": 89,
+      "note": "测试供应商禁用、会话粘滞、成本归属与异常故障转移。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立 verify 验收技能",
+      "description": "选取一条真实用户流程，加入可运行的 E2E、性质测试和必要的旧新版本差分，保存截图或 trace。"
+    },
+    {
+      "title": "让守门规则独立于候选分支",
+      "description": "把 REVIEW.md 或等价规则固定在受信任分支，校验结果绑定 Commit SHA，并先通过 observe 模式评估误报。"
+    },
+    {
+      "title": "加强自主工具执行审计",
+      "description": "记录 Agent 调用链、外网访问、凭据代理和工具身份，模拟异常编排并验证告警是否及时。"
+    },
+    {
+      "title": "做一次多供应商推理演练",
+      "description": "在脱敏测试数据上验证模型路由、提供商禁用、会话缓存及跨供应商失败重试，记录供应商和实际账单。"
+    }
+  ],
+  "references": [
+    {
+      "id": "claude-verification",
+      "title": "Anthropic / Claude Code — How the Claude Code team thinks about verification",
+      "url": "https://claude.dev/blog/how-the-claude-code-team-thinks-about-verification/",
+      "supports": "E2E/性质/差分测试、verify skill、人工升级、可信 REVIEW.md 和 Commit Gate 模式。",
+      "accessedAt": "2026-11-18"
+    },
+    {
+      "id": "google-agentic-threat",
+      "title": "Google Threat Intelligence Group — Agentic Threat Activity Crosses a Significant Threshold",
+      "url": "https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold",
+      "supports": "2026-11-17 真实威胁活动观察、攻击框架及速度与检测局限。",
+      "accessedAt": "2026-11-18"
+    },
+    {
+      "id": "openai-embedded-assessments",
+      "title": "OpenAI — Our first phase of embedded assessments",
+      "url": "https://openai.com/index/our-first-phase-of-embedded-assessments/",
+      "supports": "四家独立评估者、内部访问范围、治理协议和披露限制。",
+      "accessedAt": "2026-11-18"
+    },
+    {
+      "id": "hf-openrouter",
+      "title": "Hugging Face — Hugging Face and OpenRouter join forces",
+      "url": "https://huggingface.co/blog/openrouter",
+      "supports": "推理路由切换、API 协议、缓存会话标识、计费与供应商禁用。",
+      "accessedAt": "2026-11-18"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-16 — Agent 安全与持久状态",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-16.yaml",
+      "supports": "补充持久运行时、评测器和供应链治理的讨论。",
+      "publishedAt": "2026-11-16"
+    },
+    {
+      "title": "Orbis · 2026-11-17 — 模型选择与证据质量",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-17.yaml",
+      "supports": "对照模型接入、能力基准与独立复现方法。",
+      "publishedAt": "2026-11-17"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
