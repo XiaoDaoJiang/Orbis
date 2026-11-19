@@ -1,0 +1,341 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-19",
+  "status": "published",
+  "title": "Agent 生产化从更强模型走向分层运营：专业模型、弹性推理与授权治理",
+  "summary": "OpenAI GPT-6.2 Astra 与 Sol 把复杂专业任务和日常工作分成不同的模型预算；Microsoft MAI Code 2 与 Cyber 2 Flash 则针对编码和安全任务提供专用选择。Perplexity Orchestrator 将模型路由与同模型跨部署故障转移整合到统一接口。Google Gemini Tasks 的隔离执行和关键动作确认，以及 Anthropic 缩短漏洞协调披露周期，提示团队将成本、权限、韧性和修复响应速度一起纳入 Agent 运行合同。",
+  "topics": [
+    "agent-harness",
+    "coding-agent"
+  ],
+  "tags": [
+    "Model Tiering",
+    "Specialist Coding Models",
+    "Inference Failover",
+    "Agent Sandbox Approval",
+    "AI Vulnerability Disclosure"
+  ],
+  "signals": [
+    {
+      "title": "模型分层比单一最强模型更适合持续任务",
+      "summary": "GPT-6.2 Astra 与 Sol 面向复杂专业工作和高频日常工作采用不同能力及 API 价格；应按实际任务成功成本选择。",
+      "impact": "high"
+    },
+    {
+      "title": "专业编码与安全模型进入细分验收",
+      "summary": "Microsoft MAI Code 2/Flash 和 Cyber 2 Flash 分别面向工程改动与安全调查；官方基准和当前可用性均需独立核验。",
+      "impact": "high"
+    },
+    {
+      "title": "推理平台同时承担路由与故障转移",
+      "summary": "Perplexity Orchestrator 支持统一 API、同模型部署故障转移和预览中的任务描述路由，便利性也增加了治理边界。",
+      "impact": "high"
+    },
+    {
+      "title": "Agent 可信执行还取决于审批与修复时钟",
+      "summary": "Google Gemini Tasks 采用隔离执行与关键动作确认；Anthropic 的漏洞披露时限调整促使维护团队提高修复响应速度。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "frontier-tiered-model-budget",
+      "layout": "metrics",
+      "title": "GPT-6.2：能力升级需要按任务预算计价",
+      "conclusion": "将长期复杂任务与高频日常任务分开评估；不仅比较 token 单价，也比较可验收交付的单位成本。",
+      "facts": [
+        {
+          "id": "astra-sol-distinct-roles",
+          "text": "OpenAI 公布 GPT-6.2 Astra 与 GPT-6.2 Sol：前者针对复杂专业任务，后者面向高频日常工作；开发者可通过 API 访问 gpt-6.2-astra 与 gpt-6.2-sol。",
+          "evidence": [
+            "openai-gpt62"
+          ]
+        },
+        {
+          "id": "astra-sol-api-pricing",
+          "text": "OpenAI 公布每百万 tokens 的标准 API 价格：Astra 输入 $8、缓存输入 $0.40、输出 $40；Sol 输入 $2、缓存输入 $0.10、输出 $10。",
+          "evidence": [
+            "openai-gpt62"
+          ]
+        },
+        {
+          "id": "frontiercode-cost-claim",
+          "text": "OpenAI 引用 Cognition FrontierCode 2.0 结果称 GPT-6.2 Sol 与 Astra 在该评测中相差约 0.5 分，而成本约为后者五分之一；这是发布方给出的特定配置评测，不代表所有软件仓库表现。",
+          "evidence": [
+            "openai-gpt62"
+          ]
+        }
+      ],
+      "limitations": [
+        "价格和基准依赖发布方说明、推理配置及任务分布；复杂 Agent 的总重试成本需要独立测量。"
+      ]
+    },
+    {
+      "id": "specialist-coding-security-models",
+      "layout": "comparison",
+      "title": "专业模型：编码、修复与安全调查分开选型",
+      "conclusion": "先把多文件修复、批量小改动和安全调查拆成任务集，再比较模型可用性、代码质量和真实单位成本。",
+      "facts": [
+        {
+          "id": "mai-code-model-roles",
+          "text": "Microsoft 在 2026 年 11 月 17 日发布 MAI Code 2 和 Code 2 Flash：Code 2 针对复杂调试、多文件修改与仓库级推理，Flash 面向代码解释、定向编辑及大量例行修复。",
+          "evidence": [
+            "microsoft-code2"
+          ]
+        },
+        {
+          "id": "mai-code-benchmark-claim",
+          "text": "Microsoft 在四类日常工程基准的厂商评估中，称 MAI Code 2 达到 GPT-6.1 Sol 约 98% 的表现而成本约 40%；官方明确不以长周期 Agent 工作或基础科学为主要调优目标。",
+          "evidence": [
+            "microsoft-code2"
+          ]
+        },
+        {
+          "id": "mai-cyber-security-rollout",
+          "text": "Microsoft 公布 MAI Cyber 2 Flash 具有约 100 万 tokens 上下文窗口，并报告其在 CyberGym-E2E 达到 92.3% 的任务成功率；该模型计划从 2026 年 12 月中旬开始面向符合条件的 Microsoft 安全产品用户替换现有模型。",
+          "evidence": [
+            "microsoft-cyber2"
+          ]
+        }
+      ],
+      "limitations": [
+        "Code 与 Cyber 指标来自 Microsoft 的指定测试配置，且 Cyber 产品接入范围受限，不能推断第三方 API 已开放。"
+      ]
+    },
+    {
+      "id": "same-model-inference-failover",
+      "layout": "architecture",
+      "title": "Orchestrator：多供应商故障转移应有可审计的路由合同",
+      "conclusion": "自动切换不应改变授权范围、数据策略或结果校验；对每次调用保存选中模型、部署状态和异常重试轨迹。",
+      "facts": [
+        {
+          "id": "orchestrator-unified-protocols",
+          "text": "Perplexity 于 2026 年 11 月 17 日介绍 Orchestrator：统一支持 OpenAI Chat Completions、Responses 和 Anthropic Messages 请求格式，并汇集开放权重及闭源模型。",
+          "evidence": [
+            "perplexity-orchestrator"
+          ]
+        },
+        {
+          "id": "same-model-deployment-failover",
+          "text": "Perplexity 文档表示 Orchestrator 根据部署可用性、容量和延迟选择服务商，在错误、限流或超时时可改用同一个模型的其他可用部署重试。",
+          "evidence": [
+            "perplexity-orchestrator"
+          ]
+        },
+        {
+          "id": "optional-preview-task-routing",
+          "text": "Orchestrator 另提供预览中的 perplexity/auto 任务路由：决策模型依据文本描述选择配置的目标模型；无法匹配或决策失败时使用默认模型，使用量按实际模型计费。",
+          "evidence": [
+            "perplexity-orchestrator"
+          ]
+        }
+      ],
+      "limitations": [
+        "官方对可用性提升的统计是指定观察区间的厂商测量；跨部署的隐私、地域与会话一致性需要按企业合同重新验证。"
+      ]
+    },
+    {
+      "id": "task-sandbox-and-critical-approvals",
+      "layout": "system-map",
+      "title": "Gemini Tasks：隔离执行与关键操作确认并行",
+      "conclusion": "Agent 应在隔离的账户工作环境执行，并在购买、授权或外部提交等关键动作前设置独立批准边界。",
+      "facts": [
+        {
+          "id": "gemini-task-rollout",
+          "text": "Google 于 2026 年 11 月 17 日介绍 Gemini Tasks，宣布面向美国、日本、韩国、加拿大、澳大利亚和印度等市场逐步推出，并表示 Gemini 已连接超过 60 个应用。",
+          "evidence": [
+            "google-gemini-tasks"
+          ]
+        },
+        {
+          "id": "account-isolated-agent-compute",
+          "text": "Google 表示 Gemini Tasks 通过 Agent Compute Engine 在为账号专用的硬件隔离虚拟机中执行，并结合沙箱、网页提示注入过滤及 Safe Browsing 等多层防护。",
+          "evidence": [
+            "google-gemini-tasks"
+          ]
+        },
+        {
+          "id": "critical-action-confirmation",
+          "text": "Google 表示系统可在关键步骤暂停并请求确认，例如购买前获得用户确认或预先批准；针对已信任的常规动作，用户可设置 Always allow。",
+          "evidence": [
+            "google-gemini-tasks"
+          ]
+        }
+      ],
+      "limitations": [
+        "这些保护是产品官方设计说明，Google 也承认任务可能失败或遗漏；地域、账号及应用授权条件会影响实际可用性。"
+      ]
+    },
+    {
+      "id": "ai-era-vulnerability-disclosure",
+      "layout": "timeline",
+      "title": "漏洞披露周期缩短：从发现速度转向修复响应能力",
+      "conclusion": "将漏洞分级、通知回执、补丁验证和披露截止日纳入可追踪的修复流程；保留人工复核环节。",
+      "facts": [
+        {
+          "id": "anthropic-cvd-new-deadlines",
+          "text": "Anthropic 于 2026 年 11 月 16 日宣布，将其协调漏洞披露期限从 90 天改为高危和严重问题 30 天、其他问题 45 天；新期限适用于自 2027 年 1 月 1 日起向维护者报告的漏洞。",
+          "evidence": [
+            "anthropic-cvd"
+          ]
+        },
+        {
+          "id": "anthropic-escalation-after-patch",
+          "text": "Anthropic 还计划在维护者未响应初始报告时于 15 天后而非 30 天后升级给外部协调者，并将有补丁后的完整技术细节披露等待期由 45 天缩短为 30 天。",
+          "evidence": [
+            "anthropic-cvd"
+          ]
+        },
+        {
+          "id": "anthropic-human-review-exceptions",
+          "text": "Anthropic 表示被主动利用漏洞的七天披露期不变，未经人工复核的 AI 扫描发现不适用新政策；对基础设施和标准变更等难以快速修复问题将协商合理期限。",
+          "evidence": [
+            "anthropic-cvd"
+          ]
+        }
+      ],
+      "limitations": [
+        "这是 Anthropic 自身的协调披露政策更新，不代表行业普遍强制执行，也不适用于生效前已在处理的报告。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "GPT-6.2 API model tiers",
+      "summary": "用同一组任务比较 Astra/Sol 交付成功率、token 与重试成本。",
+      "maturity": "early",
+      "url": "https://openai.com/index/introducing-gpt-6-2-astra-sol/"
+    },
+    {
+      "action": "READ",
+      "name": "Microsoft MAI Code 2 and Flash",
+      "summary": "梳理编码任务分层、厂商 benchmark 与接入范围。",
+      "maturity": "early",
+      "url": "https://microsoft.ai/news/introducing-mai-code-2-and-mai-code-2-flash/"
+    },
+    {
+      "action": "TEST",
+      "name": "Perplexity Orchestrator API",
+      "summary": "以模拟失败场景检查同模型部署切换和路由记录。",
+      "maturity": "early",
+      "url": "https://www.perplexity.ai/hub/blog/orchestrator-one-api-for-reliable-inference"
+    },
+    {
+      "action": "READ",
+      "name": "Anthropic Coordinated Disclosure Update",
+      "summary": "评估维护团队在新披露周期下的告警与修复准备。",
+      "maturity": "growing",
+      "url": "https://www.anthropic.com/research/coordinated-vulnerability-disclosure-timelines"
+    }
+  ],
+  "radar": [
+    {
+      "label": "按任务分层的 Agent 模型选型",
+      "impact": 95,
+      "horizon": 96,
+      "note": "优先用成功交付成本而不是宣传 benchmark 比较模型与推理档位。"
+    },
+    {
+      "label": "编码与安全专用模型",
+      "impact": 89,
+      "horizon": 78,
+      "note": "在实际代码库任务中对照多文件修复、例行修改和漏洞检测。"
+    },
+    {
+      "label": "推理服务故障转移与路由审计",
+      "impact": 94,
+      "horizon": 91,
+      "note": "验证切换后的供应商、地域、重试和账单归属是否符合合同。"
+    },
+    {
+      "label": "Agent 授权与漏洞响应 SLA",
+      "impact": 97,
+      "horizon": 89,
+      "note": "为关键动作设置审批门禁，为漏洞建立分级与披露倒计时。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "对两档模型运行同一验收集",
+      "description": "固定 Agent Harness、任务集和测试环境，对复杂修改与日常工作统计成功率、重试次数和单次通过成本。"
+    },
+    {
+      "title": "分离编码与安全任务路由",
+      "description": "使用独立基线测试多文件修复、批量小修改和漏洞定位，不把厂商自报性能直接当上线门禁。"
+    },
+    {
+      "title": "演练一次推理故障转移",
+      "description": "在脱敏环境模拟限流、超时与部署切换，核对选中模型、供应商、权限、会话一致性及实际费用。"
+    },
+    {
+      "title": "定义关键授权与漏洞修复时限",
+      "description": "列出必须人工确认的写入与购买操作，并建立高危漏洞通知、复核、修复和超期升级流程。"
+    }
+  ],
+  "references": [
+    {
+      "id": "openai-gpt62",
+      "title": "OpenAI — Introducing GPT-6.2 Astra and Sol",
+      "url": "https://openai.com/index/introducing-gpt-6-2-astra-sol/",
+      "supports": "两档模型的专业任务定位、API 定价与 FrontierCode 比较。",
+      "accessedAt": "2026-11-19"
+    },
+    {
+      "id": "microsoft-code2",
+      "title": "Microsoft AI — MAI Code 2 and Code 2 Flash",
+      "url": "https://microsoft.ai/news/introducing-mai-code-2-and-mai-code-2-flash/",
+      "supports": "2026-11-17 编码模型定位、厂商基准和当前提供渠道。",
+      "accessedAt": "2026-11-19"
+    },
+    {
+      "id": "microsoft-cyber2",
+      "title": "Microsoft AI — MAI Cyber 2 Flash",
+      "url": "https://microsoft.ai/news/introducing-mai-cyber-2-flash/",
+      "supports": "安全模型上下文、CyberGym-E2E 自报表现与后续产品推出范围。",
+      "accessedAt": "2026-11-19"
+    },
+    {
+      "id": "perplexity-orchestrator",
+      "title": "Perplexity — Orchestrator: one API for reliable inference",
+      "url": "https://www.perplexity.ai/hub/blog/orchestrator-one-api-for-reliable-inference",
+      "supports": "统一协议、同模型部署故障转移、perplexity/auto 预览与计费原则。",
+      "accessedAt": "2026-11-19"
+    },
+    {
+      "id": "google-gemini-tasks",
+      "title": "Google — Put Gemini to work for you",
+      "url": "https://blog.google/innovation-and-ai/products/gemini-app/tasks-in-gemini-free-new-features/",
+      "supports": "Gemini Tasks 上线范围、隔离计算、提示注入防御及关键动作批准。",
+      "accessedAt": "2026-11-19"
+    },
+    {
+      "id": "anthropic-cvd",
+      "title": "Anthropic — Updating our coordinated vulnerability disclosure policy timelines",
+      "url": "https://www.anthropic.com/research/coordinated-vulnerability-disclosure-timelines",
+      "supports": "2027-01-01 生效的漏洞披露期限、升级机制与人工复核例外。",
+      "accessedAt": "2026-11-19"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-18 — 验证闭环与推理路由",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-18.yaml",
+      "supports": "承接上期的验证、路由与审计，比较本期的成本和安全治理。",
+      "publishedAt": "2026-11-18"
+    },
+    {
+      "title": "Orbis · 2026-11-16 — 持久运行时与安全边界",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-16.yaml",
+      "supports": "对照 Agent 长时运行与环境隔离的长期工程问题。",
+      "publishedAt": "2026-11-16"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
