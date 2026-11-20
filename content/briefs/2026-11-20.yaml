@@ -1,0 +1,335 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-20",
+  "status": "published",
+  "title": "Agent 工程闭环再升级：模型效率、权限沙箱、网页上下文与可验证交付",
+  "summary": "Gemini 4 Neon 体现模型与 Harness 共同决定编程任务效果，公开价格与工作流指标支持按任务成本评估。Codex sandbox 把本地文件与网络权限落到具体执行环境；Perplexity Context API 将网页获取、时效和逐项失败处理做成可配置接口。Arena 新的 Agent Index 按任务完成、纠偏与工具可靠性拆解评价，OpenAI 在芯片 RTL 优化中的经验则说明，Agent 的产出需要独立仿真和专业工具核验。工程决策应统一核算交付成功率、外部数据边界、权限和真实验证证据。",
+  "topics": [
+    "agent-harness",
+    "coding-agent",
+    "mcp"
+  ],
+  "tags": [
+    "Agent Model Efficiency",
+    "Sandboxed Tool Execution",
+    "Web Context Retrieval",
+    "Agent Evaluation Index",
+    "Verifiable EDA"
+  ],
+  "signals": [
+    {
+      "title": "模型强弱不应脱离 Harness 环境比较",
+      "summary": "Gemini 4 Neon 的官方 SWE-sweep 数据显示，同一模型在不同执行 Harness 下的结果可明显不同；选型需固定工具链与任务集。",
+      "impact": "high"
+    },
+    {
+      "title": "网络默认拒绝与显式授权应成为执行基线",
+      "summary": "Codex 公开其工作区沙箱的文件访问、网络禁用与代理放行方案，同时指出普通 stdio MCP 启动并非自动受沙箱约束。",
+      "impact": "high"
+    },
+    {
+      "title": "获取可信网页上下文需要独立的新鲜度合同",
+      "summary": "Perplexity Context API 提供逐 URL 内容、缓存与实时抓取控制；Agent 应记录来源、抓取时间、失败项和提示注入风险。",
+      "impact": "high"
+    },
+    {
+      "title": "真实任务评测与专业验证比单一排行榜更有用",
+      "summary": "Arena 将任务结果、纠偏、工具使用和对齐分开展示；OpenAI 的 EDA 案例进一步强调仿真、物理指标和专家检验。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "model-harness-efficiency",
+      "layout": "metrics",
+      "title": "Gemini 4 Neon：将模型与 Harness 视为联合配置",
+      "conclusion": "对 Coding Agent 的比较应锁定 Harness、推理档位、测试集与预算，统计每次有效交付成本，而非只读模型排名。",
+      "facts": [
+        {
+          "id": "neon-launch-price",
+          "text": "Google 于 2026 年 11 月 18 日推出 Gemini 4 Neon，公布 100 万 token 上下文窗口及每百万 token 输入 3 美元、输出 15 美元、缓存输入 0.15 美元的 API 标价。",
+          "evidence": [
+            "google-neon"
+          ]
+        },
+        {
+          "id": "neon-agent-benchmarks",
+          "text": "Google 在官方介绍中报告 Gemini 4 Neon 于 Terminal-Bench 4.1 达到 65.2%、在默认 high 推理档的 FrontierCode 2.0 达到 46.2%；这些是指定配置下的发布方指标。",
+          "evidence": [
+            "google-neon"
+          ]
+        },
+        {
+          "id": "neon-harness-gap",
+          "text": "Google 报告 Neon 在 SWE-sweep 的 mini-SWE Harness 得分 12.8%，置于 Google Antigravity Harness 后为 39.0%，反映官方测试中执行环境会显著影响最终结果。",
+          "evidence": [
+            "google-neon"
+          ]
+        }
+      ],
+      "limitations": [
+        "基准、价目和倍率来自 Google 发布材料，未证明在任意代码仓库、推理档位或 Agent Harness 下均可复现。"
+      ]
+    },
+    {
+      "id": "codex-execution-boundaries",
+      "layout": "architecture",
+      "title": "Codex sandbox：权限策略必须真正约束子进程和 MCP",
+      "conclusion": "为每个 Agent Run 声明可写目录、敏感读权限与网络白名单；对 MCP 服务及子进程独立验证策略是否生效。",
+      "facts": [
+        {
+          "id": "codex-workspace-defaults",
+          "text": "OpenAI 介绍 Codex 的 :workspace 权限配置允许工作区写入，但保持 .git 和 .codex 等目录只读；网络访问默认关闭，而文件读取仍受宿主用户已有权限约束。",
+          "evidence": [
+            "openai-codex-sandbox"
+          ]
+        },
+        {
+          "id": "codex-network-modes",
+          "text": "Codex sandbox 的网络配置包括全部禁用、直接全面访问，以及通过代理按 permission profile 判断放行三种方式。",
+          "evidence": [
+            "openai-codex-sandbox"
+          ]
+        },
+        {
+          "id": "codex-mcp-process-warning",
+          "text": "OpenAI 明确普通 stdio MCP 服务的启动命令不会自动套用 Codex sandbox；开发者可使用 codex sandbox --permission-profile 包裹外部命令或 MCP 进程。",
+          "evidence": [
+            "openai-codex-sandbox"
+          ]
+        }
+      ],
+      "limitations": [
+        "默认禁网不能阻止本机所有间接副作用，宿主文件读取、已安装依赖和未包裹的 MCP 进程仍需额外权限审计。"
+      ]
+    },
+    {
+      "id": "web-context-freshness-contract",
+      "layout": "system-map",
+      "title": "Context API：网页读取从零散抓取升级为结构化工具合同",
+      "conclusion": "给外部页面的每次读取记录原始 URL、输出格式、缓存年龄与状态；把远端内容视为数据而不是可执行指令。",
+      "facts": [
+        {
+          "id": "context-api-batch-formats",
+          "text": "Perplexity 推出的 Context API 单次可读取最多 10 个 URL，并按输入顺序返回各页面的 Markdown、HTML、绝对链接或查询相关原文片段。",
+          "evidence": [
+            "perplexity-context-api"
+          ]
+        },
+        {
+          "id": "context-api-cache-policy",
+          "text": "Context API 默认优先使用最近两天取得的网页索引副本；调用者可通过 max_age_seconds=0 要求实时抓取，或设置 cache_only 禁止新抓取。",
+          "evidence": [
+            "perplexity-context-api"
+          ]
+        },
+        {
+          "id": "context-api-item-status",
+          "text": "该 API 为每个 URL 返回独立状态、内容来源及抓取时间；批量 URL 并行处理，单页超时不要求整批失败。",
+          "evidence": [
+            "perplexity-context-api"
+          ]
+        }
+      ],
+      "limitations": [
+        "网页清洗和查询片段提取不等于事实验证，也不等于抵御页面提示注入；第三方服务使用前需复核隐私、数据驻留和成本。"
+      ]
+    },
+    {
+      "id": "agent-evaluation-multidimensional",
+      "layout": "comparison",
+      "title": "Agent Arena Index：把任务完成与行为对齐拆开验收",
+      "conclusion": "自有评测须并列呈现真实交付、工具可靠性、纠偏能力和越权风险，避免总榜掩盖可预期的失误模式。",
+      "facts": [
+        {
+          "id": "arena-domain-indexes",
+          "text": "Arena 在 2026 年 11 月推出新的 Agent Arena Index，并提供 Work、Coding、Chat、Task Outcome、Steering 和 Tool Use 等细分指标；官方称总榜覆盖超过 290 万次用户会话。",
+          "evidence": [
+            "arena-agent-index"
+          ]
+        },
+        {
+          "id": "arena-core-signals",
+          "text": "Agent Arena Index 综合 Task Completion、Praise vs Complaint、Steerability 与 Bash Reliability；独立的 Alignment Index 则考虑 Unauthorized Action、False Attribution、Deceptive Completion。",
+          "evidence": [
+            "arena-agent-index"
+          ]
+        },
+        {
+          "id": "arena-rescale-method",
+          "text": "Arena 说明新评分采用线性重新缩放并设置锚点，旨在提升跨榜单发布时间的解释性；该变化本身不改变同一期的模型排名。",
+          "evidence": [
+            "arena-agent-index"
+          ]
+        }
+      ],
+      "limitations": [
+        "真实用户会话的混合任务分布、统计信号与本地验收场景并不完全一致；总榜不能替代仓库级安全和成功率测试。"
+      ]
+    },
+    {
+      "id": "ai-eda-independent-verification",
+      "layout": "timeline",
+      "title": "芯片 RTL 优化：自动生成应走专业工具与独立检查",
+      "conclusion": "把硬件设计中的形式检验、仿真和 PPA 测量视为 Agent 工程的通用范式：生成方案不能直接替代验收。",
+      "facts": [
+        {
+          "id": "eda-amd-ppa-results",
+          "text": "OpenAI 在 2026 年 11 月的技术披露中称，与 AMD 的合作在部分优化基线上观察到最高 14% 的 GPU IP 功耗、性能和面积指标改进；模型重写了 SystemVerilog RTL，方案使用 Synopsys 工具进行行为与 PPA 检验。",
+          "evidence": [
+            "openai-chip-design"
+          ]
+        },
+        {
+          "id": "eda-jalapeno-area",
+          "text": "OpenAI 报告其自研 Jalapeño 芯片的 warp engine 与 matrix unit 在模型提出的修改下，标准单元面积分别约降低 13% 与 10%，且相关设计改动通过芯片 bring-up 检验。",
+          "evidence": [
+            "openai-chip-design"
+          ]
+        },
+        {
+          "id": "eda-riscv-evaluation-constraints",
+          "text": "OpenAI 使用开源 PicoRV32 与 Ibex RISC-V 核进行模型评测；仿真不合格或面积超过原核 16 倍的设计记零分，并依据隐藏工作负载与 Yosys 估算频率评价吞吐量。",
+          "evidence": [
+            "openai-chip-design"
+          ]
+        }
+      ],
+      "limitations": [
+        "PPA 改进为 OpenAI 的项目披露，且开源评测简化了真实量产芯片所需的功能与物理约束；不能视为通用硬件设计性能保证。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "Codex sandbox permission profiles",
+      "summary": "用隔离测试工作区验证文件、网络和 MCP 子进程的权限拒绝规则。",
+      "maturity": "growing",
+      "url": "https://openai.com/index/inside-the-codex-sandbox/"
+    },
+    {
+      "action": "TEST",
+      "name": "Perplexity Context API",
+      "summary": "比较缓存与实时读取差异，审计每个 URL 的状态、抓取时间和来源。",
+      "maturity": "early",
+      "url": "https://www.perplexity.ai/hub/blog/context-api-extracts-full-context-from-any-web-page"
+    },
+    {
+      "action": "READ",
+      "name": "Agent Arena Index methodology",
+      "summary": "理解任务完成、工具调用、纠偏和越权行为的指标定义。",
+      "maturity": "growing",
+      "url": "https://arena.ai/blog/introducing-the-agent-arena-index"
+    },
+    {
+      "action": "READ",
+      "name": "OpenAI chip design evaluation",
+      "summary": "学习在设计生成中串联仿真、隐藏测试和专业工具验证。",
+      "maturity": "early",
+      "url": "https://openai.com/index/advancing-chip-design-with-our-models/"
+    }
+  ],
+  "radar": [
+    {
+      "label": "模型与 Harness 联合评测",
+      "impact": 95,
+      "horizon": 94,
+      "note": "先做同任务同预算比较，再评估模型更换后的生产成本。"
+    },
+    {
+      "label": "默认禁网与 MCP 进程授权",
+      "impact": 97,
+      "horizon": 91,
+      "note": "检查代理、子进程和工具边界，尤其是外部网络的可审计放行。"
+    },
+    {
+      "label": "网页上下文新鲜度及信任分级",
+      "impact": 89,
+      "horizon": 84,
+      "note": "网页元数据记录可提高可追溯性，仍需独立事实核验。"
+    },
+    {
+      "label": "任务完成与对齐的多维验收",
+      "impact": 96,
+      "horizon": 90,
+      "note": "将成功率、越权行为、可纠偏能力和成本纳入同一评测报告。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立模型与 Harness 联合验收矩阵",
+      "description": "固定十余个代表性仓库任务、运行环境和预算，分别统计真实测试通过、返工与单位交付成本。"
+    },
+    {
+      "title": "对 MCP 和 Shell 子进程做沙箱演练",
+      "description": "在测试环境构造读敏感目录、写受限目录和外连请求，确认默认禁网与显式授权都生效。"
+    },
+    {
+      "title": "补齐网页检索的新鲜度与溯源字段",
+      "description": "为每次上下文读取保存 URL、抓取时间、缓存状态、失败原因与来源链接，防止远端指令混入 Agent 权限层。"
+    },
+    {
+      "title": "把任务结果与行为安全拆分成评分维度",
+      "description": "分别报告任务完成率、工具可靠性、响应纠偏、越权尝试和独立测试证据，不以单一排名决策上线。"
+    }
+  ],
+  "references": [
+    {
+      "id": "google-neon",
+      "title": "Google — Introducing Gemini 4 Neon",
+      "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-neon/",
+      "supports": "Gemini 4 Neon 的发布时间、上下文、模型价格、官方任务评测与 Harness 比较。",
+      "accessedAt": "2026-11-20"
+    },
+    {
+      "id": "openai-codex-sandbox",
+      "title": "OpenAI — Inside the Codex sandbox",
+      "url": "https://openai.com/index/inside-the-codex-sandbox/",
+      "supports": "Codex 工作区权限、网络沙箱、跨平台隔离、CLI 命令与 MCP 服务进程边界。",
+      "accessedAt": "2026-11-20"
+    },
+    {
+      "id": "perplexity-context-api",
+      "title": "Perplexity — Context API extracts full context from any web page",
+      "url": "https://www.perplexity.ai/hub/blog/context-api-extracts-full-context-from-any-web-page",
+      "supports": "Context API 的 URL 批量读取、响应格式、缓存新鲜度与逐项失败处理。",
+      "accessedAt": "2026-11-20"
+    },
+    {
+      "id": "arena-agent-index",
+      "title": "Arena — Introducing the Agent Arena Index",
+      "url": "https://arena.ai/blog/introducing-the-agent-arena-index",
+      "supports": "Agent Arena 评分信号、任务维度指标与独立的 Alignment Index。",
+      "accessedAt": "2026-11-20"
+    },
+    {
+      "id": "openai-chip-design",
+      "title": "OpenAI — Advancing chip design with OpenAI models",
+      "url": "https://openai.com/index/advancing-chip-design-with-our-models/",
+      "supports": "AI 辅助芯片设计的 PPA 改进、工具验证与 RISC-V 评测约束。",
+      "accessedAt": "2026-11-20"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-19 — 模型分层、推理故障转移与授权治理",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-19.yaml",
+      "supports": "承接上一期模型路由、成本与安全门禁的工程判断。",
+      "publishedAt": "2026-11-19"
+    },
+    {
+      "title": "Orbis · 2026-11-18 — Agent 验证闭环与独立审查",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-18.yaml",
+      "supports": "关联独立验证、持续审查与推理上下文的可信交付条件。",
+      "publishedAt": "2026-11-18"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
