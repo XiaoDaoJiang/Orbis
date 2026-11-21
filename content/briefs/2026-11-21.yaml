@@ -1,0 +1,335 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-21",
+  "status": "published",
+  "title": "Agent 规模化转向系统工程：按需工具、状态工作流、专用模型与人类验收",
+  "summary": "Gemini API Tool Retrieval 把庞大的工具 schema 从常驻上下文移到按需加载，降低 Agent 工具规模化时的上下文负担。OpenAI Performance Factory 则用任务状态、事件唤醒与人工审核构成可恢复的性能修复闭环。Cloudflare 开放 Clairic 系列专用提取模型，为将结构化抽取从通用推理中拆分提供新选项；OpenAI 内部研究显示 Agent 在不同工作类型上的自主完成率差异显著。Antigravity SSH 进一步把运行环境拓展至远程 Linux 主机，权限与交付验证因此更需要被明确记录。",
+  "topics": [
+    "agent-harness",
+    "coding-agent",
+    "mcp"
+  ],
+  "tags": [
+    "On-Demand Tool Schemas",
+    "Event-Driven Agent Workflow",
+    "Specialized Extraction Models",
+    "Jagged Agent Reliability",
+    "Remote Agent Execution"
+  ],
+  "signals": [
+    {
+      "title": "工具目录不等于全部 schema 必须进入上下文",
+      "summary": "Gemini Interactions API 预览 Tool Retrieval，通过 tool_search 按需载入工具参数；大量 MCP/函数工具场景可评估延迟与 token 收益。",
+      "impact": "high"
+    },
+    {
+      "title": "可恢复 Agent 需要持久任务和外部事件唤醒",
+      "summary": "OpenAI Performance Factory 用任务服务、调度循环、云端 Codex 和事件订阅串起调查、修复、人工审核与上线后回归检查。",
+      "impact": "high"
+    },
+    {
+      "title": "高频抽取可由专用小模型承担",
+      "summary": "Cloudflare 开放 Clairic 与 9B Clairic-flash 权重，并保留字段置信度及定位信息；供应商自报评测仍须用自有数据复核。",
+      "impact": "medium"
+    },
+    {
+      "title": "自主率高度依赖任务类别，远程执行更需门禁",
+      "summary": "OpenAI 内部研究中不同研发任务完成率相差很大；Antigravity SSH 使 Agent 工作区运行在远程主机，隔离与人工批准仍不可省。",
+      "impact": "high"
+    }
+  ],
+  "sections": [
+    {
+      "id": "tool-schema-on-demand",
+      "layout": "architecture",
+      "title": "Tool Retrieval：工具发现和完整参数加载解耦",
+      "conclusion": "为工具目录建立按需 schema 加载和度量合同；保留授权过滤、调用链与不应自动执行的高风险操作审批。",
+      "facts": [
+        {
+          "id": "tool-retrieval-preview",
+          "text": "Google 于 2026 年 11 月 19 日宣布 Tool Retrieval 在 Gemini Interactions API 进入预览，目标是在大量工具时避免每轮都提交完整参数 schema。",
+          "evidence": [
+            "google-tool-retrieval"
+          ]
+        },
+        {
+          "id": "tool-search-deferred-loading",
+          "text": "启用时可加入 tool_search 并为函数设置 defer_loading=true，模型先看到名称和描述，使用工具前再载入参数 schema；检索与 function_call 会保留在 interaction.steps 中。",
+          "evidence": [
+            "google-tool-retrieval"
+          ]
+        },
+        {
+          "id": "tool-retrieval-mcp-client",
+          "text": "Google 说明 Tool Retrieval 兼容 Gemini API 的远程 MCP 服务，也支持由应用侧执行工具检索；应用侧检索需要额外往返。",
+          "evidence": [
+            "google-tool-retrieval"
+          ]
+        }
+      ],
+      "limitations": [
+        "该能力为 Gemini Interactions API 预览特性；费用节约、工具选择准确率与权限隔离效果须在自有工具集上测量。"
+      ]
+    },
+    {
+      "id": "persistent-performance-factory",
+      "layout": "system-map",
+      "title": "Performance Factory：任务状态机比连续长对话更可靠",
+      "conclusion": "将可恢复 Run 设计为任务记录、阶段转移、订阅唤醒和可审查产物，而不是让 Agent 空转等待部署或人工操作。",
+      "facts": [
+        {
+          "id": "factory-four-components",
+          "text": "OpenAI 于 2026 年 11 月 19 日介绍 Performance Factory：由可配置工作流的任务服务、工作分派循环、云端 Codex 调用接口和变更事件订阅四部分组成。",
+          "evidence": [
+            "openai-performance-factory"
+          ]
+        },
+        {
+          "id": "factory-review-recovery-loop",
+          "text": "其 Regression Workflow 以告警触发调查并提出修复，工程师审查部署后再由 Agent 核验性能是否恢复；任务状态与发现保存在 Agent 会话之外。",
+          "evidence": [
+            "openai-performance-factory"
+          ]
+        },
+        {
+          "id": "factory-early-volume",
+          "text": "OpenAI 报告该回归工作流在三个多月内跟踪超过 1700 项调查、定位超过 600 个问题；这是其内部流程数据而非通用成功率。",
+          "evidence": [
+            "openai-performance-factory"
+          ]
+        }
+      ],
+      "limitations": [
+        "案例运行在 OpenAI 内部代码与可观测性环境，不能推断普通组织无需建立权限、事件幂等、回滚和人工审核机制。"
+      ]
+    },
+    {
+      "id": "specialized-extraction-path",
+      "layout": "comparison",
+      "title": "Clairic：让确定性抽取与通用 Agent 推理解耦",
+      "conclusion": "对票据、工单及结构化字段抽取分别建立样本集、字段级准确率、可追溯跨度和人审阈值，再决定是否采用轻量专用模型。",
+      "facts": [
+        {
+          "id": "clairic-open-release",
+          "text": "Cloudflare 于 2026 年 11 月 18 日公布更新版 Clairic 与 9B 参数 Clairic-flash，两款均托管于 Workers AI，并发布开放权重。",
+          "evidence": [
+            "cloudflare-clairic"
+          ]
+        },
+        {
+          "id": "clairic-document-support",
+          "text": "Cloudflare 称更新版 Clairic 支持包含图像和 PDF 的复杂文档抽取，并改进表格、列表、日期等字段处理；其类型化 API 仍返回 confidence 与文本位置跨度等信号。",
+          "evidence": [
+            "cloudflare-clairic"
+          ]
+        },
+        {
+          "id": "clairic-eval-disclosure",
+          "text": "Cloudflare 明确当前缺乏公开统一的抽取基准，文章对文本、票据与复杂输入的性能比较属于供应商内部自报评测。",
+          "evidence": [
+            "cloudflare-clairic"
+          ]
+        }
+      ],
+      "limitations": [
+        "开放权重不保证可在既有 CPU/GPU 环境低成本部署；自报准确率不能代替私有中文文档及业务异常样本测试。"
+      ]
+    },
+    {
+      "id": "jagged-agent-completion",
+      "layout": "metrics",
+      "title": "自主研发能力呈锯齿形，不能以平均指标替代逐任务验收",
+      "conclusion": "按工作类型分开统计成功率、独立验证率和人工介入成本；对复杂推理、系统代码和生产执行设置不同级别授权。",
+      "facts": [
+        {
+          "id": "jagged-task-success-growth",
+          "text": "OpenAI 于 2026 年 11 月 18 日披露内部测量：估计需要人类 2–4 小时的研究任务，Agent 自主成功率从 2026 年 3 月的 23% 升至 10 月的 46%。",
+          "evidence": [
+            "openai-jagged-frontier"
+          ]
+        },
+        {
+          "id": "jagged-category-variance",
+          "text": "同一报告给出的任务分项自主成功率差异明显：监控训练运行约 79%，启动训练运行约 35%，编写推理与服务栈代码约 25%。",
+          "evidence": [
+            "openai-jagged-frontier"
+          ]
+        },
+        {
+          "id": "jagged-human-in-loop",
+          "text": "OpenAI 报告 2026 年 1 月至 9 月 Safety & Alignment 相关记录工作周增加 77%，并强调人类仍是其 AI 研发工作流的核心部分。",
+          "evidence": [
+            "openai-jagged-frontier"
+          ]
+        }
+      ],
+      "limitations": [
+        "上述指标来自单一机构的内部任务定义和统计口径，不可推广为其他企业或领域 Agent 的平均可靠性。"
+      ]
+    },
+    {
+      "id": "remote-agent-boundaries",
+      "layout": "architecture",
+      "title": "Antigravity SSH：计算移到远程，权限也必须同步迁移",
+      "conclusion": "为远程 Agent Workspace 建立主机身份、仓库边界、密钥管理、执行日志与隔离核验，确保本地审批不会被误认为远程安全保证。",
+      "facts": [
+        {
+          "id": "ssh-remote-linux",
+          "text": "Google Antigravity 文档支持桌面 App 通过 SSH 连接远程 Linux；项目、Git worktree、Agent 与终端实际运行在远程主机上。",
+          "evidence": [
+            "google-antigravity-ssh"
+          ]
+        },
+        {
+          "id": "ssh-system-prerequisites",
+          "text": "官方要求本地 Antigravity App v2.33.0+ 与 OpenSSH，远程需 x86_64 或 arm64 的 glibc Linux、可用 HTTPS 出站和启用 SSH 端口转发。",
+          "evidence": [
+            "google-antigravity-ssh"
+          ]
+        },
+        {
+          "id": "ssh-remote-tool-boundary",
+          "text": "Google 文档说明在 SSH 窗口内工具、终端沙箱、Skills、MCP 与插件均在远程主机执行，且连接后授权凭据会存储到该主机。",
+          "evidence": [
+            "google-antigravity-ssh"
+          ]
+        }
+      ],
+      "limitations": [
+        "SSH 连接不自动建立最小权限或机密隔离；需要复核远程 Linux 用户、出站网络、密钥驻留与插件权限。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "Gemini Tool Retrieval",
+      "summary": "用真实 MCP/函数工具集测量按需 schema 的上下文大小、检索准确率和调用延迟。",
+      "maturity": "early",
+      "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-api-tool-retrieval/"
+    },
+    {
+      "action": "READ",
+      "name": "OpenAI Performance Factory",
+      "summary": "分析任务状态、事件订阅、独立审查与部署后检查的可恢复工作流设计。",
+      "maturity": "growing",
+      "url": "https://openai.com/index/how-openai-performance-factory-keeps-chatgpt-fast/"
+    },
+    {
+      "action": "TEST",
+      "name": "Cloudflare Clairic-flash",
+      "summary": "在非敏感样本上测试字段定位、复杂日期及图片抽取的准确率与推理成本。",
+      "maturity": "early",
+      "url": "https://blog.cloudflare.com/open-clairic"
+    },
+    {
+      "action": "READ",
+      "name": "Google Antigravity SSH",
+      "summary": "核查远程开发主机上的工具权限、SSH 转发及凭据驻留边界。",
+      "maturity": "growing",
+      "url": "https://antigravity.google/docs/ssh"
+    }
+  ],
+  "radar": [
+    {
+      "label": "按需工具 schema 检索",
+      "impact": 92,
+      "horizon": 91,
+      "note": "适合工具数量不断增加的 Agent，但应在同等任务下验证 token 与端到端延迟。"
+    },
+    {
+      "label": "基于事件的持久化 Agent Run",
+      "impact": 96,
+      "horizon": 94,
+      "note": "将任务与 Agent 会话解耦，优先保障中断恢复、人审和部署回调的幂等性。"
+    },
+    {
+      "label": "专用模型处理结构化抽取",
+      "impact": 86,
+      "horizon": 76,
+      "note": "先对高频字段型任务建立基准，避免以供应商自报数字替代真实数据评测。"
+    },
+    {
+      "label": "远程工作区与权限审计",
+      "impact": 94,
+      "horizon": 86,
+      "note": "远程端执行环境成为真正的信任边界，须建立最小授权和独立审计。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "给多工具 Agent 做 schema 按需加载实验",
+      "description": "选取 30 个以上工具，固定测试集，记录全量 schema 与按需加载两种模式的 token、错误工具率和端到端耗时。"
+    },
+    {
+      "title": "把 Agent 的恢复点转为持久任务事件",
+      "description": "建立 runId、阶段、产物摘要和幂等事件处理；测试审批、部署与 CI 完成后能否从准确阶段恢复。"
+    },
+    {
+      "title": "将抽取任务和复杂决策任务分开评测",
+      "description": "为字段抽取与推理型任务各建立独立准确率、证据和人工介入指标；用真实异常样本校验。"
+    },
+    {
+      "title": "审计远程 Agent 主机的信任边界",
+      "description": "检查 SSH 凭据、远程用户权限、MCP 进程、网络出口和工作区清理流程，并保存可复验日志。"
+    }
+  ],
+  "references": [
+    {
+      "id": "google-tool-retrieval",
+      "title": "Google — Introducing Tool Retrieval in the Gemini API",
+      "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-api-tool-retrieval/",
+      "supports": "Gemini Interactions API Tool Retrieval 的预览状态、按需 schema 加载、tool_search 和 MCP 兼容性。",
+      "accessedAt": "2026-11-21"
+    },
+    {
+      "id": "openai-performance-factory",
+      "title": "OpenAI — How OpenAI's Performance Factory keeps ChatGPT fast",
+      "url": "https://openai.com/index/how-openai-performance-factory-keeps-chatgpt-fast/",
+      "supports": "Performance Factory 的四个组件、事件唤醒与人工审查、性能回归工作流和内部规模数据。",
+      "accessedAt": "2026-11-21"
+    },
+    {
+      "id": "cloudflare-clairic",
+      "title": "Cloudflare — An updated Clairic and Clairic-flash are now open-weight",
+      "url": "https://blog.cloudflare.com/open-clairic",
+      "supports": "Clairic 及 Clairic-flash 的开放权重、抽取能力、字段结果类型和自报评测局限。",
+      "accessedAt": "2026-11-21"
+    },
+    {
+      "id": "openai-jagged-frontier",
+      "title": "OpenAI — Research acceleration: The jagged frontier",
+      "url": "https://openai.com/index/research-acceleration-jagged-frontier/",
+      "supports": "OpenAI 内部 Agent 工作成功率、不同研发任务的能力差异以及人类参与的研究指标。",
+      "accessedAt": "2026-11-21"
+    },
+    {
+      "id": "google-antigravity-ssh",
+      "title": "Google — Antigravity Connect over SSH",
+      "url": "https://antigravity.google/docs/ssh",
+      "supports": "Antigravity SSH 的运行位置、版本与主机要求、工具及远程凭据边界。",
+      "accessedAt": "2026-11-21"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-20 — Agent 工程闭环、沙箱与验证",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-20.yaml",
+      "supports": "衔接前一期权限沙箱、模型效率和验证闭环的工程实践。",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "title": "Orbis · 2026-11-18 — 可执行验证与审计",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-18.yaml",
+      "supports": "关联持续审查、独立验证和 Agent 任务控制的已有内容。",
+      "publishedAt": "2026-11-18"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
