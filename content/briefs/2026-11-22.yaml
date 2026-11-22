@@ -1,0 +1,357 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-22",
+  "status": "published",
+  "title": "Agent 能力进入分层验证期：循环推理、开放多模态、状态完整性与蒸馏防护",
+  "summary": "Thinking Machines Inkling 2 Mini 通过循环 Transformer 和低比特权重探索本地 Agent 推理效率，但更短的显式思维链要求重新审视可监控性。腾讯 WeMM-Video 与 Hy4 分别推进视频音画理解和超大 MoE 模型，推理成本与许可证成为落地约束。OpenAI API 文档强调保持历史前缀不变，以保留跨轮 reasoning；其蒸馏防御研究进一步说明敏感推理轨迹需要独立保护。MedChemBench 将专业领域推理拆成可核验的子任务，提醒工程团队不要用单一榜单替代任务级验收。",
+  "topics": [
+    "agent-harness",
+    "coding-agent"
+  ],
+  "tags": [
+    "Looped Transformer Efficiency",
+    "Open Omni-Modal Video Models",
+    "Long-Context MoE",
+    "Reasoning State Integrity",
+    "Adversarial Distillation Defense",
+    "Scientific Agent Evaluation"
+  ],
+  "signals": [
+    {
+      "title": "循环架构把 Agent 推理预算转向模型内部",
+      "summary": "Inkling 2 Mini 以重复中间层和约 20GB 权重占用探索本地编码 Agent；性能与思维链可监控性必须同时测试。",
+      "impact": "high"
+    },
+    {
+      "title": "开放多模态开始形成大模型与小模型分层",
+      "summary": "WeMM-Video 提供多档视频音画理解模型，Hy4 走向 770B MoE；实际选择取决于视频质量、显存、部署补丁及许可证。",
+      "impact": "medium"
+    },
+    {
+      "title": "推理状态复用与轨迹泄露是两种独立边界",
+      "summary": "OpenAI 建议跨轮保留输入前缀以复用 reasoning，同时披露多层防御推理轨迹提取的内部结果；缓存优化不能替代安全隔离。",
+      "impact": "high"
+    },
+    {
+      "title": "专业基准要测解释、选择和预测而非单一得分",
+      "summary": "MedChemBench 分解药物化学的结构读取、证据推理、候选排序和性质预测；厂商报告的高分不能等同于科学结论已验证。",
+      "impact": "medium"
+    }
+  ],
+  "sections": [
+    {
+      "id": "looped-transformer-efficiency",
+      "layout": "architecture",
+      "title": "Inkling 2 Mini：更多内部计算不必转化为更长文本推理",
+      "conclusion": "在本地编码 Agent 试验中同时记录吞吐、任务成功率、内存和可审计轨迹；不要把更短的 CoT 当成推理成本或安全风险必然降低的证明。",
+      "facts": [
+        {
+          "id": "inkling-architecture",
+          "text": "Thinking Machines Lab 于 2026 年 11 月 20 日发布 Inkling 2 Mini：26.4B 总参数、3.4B 激活参数的 MoE 模型，每个 token 让中间层循环执行三次，计入循环后约 5.4B 权重激活量。",
+          "evidence": [
+            "inkling-mini-release"
+          ]
+        },
+        {
+          "id": "inkling-local-footprint",
+          "text": "官方称 Inkling 2 Mini 主要采用 NVFP4 权重、末尾层采用 MXFP8，权重内存约 20GB，并支持在至少 32GB RAM 的 Mac 上通过 Ollama 运行；模型卡列明 Apache 2.0 许可证。",
+          "evidence": [
+            "inkling-mini-release",
+            "inkling-mini-model-card"
+          ]
+        },
+        {
+          "id": "inkling-monitoring-tradeoff",
+          "text": "官方在可变循环研究模型上报告，三次循环时无显式 CoT 的任务时间跨度从单次循环的 16 秒增至 37 秒，生成的 CoT 趋短；这些是研究实验结果，不代表生产场景的通用安全保证。",
+          "evidence": [
+            "inkling-mini-release"
+          ]
+        }
+      ],
+      "limitations": [
+        "DeepSWE 等成绩与可监控性结果主要由发布方报告；跨模型评测设置、精度和硬件不完全一致，须以固定任务集复测。"
+      ]
+    },
+    {
+      "id": "open-omnimodal-model-tiers",
+      "layout": "comparison",
+      "title": "WeMM-Video 与 Hy4：开放权重不等于相同部署门槛",
+      "conclusion": "针对视频音画任务优先选择能复现的轻量模型；超大参数 MoE 应先核查计算资源、依赖补丁与商用许可证，而非仅看官方榜单。",
+      "facts": [
+        {
+          "id": "wemm-model-family",
+          "text": "腾讯微信视觉团队开源 WeMM-Video，中英文音画联合理解系列包括 2B、4B、9B 稠密模型和 35B-A3B MoE 模型，官方称训练使用约 1.2 万亿多模态 token。",
+          "evidence": [
+            "tencent-wemm-video"
+          ]
+        },
+        {
+          "id": "wemm-video-audio-runtime",
+          "text": "WeMM-Video 官方示例支持视频帧与原声联合输入、Instruct 与 Thinking 两种模式，给出 Transformers、补丁版 vLLM/SGLang 与 GGUF 推理路径。",
+          "evidence": [
+            "tencent-wemm-video"
+          ]
+        },
+        {
+          "id": "hy4-size-and-license",
+          "text": "腾讯 Hy4 官方模型卡描述 770B 总参数、49B 文本激活参数、1M 上下文的 MoE 语言骨干，并使用 Gated Sparse Attention 与 DFly2 投机解码；模型采用 Tencent Hy License。",
+          "evidence": [
+            "tencent-hy4-model-card"
+          ]
+        }
+      ],
+      "limitations": [
+        "多模态能力和基准领先性属项目方披露；Hy4 显存需求与 WeMM 特定部署补丁需要单独测试，不能把开放权重误读为无条件开放许可。"
+      ]
+    },
+    {
+      "id": "reasoning-prefix-integrity",
+      "layout": "architecture",
+      "title": "跨轮 reasoning 复用：历史前缀成为运行时契约",
+      "conclusion": "在 Agent Harness 固定工具和指令的前缀版本，新增约束采用 append-only；将 prefix mismatch、缓存命中与任务正确性一起纳入回归测试。",
+      "facts": [
+        {
+          "id": "prefix-unchanged-cache",
+          "text": "OpenAI API《Keep the prefix unchanged》指南说明 Prompt Cache 从请求开头匹配，修改较早历史、工具定义或格式参数会使该位置之后的缓存复用下降。",
+          "evidence": [
+            "openai-prefix-guide"
+          ]
+        },
+        {
+          "id": "prefix-reasoning-loss",
+          "text": "官方文档指出，GPT-6.2 及更新模型遇到历史前缀变更时可能移除对应 reasoning items，使后续轮次重复推理并增加 token、延迟或质量风险。",
+          "evidence": [
+            "openai-prefix-guide"
+          ]
+        },
+        {
+          "id": "prefix-append-only-updates",
+          "text": "OpenAI 给出 append-only 更新方式：用 configuration_update 调整 effort 或输出 schema，用 additional_tools 增加工具，并建议通过官方 compaction 保留可复用的 reasoning 状态。",
+          "evidence": [
+            "openai-prefix-guide"
+          ]
+        }
+      ],
+      "limitations": [
+        "以上是 OpenAI Responses API 的模型与缓存语义；不同厂商、版本及自定义会话压缩策略不可直接推断具有相同行为。"
+      ]
+    },
+    {
+      "id": "protected-reasoning-boundary",
+      "layout": "metrics",
+      "title": "防蒸馏需要保护完整交互中的敏感推理轨迹",
+      "conclusion": "将敏感模型轨迹视为需要控制的输出资产：结合请求限额、分类器、泄露回归样本、跨轮身份绑定和异常流量检测建立分层防线。",
+      "facts": [
+        {
+          "id": "distillation-risk-definition",
+          "text": "OpenAI 2026 年 11 月 20 日的报告指出，未经授权的能力蒸馏可能让二次模型继承模型能力，却不继承原模型在网络安全等领域的安全限制。",
+          "evidence": [
+            "openai-distillation-defense"
+          ]
+        },
+        {
+          "id": "distillation-defense-stack",
+          "text": "OpenAI 披露组合使用对抗测试、训练、分类器、API 级保护以及针对协同提取行为的调查，以减少受保护 reasoning 轨迹被提取的风险。",
+          "evidence": [
+            "openai-distillation-defense"
+          ]
+        },
+        {
+          "id": "distillation-internal-evaluation",
+          "text": "在 OpenAI 内部自适应红队测试中，针对旧版防护 GPT-6 Astra 的受保护推理提取平均成功率为 54.0%，新版防护 GPT-6.2 Astra 的对应结果为 0.2%；两者不是同一模型的单变量对照。",
+          "evidence": [
+            "openai-distillation-defense"
+          ]
+        }
+      ],
+      "limitations": [
+        "54.0% 与 0.2% 均为厂商内部特定测试口径，不能外推为线上真实攻击成功率，也不能据此认定所有蒸馏攻击已被阻断。"
+      ]
+    },
+    {
+      "id": "scientific-evaluation-granularity",
+      "layout": "metrics",
+      "title": "MedChemBench：领域推理的可验证任务分解",
+      "conclusion": "为科研辅助 Agent 分别设计结构识别、证据解释、排序决策和数值预测指标，并保留专家复核与后续实验确认。",
+      "facts": [
+        {
+          "id": "medchembench-corpus",
+          "text": "OpenAI 于 2026 年 11 月 20 日发布 MedChemBench，包含来自 117 篇论文及专利、涉及 761 种分子结构的 99 道药物化学研究问题。",
+          "evidence": [
+            "openai-medchembench"
+          ]
+        },
+        {
+          "id": "medchembench-four-dimensions",
+          "text": "MedChemBench 分别评估分子结构重建、基于实验的科学推理、化合物排序与选择，以及对数值和类别性质的预测。",
+          "evidence": [
+            "openai-medchembench"
+          ]
+        },
+        {
+          "id": "medchembench-self-reported-scores",
+          "text": "OpenAI 报告在 xhigh 推理设置下 GPT-6.2 Astra 获得 84.5% 可得分，GPT-6 Astra 为 83.3%；同一页面强调性质预测与化合物选择等能力仍较难。",
+          "evidence": [
+            "openai-medchembench"
+          ]
+        }
+      ],
+      "limitations": [
+        "这些是基于公开文献的离线任务得分，不是临床疗效、安全性或实际药物发现成功率；评测与模型结果需独立复核。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "TEST",
+      "name": "Inkling 2 Mini",
+      "summary": "用相同 coding-agent 用例比较循环模型的任务成功率、延迟、显存占用和思维链可审计性。",
+      "maturity": "early",
+      "url": "https://thinkingmachines.ai/news/inkling-2-mini/"
+    },
+    {
+      "action": "TEST",
+      "name": "Tencent WeMM-Video",
+      "summary": "以带原声视频样本验证画面与音频的联合理解、推理模式与部署环境依赖。",
+      "maturity": "early",
+      "url": "https://github.com/Tencent/WeMM-Video"
+    },
+    {
+      "action": "READ",
+      "name": "Tencent Hy4",
+      "summary": "审查 770B MoE 的硬件需求、投机解码设计与 Tencent Hy License 使用边界。",
+      "maturity": "early",
+      "url": "https://huggingface.co/tencent/Hy4"
+    },
+    {
+      "action": "TEST",
+      "name": "OpenAI Reasoning Prefix",
+      "summary": "在多轮工具调用中测量 prefix mismatch、缓存命中、reasoning 保留及任务成功率。",
+      "maturity": "growing",
+      "url": "https://developers.openai.com/api/docs/guides/keep-prefix-unchanged"
+    },
+    {
+      "action": "READ",
+      "name": "OpenAI MedChemBench",
+      "summary": "研究领域任务如何分解为结构、解释、排序与预测的可复现评测维度。",
+      "maturity": "early",
+      "url": "https://openai.com/index/introducing-medchembench/"
+    }
+  ],
+  "radar": [
+    {
+      "label": "循环 Transformer 本地 Agent",
+      "impact": 88,
+      "horizon": 76,
+      "note": "优化模型内计算与显式 reasoning token 的权衡，同时评估追踪与审计性。"
+    },
+    {
+      "label": "原生音画视频理解",
+      "impact": 84,
+      "horizon": 72,
+      "note": "用带音轨的视频测任务准确率，先排除固定显存和依赖补丁限制。"
+    },
+    {
+      "label": "跨轮推理前缀完整性",
+      "impact": 95,
+      "horizon": 94,
+      "note": "对多工具多轮 Agent 影响直接，可纳入版本化上下文与回归门禁。"
+    },
+    {
+      "label": "推理轨迹提取与防蒸馏",
+      "impact": 92,
+      "horizon": 80,
+      "note": "在合法授权前提下以红队样本和日志回放建立泄露检测回归。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "建立循环模型的本地 Agent A/B 测试",
+      "description": "固定仓库任务、硬件、解题预算与工具集，对照 Inkling 2 Mini 的吞吐、成功率、内存和可审计性。"
+    },
+    {
+      "title": "审计多模态模型部署与许可证",
+      "description": "为 WeMM-Video 与 Hy4 分别记录 BF16/量化、GPU、依赖补丁、视频音轨路径和商业许可限制。"
+    },
+    {
+      "title": "为跨轮 Agent 增加前缀变化检测",
+      "description": "在 Harness 测试中故意变更工具或历史消息，追踪 input_transformations、prefix_mismatch、cached tokens 和最终质量。"
+    },
+    {
+      "title": "把领域与安全指标拆成独立门禁",
+      "description": "分别建立推理轨迹泄露回归用例与科研领域解释、排序、数值预测指标，不把厂商基准当上线证明。"
+    }
+  ],
+  "references": [
+    {
+      "id": "inkling-mini-release",
+      "title": "Thinking Machines Lab — Introducing Inkling 2 Mini",
+      "url": "https://thinkingmachines.ai/news/inkling-2-mini/",
+      "supports": "模型发布日、循环 Transformer、MoE 规模、本地内存和可监控性实验。",
+      "accessedAt": "2026-11-22"
+    },
+    {
+      "id": "inkling-mini-model-card",
+      "title": "Thinking Machines Lab — Inkling 2 Mini Model Card",
+      "url": "https://thinkingmachines.ai/model-card/inkling-2-mini/",
+      "supports": "Inkling 2 Mini 许可证与定位。",
+      "accessedAt": "2026-11-22"
+    },
+    {
+      "id": "tencent-wemm-video",
+      "title": "Tencent — WeMM-Video official repository",
+      "url": "https://github.com/Tencent/WeMM-Video",
+      "supports": "WeMM-Video 模型尺寸、音画输入、模式、训练概况及部署路径。",
+      "accessedAt": "2026-11-22"
+    },
+    {
+      "id": "tencent-hy4-model-card",
+      "title": "Tencent — Hy4 Model Card",
+      "url": "https://huggingface.co/tencent/Hy4",
+      "supports": "Hy4 参数、上下文、架构、投机解码及许可证。",
+      "accessedAt": "2026-11-22"
+    },
+    {
+      "id": "openai-prefix-guide",
+      "title": "OpenAI API — Keep the prefix unchanged",
+      "url": "https://developers.openai.com/api/docs/guides/keep-prefix-unchanged",
+      "supports": "多轮 reasoning 历史前缀、缓存匹配、更新和 compaction 的官方建议。",
+      "accessedAt": "2026-11-22"
+    },
+    {
+      "id": "openai-distillation-defense",
+      "title": "OpenAI — Combatting adversarial distillation",
+      "url": "https://openai.com/index/combatting-adversarial-distillation/",
+      "supports": "非授权蒸馏的风险、防护策略和内部红队评测数字。",
+      "accessedAt": "2026-11-22"
+    },
+    {
+      "id": "openai-medchembench",
+      "title": "OpenAI — Introducing MedChemBench",
+      "url": "https://openai.com/index/introducing-medchembench/",
+      "supports": "药物化学任务结构、数据规模与模型自报实验结果。",
+      "accessedAt": "2026-11-22"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-21 — Agent 规模化与按需工具",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-21.yaml",
+      "supports": "衔接上一期的 Agent Harness、工具检索和系统工程实践。",
+      "publishedAt": "2026-11-21"
+    },
+    {
+      "title": "Orbis · 2026-11-18 — 验证与持续审计",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-18.yaml",
+      "supports": "对照独立验证、审计和持续代码交付的工程原则。",
+      "publishedAt": "2026-11-18"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
