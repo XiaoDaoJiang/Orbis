@@ -1,0 +1,382 @@
+{
+  "kind": "brief",
+  "cadence": "daily",
+  "evidenceVersion": 1,
+  "publishedAt": "2026-11-23",
+  "status": "published",
+  "title": "可信 Agent 需要可追溯的执行边界：推理路由、上下文分叉、形式化验证与交易授权",
+  "summary": "Novita 的 MiniMax 请求转发事件揭示：模型名称相同不代表数据处理路径一致，供应商路由与保留策略必须可审计。Google Antigravity 的 /btw 支持并行上下文分叉，但只读提示并非独立沙箱。Lean/Mathlib 社区对黎曼假设形式化证明开展了声明比对、隔离重建和多内核复核。OpenAI 的商家身份与 Wallet 支付流程进一步显示，Agent 在外部系统执行有副作用的动作，需要独立身份、最小授权和逐次确认。",
+  "topics": [
+    "agent-harness",
+    "coding-agent",
+    "mcp"
+  ],
+  "tags": [
+    "Model Routing Provenance",
+    "Context Fork Isolation",
+    "Cross-Kernel Verification",
+    "Business Agent Identity",
+    "Agentic Payment Authorization"
+  ],
+  "signals": [
+    {
+      "title": "模型路由属于数据安全合同，不只是性能参数",
+      "summary": "Novita 确认部分 MiniMax 请求经配置路径转发到模型官方 API；路由链、上游处理者和凭据暴露需纳入独立审计。",
+      "impact": "high"
+    },
+    {
+      "title": "上下文分叉并不天然形成权限沙箱",
+      "summary": "Antigravity /btw 把旁路问题与主任务历史分离，但继承同一权限配置；只读模型指令与底层强制访问控制不能混同。",
+      "impact": "high"
+    },
+    {
+      "title": "AI 辅助证明进入独立内核复核阶段",
+      "summary": "Lean/Mathlib 社区公布对黎曼假设形式化证明的认证声明；检验链覆盖目标声明、隔离编译和多种独立证明检查器。",
+      "impact": "high"
+    },
+    {
+      "title": "面向真实交易的 Agent 需绑定身份与逐次授权",
+      "summary": "OpenAI Business Agent 与 ChatGPT Wallet 分别引入经认领商家信息和用户确认支付步骤；代理执行不能替代所有权与授权证据。",
+      "impact": "medium"
+    }
+  ],
+  "sections": [
+    {
+      "id": "model-route-provenance",
+      "layout": "architecture",
+      "title": "模型路由漂移：API 抽象不等于数据驻留保证",
+      "conclusion": "为每次模型请求记录实际下游、处理区域、保留条款和安全例外；发生路径偏差时按潜在数据外传进行响应。",
+      "facts": [
+        {
+          "id": "novita-forwarding-confirmed",
+          "text": "Novita 于 2026-11-22 公告确认部分 MiniMax 请求转发至 MiniMax 官方 API，而非其托管的基础设施。",
+          "evidence": [
+            "novita-privacy-notice"
+          ]
+        },
+        {
+          "id": "routing-configuration-scope",
+          "text": "Novita 表示，本拟用于特定客户的 API 转发配置被更广泛地应用，并已暂停受影响模型。",
+          "evidence": [
+            "novita-privacy-notice"
+          ]
+        },
+        {
+          "id": "affected-requests-window",
+          "text": "Novita 提示 2026-05-28 至 2026-11-11 期间经 Novita 或 OpenRouter 路由的 MiniMax 请求内容可能被第三方访问或保留。",
+          "evidence": [
+            "novita-privacy-notice"
+          ]
+        },
+        {
+          "id": "investigation-not-conclusive",
+          "text": "Novita 仍在向 MiniMax 核实数据处置，并建议包含真实密钥的受影响客户撤销或轮换凭据。",
+          "evidence": [
+            "novita-privacy-notice"
+          ]
+        }
+      ],
+      "limitations": [
+        "公告未证实所有相关请求均被第三方保存，也未确定每个租户的实际暴露范围。",
+        "下游处理及删除状态仍待服务商调查确认。"
+      ]
+    },
+    {
+      "id": "forked-context-security",
+      "layout": "comparison",
+      "title": "旁路会话：状态隔离与工具授权是两回事",
+      "conclusion": "把旁路会话的用途限制为可回收的探查，并以执行层策略阻断不必要写操作；不能单凭“只读”提示词认定安全。",
+      "facts": [
+        {
+          "id": "btw-fork-history",
+          "text": "Antigravity 官方文档说明 /btw 复制当前对话历史创建旁路会话，主 Agent 可继续工作，旁路内容不自动写回主对话。",
+          "evidence": [
+            "antigravity-btw-doc"
+          ]
+        },
+        {
+          "id": "btw-inherited-permissions",
+          "text": "官方说明 /btw 继承主会话的模型、权限、沙箱、MCP 服务和管理员策略；只读属于模型指令而非独立安全沙箱。",
+          "evidence": [
+            "antigravity-btw-doc"
+          ]
+        },
+        {
+          "id": "btw-approval-behavior",
+          "text": "官方文档区分 App 与 CLI：App 旁路可呈现审批请求；CLI 卡片不能呈现审批并自动拒绝这类工具调用。",
+          "evidence": [
+            "antigravity-btw-doc"
+          ]
+        },
+        {
+          "id": "antigravity-update-context",
+          "text": "Antigravity v2.34.0 更新记录标注 2026-11-20，加入从终端所选文本直接发起旁路提问及 MCP Apps 支持。",
+          "evidence": [
+            "antigravity-changelog"
+          ]
+        }
+      ],
+      "limitations": [
+        "模型被指示只读不等于对全部工具具备强制只读保证。",
+        "具体行为依赖客户端、版本和用户已授予的权限。"
+      ]
+    },
+    {
+      "id": "formal-proof-verification",
+      "layout": "system-map",
+      "title": "17 百万行证明的验收：从声明匹配到多内核重放",
+      "conclusion": "把 AI 产出的证明或代码视为待校验工件；采用不可变输入、独立构建、目标匹配和不同实现的审查链。",
+      "facts": [
+        {
+          "id": "lean-community-statement",
+          "text": "Lean 与 Mathlib 社区于 2026-11-21 联合声明，对 Levent Alpöge 于 11-20 发布的约 1700 万行 Lean 黎曼假设证明完成认证。",
+          "evidence": [
+            "lean-community-rh"
+          ]
+        },
+        {
+          "id": "statement-matching-and-checkers",
+          "text": "社区说明其验收覆盖 Mathlib 中的目标命题、可重现编译、独立命题比对与多种证明检查器。",
+          "evidence": [
+            "lean-community-rh"
+          ]
+        },
+        {
+          "id": "mit-independent-build",
+          "text": "MIT Andrew Sutherland 的验证记录显示，175187 个模块可编译，隔离构建的证明导出与发布导出按字节一致。",
+          "evidence": [
+            "mit-rh-verification"
+          ]
+        },
+        {
+          "id": "mit-running-checks",
+          "text": "截至 MIT 验证页面 2026-11-22 16:20 UTC 更新，部分导出文件上的 Lean 内核重放和端到端 comparator 运行仍在进行。",
+          "evidence": [
+            "mit-rh-verification"
+          ]
+        }
+      ],
+      "limitations": [
+        "这是形式化证明检查与社区认证的结果；证明思想的数学解释和可理解性仍有后续工作。",
+        "单个已通过的编译任务不能替代目标声明与证明语义的独立比对。"
+      ]
+    },
+    {
+      "id": "business-agent-identity",
+      "layout": "architecture",
+      "title": "Business Agent：业务知识与所有权必须同时校验",
+      "conclusion": "将商家所有权核验、可更新商品信息、Agent 指令及推荐独立性设计为不同治理环节。",
+      "facts": [
+        {
+          "id": "openai-verified-business",
+          "text": "OpenAI 的 Businesses in ChatGPT 入口允许符合资格、通过核验的商家认领业务并维护公开资料。",
+          "evidence": [
+            "openai-businesses"
+          ]
+        },
+        {
+          "id": "business-product-feed",
+          "text": "该入口允许零售商提交带有价格与库存信息的商品 Feed，为 ChatGPT 提供可更新业务信息。",
+          "evidence": [
+            "openai-businesses"
+          ]
+        },
+        {
+          "id": "business-agent-scope",
+          "text": "OpenAI 表示符合条件的商家可配置 Business Agent，用商家的商品和政策信息及指定准则回答顾客问题。",
+          "evidence": [
+            "openai-businesses"
+          ]
+        }
+      ],
+      "limitations": [
+        "商家认领并不保证更高推荐排序或销售转化。",
+        "开放资格、行业和地域依赖 OpenAI 的核验与完整性要求。"
+      ]
+    },
+    {
+      "id": "agentic-payment-authority",
+      "layout": "timeline",
+      "title": "代理交易：先确认用户意图，再发放有限支付凭证",
+      "conclusion": "把订单预览、用户批准、支付令牌、幂等执行和事后审计拆成独立状态，而不是授予 Agent 常驻卡信息。",
+      "facts": [
+        {
+          "id": "wallet-availability-date",
+          "text": "OpenAI 于 2026-11-13 公布 ChatGPT Wallet，初期面向美国部分 Pro 用户，通过 dots 进行受控支付。",
+          "evidence": [
+            "openai-wallet"
+          ]
+        },
+        {
+          "id": "wallet-per-purchase-approval",
+          "text": "官方流程要求用户每笔交易查看商品、总额和所选卡片，再通过生物识别等安全检查确认授权。",
+          "evidence": [
+            "openai-wallet"
+          ]
+        },
+        {
+          "id": "wallet-payment-tokenization",
+          "text": "付款批准后，支付网络生成支付令牌替代真实卡信息，Agent 和商家无需获取用户真实卡号。",
+          "evidence": [
+            "openai-wallet"
+          ]
+        }
+      ],
+      "limitations": [
+        "当前是有限开放的产品流程，不能推断所有网站或地区已经支持。",
+        "未来参数化预授权属于产品展望，非当前默认具备的能力。"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "action": "READ",
+      "name": "Antigravity /btw",
+      "summary": "检查 side-question 的历史复制、权限继承以及 App/CLI 审批差异。",
+      "maturity": "growing",
+      "url": "https://antigravity.google/docs/commands/btw/"
+    },
+    {
+      "action": "READ",
+      "name": "Lean RH verification",
+      "summary": "阅读可重现构建、原始导出与多内核交叉校验的验证记录。",
+      "maturity": "early",
+      "url": "https://math.mit.edu/~drew/grh/"
+    },
+    {
+      "action": "TEST",
+      "name": "Gemini API CLI",
+      "summary": "用官方 CLI 的 schema 和 dry-run 方式验证调用参数与凭据脱敏行为。",
+      "maturity": "early",
+      "url": "https://github.com/google-gemini/gemini-api-cli"
+    },
+    {
+      "action": "READ",
+      "name": "Novita privacy notice",
+      "summary": "审查模型转发事件、保留风险和供应商告知对密钥轮换的影响。",
+      "maturity": "growing",
+      "url": "https://novita.ai/blog/minimax-requests-privacy-notice/"
+    },
+    {
+      "action": "WATCH",
+      "name": "ChatGPT Business Agent",
+      "summary": "跟踪业务身份认领、商品 Feed 与商家自定义指令的边界。",
+      "maturity": "early",
+      "url": "https://openai.com/business/businesses-in-chatgpt/"
+    }
+  ],
+  "radar": [
+    {
+      "label": "模型实际下游可追溯",
+      "impact": 97,
+      "horizon": 96,
+      "note": "云推理与多级路由应验证真实处理者和保留策略。"
+    },
+    {
+      "label": "旁路会话的强制只读",
+      "impact": 92,
+      "horizon": 91,
+      "note": "共享工具权限时，旁路线程需要执行层防写策略与审批。"
+    },
+    {
+      "label": "独立验证器与不可变工件",
+      "impact": 90,
+      "horizon": 74,
+      "note": "大型 AI 生成产物的验收应覆盖目标、编译与独立重放。"
+    },
+    {
+      "label": "Agent 身份与付款授权",
+      "impact": 86,
+      "horizon": 68,
+      "note": "商业 Agent 需要身份认证、逐单授权与可审计令牌。"
+    }
+  ],
+  "actions": [
+    {
+      "title": "给模型路由加可验证的处理路径",
+      "description": "在网关记录服务商、下游厂商、路由原因、地域及保留条款；抽取 20 条历史请求核对实际调用链。"
+    },
+    {
+      "title": "测试分叉会话的最小权限",
+      "description": "建立 /btw 只读探查和尝试写文件、调用外部工具、触发审批的回归用例，分开验证 App 与 CLI。"
+    },
+    {
+      "title": "为 AI 代码增加第二验证器",
+      "description": "将目标断言、干净环境重建、结果哈希和不同工具交叉检查纳入 CI，失败时保留可复现输入。"
+    },
+    {
+      "title": "拆分 Agent 交易的审批状态机",
+      "description": "以订单草案、人工确认、一次性付款令牌和执行回执设计最小原型，验证重复提交不会重复付款。"
+    }
+  ],
+  "references": [
+    {
+      "id": "novita-privacy-notice",
+      "title": "Novita — Privacy Notice Regarding MiniMax Requests",
+      "url": "https://novita.ai/blog/minimax-requests-privacy-notice/",
+      "supports": "请求转发确认、受影响时间窗、调查限制、受影响模型暂停与凭据轮换建议。",
+      "accessedAt": "2026-11-23"
+    },
+    {
+      "id": "antigravity-btw-doc",
+      "title": "Google Antigravity — Side question command /btw",
+      "url": "https://antigravity.google/docs/commands/btw/",
+      "supports": "旁路会话历史复制、权限继承、只读不是独立沙箱以及 App 与 CLI 审批差异。",
+      "accessedAt": "2026-11-23"
+    },
+    {
+      "id": "antigravity-changelog",
+      "title": "Google Antigravity — Changelog v2.34.0",
+      "url": "https://antigravity.google/docs/changelog",
+      "supports": "2026-11-20 版本更新涉及 MCP Apps 和从终端选择文本发起 /btw。",
+      "accessedAt": "2026-11-23"
+    },
+    {
+      "id": "lean-community-rh",
+      "title": "Lean and Mathlib communities — Verification of the Riemann Hypothesis",
+      "url": "https://leanprover-community.github.io/blog/posts/riemann-hypothesis/",
+      "supports": "2026-11-21 联合认证声明、1700 万行证明与形式化验证的四项要求。",
+      "accessedAt": "2026-11-23"
+    },
+    {
+      "id": "mit-rh-verification",
+      "title": "MIT Andrew Sutherland — RH Lean verification files",
+      "url": "https://math.mit.edu/~drew/grh/",
+      "supports": "隔离构建、175187 模块、导出哈希一致性及 2026-11-22 时点仍在运行的验证步骤。",
+      "accessedAt": "2026-11-23"
+    },
+    {
+      "id": "openai-businesses",
+      "title": "OpenAI — Businesses in ChatGPT",
+      "url": "https://openai.com/business/businesses-in-chatgpt/",
+      "supports": "业务认领资格、商品 Feed、Business Agent 和信息维护功能。",
+      "accessedAt": "2026-11-23"
+    },
+    {
+      "id": "openai-wallet",
+      "title": "OpenAI — Introducing ChatGPT Wallet",
+      "url": "https://openai.com/index/introducing-chatgpt-wallet/",
+      "supports": "2026-11-13 发布与初期范围、逐笔用户批准、支付令牌和支付网络职责。",
+      "accessedAt": "2026-11-23"
+    }
+  ],
+  "archivePicks": [
+    {
+      "title": "Orbis · 2026-11-21 — Agent 工程与人工验收",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-21.yaml",
+      "supports": "延伸阅读持久状态、工具检索与任务级验收。",
+      "publishedAt": "2026-11-21"
+    },
+    {
+      "title": "Orbis · 2026-11-18 — 独立验证与持续审计",
+      "url": "https://github.com/XiaoDaoJiang/Orbis/blob/main/content/briefs/2026-11-18.yaml",
+      "supports": "对照验证与安全审计的工程闭环。",
+      "publishedAt": "2026-11-18"
+    }
+  ],
+  "corrections": [],
+  "presentation": {
+    "enabled": true,
+    "template": "daily-v1"
+  }
+}
